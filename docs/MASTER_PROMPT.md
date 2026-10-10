@@ -197,7 +197,61 @@ Infra budget (~$0–50/mo to start) approved.
 **#1 pain:** everything is scattered. Goal: one system with clear sections —
 Leads, Inbox, Calendar, Projects, Payments, Subcontractors, Permits, Expenses, Reports.
 
-## 10. Working rules for me
+## 10. Decisions — Discovery round 2 (2026-10-10)
+
+**Company info:** MD Golden Builders · CSLB License #1128874 ·
+4275 Mission Bay Drive #359, San Diego, CA 92109 · 858-933-1964 · info@mdgoldenbuilders.com
+
+**Brand:** logo at `brand/logo.jpg` (gold houses + black). Palette:
+gold `#D09028` (gradient `#E8A92E` → `#B07020`), black `#111111`, white background.
+
+**Contract today:** Builder's Book **Form 203** Home Improvement Contract (5 pages,
+B&P §7159 / Civ. Code §8170) + **Form 204C Additional Description** pages
+(scope of work by section, materials, inspection, exclusions, contract price,
+payment schedule — each page signed by contractor and owner).
+Signature/initial points on Form 203: owner initials (receipt of copy), initial boxes
+(notices), owner signature + date (and 2nd owner), contractor signature + date,
+Notice of Cancellation receipt acknowledgment, arbitration initials (owner + contractor),
+customer acknowledgment of notices (sign + date).
+⚠️ Forms are © Builder's Book ("permission must be granted for reproduction") — we must
+NOT copy their text into the app. Options: (A) attorney-drafted MD Golden Builders
+contract template that meets §7159 (recommended long-term), (B) licensed digital forms,
+(C) MVP: generate our own Scope/Payment pages + e-sign over an uploaded filled PDF.
+Never commit customer contracts/PII to the repo.
+
+**Payment schedule example (real contract, $85,760):** $1,000 deposit, then
+$33,904 upon start of demo, $33,904 upon footings, $8,476 upon stucco, $8,476 completion
+(= remainder split 40/40/10/10 by milestone). → Payment schedules are **templates with
+named milestones**, editable per contract; each milestone: % or $, trigger (stage/date),
+invoice, status.
+
+**After signing (automated):** welcome email ("thank you for choosing us") with the
+signed contract PDF attached and the payment schedule listed. Project then either starts
+right away or waits on permits (architect/engineer submits plans to the city) — project
+status `Waiting on Permit` with permit tracking.
+
+**Media:** photos & videos before / during / after, uploaded from phone straight into the
+project (replaces per-project WhatsApp groups where info gets lost).
+
+**Completion:** email with Completion Form + **warranty specific to the work type**
+(warranty templates per service) + review links (Google, Yelp, Thumbtack).
+
+**Subcontractor payments:** each sub on a project has its own payment schedule
+(milestones, like customers) and payment records with proof. Applies to change orders too.
+
+**Joist:** stays for estimates (owner likes open-notifications). App only attaches the
+Joist estimate PDF (+ amount) to the lead.
+
+**Out of scope:** Junk Removal business — separate, never in this app.
+
+**Roles updated:** Secretary = **Office Manager**, full access incl. money and projects
+(she also helps roll out the system). Salespeople = own leads/projects only.
+
+**Appointments:** secretary schedules, owner attends (incl. second meetings).
+Auto SMS to customer **1 day before every appointment**: "Reply 1 to confirm" →
+appointment shows Confirmed / Not confirmed; unconfirmed ones alert the secretary.
+
+## 11. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

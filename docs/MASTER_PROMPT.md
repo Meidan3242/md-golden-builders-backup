@@ -276,6 +276,8 @@ lien-waiver requirement), e-signed by the sub. Template to be drafted and attorn
 conditional/unconditional × progress/final). Rule in app: collect a *conditional* waiver
 before each sub payment, *unconditional* after payment clears.
 
+**Review links:** owner Linktree https://linktr.ee/mdgoldenbuilders (contains Google / Yelp / Thumbtack). Store each direct review URL in Settings; Linktree is the fallback.
+
 **Welcome email:** drafted in `docs/templates/welcome-email.md`.
 
 ## 12. Working rules for me

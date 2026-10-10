@@ -251,7 +251,34 @@ Joist estimate PDF (+ amount) to the lead.
 Auto SMS to customer **1 day before every appointment**: "Reply 1 to confirm" →
 appointment shows Confirmed / Not confirmed; unconfirmed ones alert the secretary.
 
-## 11. Working rules for me
+## 11. Decisions — Discovery round 3 (2026-10-10)
+
+**Contract (MVP = option C):** the app fills the owner's Form 203 + 204C PDFs with
+lead/project data (owner name, address, phone, email, price, deposit, dates, scope,
+payment schedule) and places e-signature / initials / date fields at every required spot;
+customer signs on phone; signed PDF + audit trail (IP, timestamp, email) stored on the
+project. Owner should confirm with Builder's Book that their license covers digital use.
+In parallel: find a CA construction attorney to draft an MD Golden Builders–owned
+contract template (long-term replacement).
+
+**Warranty:** workmanship warranty, **1 year or 5 years** depending on the work.
+Warranty term chosen per project/service; printed on the Completion Form.
+(Owner will send the current Completion Form.)
+
+**Media:** internal gallery per project (before / during / after); optional
+"share gallery with customer" link (nice-to-have); easy export for Instagram posts.
+Future idea (not in scope now): video editing/reels from project media.
+
+**Subcontractors (dozens):** no agreements today → app adds a **Subcontractor Agreement
+per project** (scope, price, payment milestones, insurance/license requirement,
+lien-waiver requirement), e-signed by the sub. Template to be drafted and attorney-reviewed.
+**Lien waivers:** use California **statutory** release forms (Civ. Code §§8132–8138:
+conditional/unconditional × progress/final). Rule in app: collect a *conditional* waiver
+before each sub payment, *unconditional* after payment clears.
+
+**Welcome email:** drafted in `docs/templates/welcome-email.md`.
+
+## 12. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

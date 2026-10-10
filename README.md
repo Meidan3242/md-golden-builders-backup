@@ -2,4 +2,19 @@
 
 Lead, project and finance management system for MD Golden Builders (San Diego home remodeling).
 
-- [Master build prompt](docs/MASTER_PROMPT.md)
+- [Master build prompt & decisions](docs/MASTER_PROMPT.md)
+- Templates: [welcome email](docs/templates/welcome-email.md) · [completion form](docs/templates/completion-form.md)
+- [Screenshots of the prototype](docs/screenshots/)
+
+## Run the prototype
+
+```bash
+npm install
+npm run dev   # http://localhost:3000
+```
+
+The prototype runs on demo data (`src/lib/demo-data.ts`, fictional customers).
+Use the **Viewing as** menu in the header to switch between Owner, Office Manager and
+Sales Rep and see what each role can access. All data reads go through
+`src/lib/data.ts`, which filters by the current user — the same rule will be enforced by
+the database (Row-Level Security) when the backend is connected.

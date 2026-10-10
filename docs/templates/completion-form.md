@@ -22,4 +22,4 @@ Signature (e-sign) · Date (auto)
 - After signing → customer receives signed PDF + thank-you email with review links
   (Google / Yelp / Thumbtack); project moves to `Completed`; final payment invoice sent.
 
-Footer: 4275 Mission Bay Dr #359, San Diego, CA 92109 · phone (confirm: 858-933-1964)
+Footer: 4275 Mission Bay Dr #359, San Diego, CA 92109 · phone 858-933-1694

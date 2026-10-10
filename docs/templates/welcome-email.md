@@ -28,11 +28,11 @@ a smooth, transparent experience from the first day to the final walkthrough.
 **How to pay:** card (secure payment link), bank transfer (ACH), Zelle, or check.
 Each invoice will include a payment link when the milestone is reached.
 
-Questions at any time? Reply to this email or call/text us at **858-933-1964**.
+Questions at any time? Reply to this email or call/text us at **858-933-1694**.
 
 Welcome to the MD Golden Builders family!
 
 {{owner_full_name}}
 MD Golden Builders · CSLB Lic. #1128874
 4275 Mission Bay Drive #359, San Diego, CA 92109
-858-933-1964 · info@mdgoldenbuilders.com
+858-933-1694 · info@mdgoldenbuilders.com

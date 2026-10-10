@@ -200,7 +200,7 @@ Leads, Inbox, Calendar, Projects, Payments, Subcontractors, Permits, Expenses, R
 ## 10. Decisions — Discovery round 2 (2026-10-10)
 
 **Company info:** MD Golden Builders · CSLB License #1128874 ·
-4275 Mission Bay Drive #359, San Diego, CA 92109 · 858-933-1964 · info@mdgoldenbuilders.com
+4275 Mission Bay Drive #359, San Diego, CA 92109 · 858-933-1694 · info@mdgoldenbuilders.com
 
 **Brand:** logo at `brand/logo.jpg` (gold houses + black). Palette:
 gold `#D09028` (gradient `#E8A92E` → `#B07020`), black `#111111`, white background.
@@ -280,7 +280,26 @@ before each sub payment, *unconditional* after payment clears.
 
 **Welcome email:** drafted in `docs/templates/welcome-email.md`.
 
-## 12. Working rules for me
+## 12. Decisions — round 4 (2026-10-10)
+
+- **Phone (correct):** 858-933-**1694**.
+- **Theme:** white background by day, black by night (auto 7am–7pm), gold accents stay;
+  manual Light / Dark / Auto toggle.
+- **Review links (Linktree short links, mapping to platform TBD):**
+  https://tr.ee/xLG1j2NoRY · https://tr.ee/ffZ0n6Xp5- (sent twice — third link missing).
+- Owner may send screenshots (WhatsApp with office, Instagram, customer chats, sub payment
+  requests) to refine real workflows.
+
+## 13. Prototype v0.1 (built)
+
+Next.js 15 + TypeScript + Tailwind v4, demo data only (no database yet).
+Screens: Dashboard, Leads (pipeline + list + detail + new), Follow-ups, Calendar,
+Projects (list + detail with tabs: Overview, Customer payments, Change orders,
+Subcontractors, Expenses, Permits, Photos & videos, Documents), Payments,
+Subcontractors, Reports, Inbox (placeholder), Settings. Demo role switcher shows the
+Owner / Office Manager / Sales Rep views. Screenshots in `docs/screenshots/`.
+
+## 14. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

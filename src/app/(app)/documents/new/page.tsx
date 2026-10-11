@@ -140,7 +140,7 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
               {type === "contract" && <label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Sign it as MD Golden Builders before sending</label>}
             </div>
             <div className="mt-4 rounded-lg bg-surface p-3 text-xs text-muted">
-              Button in the email: <b className="text-text">{type === "estimate" || type === "change-order" ? "View " + t.title : "Review & Sign"}</b>
+              Button in the email: <b className="text-text">{type === "estimate" || type === "change-order" ? "Review " + t.title : "Review & Sign"}</b>
               <br />After signing: {isSub ? "copy to the sub + saved to the project" : type === "estimate" ? "choose how to pay the deposit → contract follows" : type === "contract" ? "signed PDF to everyone + welcome email" : "signed copy + payment schedule updated"}
             </div>
             <div className="mt-4 grid gap-2">

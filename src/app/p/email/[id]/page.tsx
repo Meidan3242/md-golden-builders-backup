@@ -89,7 +89,7 @@ export default async function EmailPreview({ searchParams }: { searchParams: Pro
   );
 }
 
-/** Estimate email: one button, "View Estimate" — approving and signing happens inside. */
+/** Estimate email: one button, "Review Estimate" — approving and signing happens inside. */
 function EstimateEmail() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
@@ -102,14 +102,14 @@ function EstimateEmail() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-light.png" alt="MD Golden Builders" className="mx-auto mb-5 h-16 w-auto" />
           <p>Hi {E.customer.first},</p>
-          <p className="mt-3">It was great meeting you. As promised, here is your estimate for the <b>{E.title.toLowerCase()}</b> — the full scope, price and payment schedule.</p>
+          <p className="mt-3">It was great meeting you. As promised, here is your estimate for the <b>{E.title}</b> — the full scope, price and payment schedule.</p>
           <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">
             <div className="flex justify-between"><span className="text-muted">Estimate #</span><b>{E.number}</b></div>
             <div className="flex justify-between"><span className="text-muted">Total</span><b>{money(E.base)}</b></div>
             <div className="flex justify-between"><span className="text-muted">Valid until</span><span>{E.validUntil}</span></div>
           </div>
           <div className="my-6 text-center">
-            <a href="/p/estimate/demo" className="gold-gradient inline-block rounded-xl px-10 py-3.5 text-base font-bold text-black shadow">View Estimate</a>
+            <a href="/p/estimate/demo" className="gold-gradient inline-block rounded-xl px-10 py-3.5 text-base font-bold text-black shadow">Review Estimate</a>
             <div className="mt-2 text-xs text-muted">You can approve and sign right from the estimate</div>
           </div>
           <p>Questions? Just reply here or text me — happy to walk you through it.</p>

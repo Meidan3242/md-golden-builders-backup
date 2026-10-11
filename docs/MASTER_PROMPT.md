@@ -469,7 +469,7 @@ export) → match job name → project; ask the owner which sub when unclear.
 
 ## 20. Discovery round 8 (2026-10-11)
 
-- **Email buttons:** contract email → "Review & Sign Contract"; estimate email → "View Estimate"
+- **Email buttons:** contract email → "Review & Sign Contract"; estimate email → "Review Estimate"
   (Approve & sign lives inside the estimate page). Preview: `/p/email/demo?type=estimate`.
 - **Additional Description must look formal** (it is the whole project): double gold/black page
   frame, faint logo watermark, contract-no/date/page box, parties table, numbered sections
@@ -505,7 +505,14 @@ export) → match job name → project; ask the owner which sub when unclear.
   Auto-checks: deposit limit, schedule sums to price, 65+ → 5-day cancel.
 - Customer messages: removed the "takes ~3 minutes" line.
 
-## 22. Working rules for me
+## 22. Round 10 (2026-10-11)
+
+- Estimate email button: **"Review Estimate"** (contract: "Review & Sign Contract").
+- **Subcontractor agreements: 1-year workmanship warranty** from every sub (standard clause).
+- **Document numbering:** YYYY-NNN running number (e.g. 2026-041), shared by project/contract.
+- **After estimate approval + deposit choice, the contract is sent automatically** (no review step).
+
+## 23. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

@@ -524,7 +524,18 @@ from project data, and **drafts** anything that leaves the company or moves mone
 (customer messages, invoices, pay-run entries) for a one-tap Send/Confirm. Team members can
 @assistant (e.g. reminders for Meidan). Phone: compact header (icon buttons, one-line stage).
 
-## 24. Working rules for me
+## 24. Proposed next ideas — assistant & project management (awaiting owner's pick)
+
+Assistant: project memory Q&A ("what tile did she pick?") · change order from a sentence ·
+voice daily log · text subs from the chat + track replies · English↔Spanish for subs ·
+payment chasing drafts · punch list by voice + photos · "close project" flow (completion form,
+warranty, final invoice, review request) · internal vs customer-visible messages ·
+idle-project / missing-waiver / budget-overrun alerts · best before/after photo picks for IG.
+PM: budget vs actual per scope line · crew/sub schedule board · task templates per project
+type · job-costing report by project type (feeds future estimates) · customer portal link ·
+warranty tickets on closed projects.
+
+## 25. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

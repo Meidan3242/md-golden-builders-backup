@@ -18,3 +18,8 @@ Use the **Viewing as** menu in the header to switch between Owner, Office Manage
 Sales Rep and see what each role can access. All data reads go through
 `src/lib/data.ts`, which filters by the current user — the same rule will be enforced by
 the database (Row-Level Security) when the backend is connected.
+
+## Deploy
+
+Hosted on Vercel (project `md-golden-builders`, framework preset: Next.js). Every push to a
+branch gets its own preview URL; the production URL follows `main`.

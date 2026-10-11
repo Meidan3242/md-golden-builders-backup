@@ -285,8 +285,8 @@ before each sub payment, *unconditional* after payment clears.
 - **Phone (correct):** 858-933-**1694**.
 - **Theme:** white background by day, black by night (auto 7am–7pm), gold accents stay;
   manual Light / Dark / Auto toggle.
-- **Review links (Linktree short links, mapping to platform TBD):**
-  https://tr.ee/xLG1j2NoRY · https://tr.ee/ffZ0n6Xp5- (sent twice — third link missing).
+- **Review links:** Google https://tr.ee/xLG1j2NoRY · Yelp https://tr.ee/ffZ0n6Xp5- ·
+  Thumbtack https://tr.ee/kiBOFNYW8q
 - Owner may send screenshots (WhatsApp with office, Instagram, customer chats, sub payment
   requests) to refine real workflows.
 
@@ -336,7 +336,24 @@ Owner / Office Manager / Sales Rep views. Screenshots in `docs/screenshots/`.
    transcript) per call → pull RingCentral's own AI notes + recording, no need to build ours.
    → Existing follow-up texts become the Day 1 / Day 3 templates.
 
-## 15. Working rules for me
+## 15. Project chat + smart capture (requested 2026-10-11)
+
+Every project gets a **Chat & updates** feed (replaces the internal WhatsApp group).
+The owner/office drop free text, screenshots, PDFs, photos or voice notes; an AI
+assistant (Claude, vision) extracts a structured entry and files it:
+- "customer paid 5000 zelle contract 2" + screenshot → customer payment on Contract/CO #2,
+  screenshot saved under Documents › Receipts, money summary updated.
+- "/paid juan 1000 check 1187" (+ photo) → sub payment with method + proof; auto-request
+  lien waiver from the sub by text.
+- receipt photo → expense; sub invoice PDF → sub invoice awaiting approval; photos → gallery.
+- Slash commands: /received, /paid, /expense, /co, /task.
+Rules: money entries show a capture card; unclear ones need one-tap Confirm; every entry
+undoable; audit trail. Later: same capture from SMS/WhatsApp forwarded to a system number.
+
+**Phones:** keep RingCentral (calls, recordings, AI notes, SMS via API). Customer chats stay
+on SMS/iMessage from the business line; internal WhatsApp groups move into the app.
+
+## 16. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, Mail, Phone, Plus, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProjectChat } from "@/components/project-chat";
 import { DocIcon, ExpensesTable, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
@@ -21,6 +22,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
   const tabs = [
     { key: "overview", label: "Overview" },
+    { key: "chat", label: "Chat & updates", count: p.chat?.length ?? 0 },
     { key: "payments", label: "Customer payments", count: p.milestones.length },
     { key: "change-orders", label: "Change orders", count: p.changeOrders.length },
     ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: p.subs.length }, { key: "expenses", label: "Expenses", count: p.expenses.length }] : []),
@@ -73,6 +75,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       <Tabs tabs={tabs} active={tab} base={`/projects/${p.id}`} />
 
       {tab === "overview" && <Overview p={p} f={f} showMoney={showMoney} />}
+      {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
       {tab === "payments" && <MilestoneTable milestones={p.milestones} />}
       {tab === "change-orders" && <ChangeOrders p={p} showMoney={showMoney} />}
       {tab === "subs" && showMoney && (

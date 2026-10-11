@@ -40,6 +40,10 @@ export default async function SettingsPage() {
                 ["Address", "4275 Mission Bay Dr #359, San Diego, CA 92109"],
                 ["Phone", "858-933-1694"],
                 ["Email", "info@mdgoldenbuilders.com"],
+                ["Business line (RingCentral)", "(858) 332-2168"],
+                ["Google reviews", "tr.ee/xLG1j2NoRY"],
+                ["Yelp reviews", "tr.ee/ffZ0n6Xp5-"],
+                ["Thumbtack reviews", "tr.ee/kiBOFNYW8q"],
               ]}
             />
           </div>

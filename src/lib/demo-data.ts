@@ -261,6 +261,17 @@ export const PROJECTS: Project[] = [
       { id: "d5", name: "Change Order #1.pdf", kind: "Change Order", at: iso(-12), signed: true },
       { id: "d6", name: "Conditional waiver — CM Concrete — progress 2.pdf", kind: "Lien Waiver", at: iso(-14) },
     ],
+    chat: [
+      { id: "ch1", at: iso(-2, 8, 12), by: "u-office", text: "@MD did the customer pay for the extra 20 ft already?" },
+      { id: "ch2", at: iso(-2, 8, 30), by: "u-owner", text: "Yes, paid the change order yesterday", attachment: { name: "zelle-screenshot.jpg", kind: "image" },
+        capture: { kind: "Customer payment", fields: [["Amount", "$7,400"], ["Method", "Zelle"], ["For", "Change Order #1 — Upon signing"], ["Date", "Oct 1"]], destination: "Payments › Change Order #1 · screenshot saved to Documents › Receipts", status: "Saved" } },
+      { id: "ch3", at: iso(-1, 15, 2), by: "u-owner", text: "", attachment: { name: "6 photos", kind: "image" },
+        capture: { kind: "Photos", fields: [["Photos", "6"], ["Phase", "During"]], destination: "Photos & videos › During", status: "Saved" } },
+      { id: "ch4", at: iso(-1, 16, 40), by: "u-owner", text: "/paid carlos 9450 check 1192 wall complete", attachment: { name: "check-1192.jpg", kind: "image" },
+        capture: { kind: "Sub payment", fields: [["Sub", "CM Concrete & Masonry (Carlos)"], ["Amount", "$9,450"], ["Method", "Check #1192"], ["Milestone", "Wall complete"]], destination: "Subcontractors › CM Concrete · proof attached · lien waiver requested by text", status: "Needs confirmation" } },
+      { id: "ch5", at: iso(0, 7, 55), by: "u-owner", text: "home depot 312.40 rebar + grout", attachment: { name: "receipt.jpg", kind: "image" },
+        capture: { kind: "Expense", fields: [["Vendor", "Home Depot"], ["Amount", "$312.40"], ["Category", "Materials"]], destination: "Expenses · receipt attached", status: "Saved" } },
+    ],
     activity: [
       { id: "pa1", at: iso(-1, 15), by: "u-owner", kind: "file", text: "Uploaded 6 photos — wall at 4 ft" },
       { id: "pa2", at: iso(-3, 10), by: "u-office", kind: "payment", text: "Invoice sent: Upon installation of footings — $33,904" },

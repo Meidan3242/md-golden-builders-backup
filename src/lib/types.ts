@@ -231,6 +231,24 @@ export interface Project {
   media: MediaItem[];
   documents: ProjectDoc[];
   activity: Activity[];
+  chat?: ChatMessage[];
+}
+
+/** What the smart-capture assistant understood from a chat message. */
+export interface CaptureResult {
+  kind: "Customer payment" | "Sub payment" | "Expense" | "Document" | "Photos" | "Task";
+  fields: [string, string][];
+  destination: string; // where it was filed, e.g. "Payments › Contract #2"
+  status: "Saved" | "Needs confirmation";
+}
+
+export interface ChatMessage {
+  id: string;
+  at: string;
+  by: string;
+  text: string;
+  attachment?: { name: string; kind: "image" | "pdf" };
+  capture?: CaptureResult;
 }
 
 export interface Subcontractor {

@@ -299,7 +299,44 @@ Subcontractors, Expenses, Permits, Photos & videos, Documents), Payments,
 Subcontractors, Reports, Inbox (placeholder), Settings. Demo role switcher shows the
 Owner / Office Manager / Sales Rep views. Screenshots in `docs/screenshots/`.
 
-## 14. Working rules for me
+## 14. What the owner's day-to-day screenshots showed (2026-10-11)
+
+(Real customer names/addresses intentionally NOT stored here.)
+
+1. **Customers text the owner in iMessage group chats** (customer + spouse + owner) and
+   ask "did you hear back from the city?". Owner answers manually with a screenshot of the
+   City of San Diego permit portal (record `PRJ-…`, status "In Review", review tasks).
+   → Permit record # + portal link per project; one-tap **"Send project update"** text to
+   all customer contacts; later: automatic permit-status check + weekly update text.
+   → A project has **multiple customer contacts** (spouses), all receive updates.
+2. **Contacts are saved as "Name + street"** — the address is how the team identifies a job.
+   → Search by address everywhere; project title = street address.
+3. **One WhatsApp group per project** (name = address, icon = customer name). The office
+   manager posts a running money summary by hand: list of contracts (contract, 2nd, 3rd,
+   4th contract = change orders), total, payments received with dates, total paid,
+   balance left, payment schedule, expenses, sub invoices ("<sub> invoice.pdf" → "Paid ✓"),
+   notes like "client needs to pay +$550 for X (not added to total)", and @MD questions
+   ("is this ongoing?", "chris paid for it already").
+   → The app generates this **Project money summary automatically** (+ "Copy for WhatsApp").
+   → **Pass-through / extra charges** not in the contract total (e.g. extra cement) tracked
+   separately until billed.
+   → **Project chat/comments with @mentions** replace the WhatsApp group for internal talk.
+4. **Owner breaks each contract into scope line items with sub cost**, e.g.
+   "Drywall-garage $5,000 · Back yard $20,000 paid (sub: Carlos) · Tankless paid in full ·
+   HVAC $9,000 · Bathroom plumbing $4,500 · Railing $1,500".
+   → Each contract/change order has **line items: scope · customer price · assigned sub ·
+   sub cost · paid status**. Budget vs actual per line.
+5. **Home Depot Pro**: crew members buy materials at the store; owner approves by SMS
+   ("Reply 1 to approve"); orders are tagged with a **job name**.
+   → Expenses import from Home Depot Pro purchase history (CSV) matched by job name;
+   project gets a short "job name" used at suppliers.
+6. **RingCentral**: office texts customers from the business line (858) 332-2168
+   ("Hi …, this is Laine with MD Golden Builders. Just checking in…"); customers reply with
+   gate codes, updates. RingCentral already produces **AI Notes** (summary, recap, tasks,
+   transcript) per call → pull RingCentral's own AI notes + recording, no need to build ours.
+   → Existing follow-up texts become the Day 1 / Day 3 templates.
+
+## 15. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

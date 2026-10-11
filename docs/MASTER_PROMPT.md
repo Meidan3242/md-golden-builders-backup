@@ -413,7 +413,32 @@ arrives on the **RingCentral line** → app can show Approve/Deny and reply via 
 API. Receipts: no public HD API known → email e-receipts to a system inbox (or Pro Xtra
 export) → match job name → project; ask the owner which sub when unclear.
 
-## 18. Working rules for me
+## 18. Discovery round 6 (2026-10-11)
+
+- **Lead robot today: InstantResponse.AI** (app.instantresponse.ai) answers Yelp + Thumbtack
+  leads and posts each new lead (name, phone, city/ZIP, service, link) into a WhatsApp group
+  "Yelp Bot". → Preferred intake: pull leads from InstantResponse.AI (webhook/API/Zapier if
+  they offer it) or parse its notifications; keep the robot doing first contact.
+- **Home Depot:** most purchases are a sub's, some are the owner's → every receipt asks
+  "whose is it / which sub?" when not obvious. Receipts must arrive automatically (no extra
+  work for Laline): a dedicated receiving email address for the company
+  (e.g. receipts@mdgoldenbuilders.com) set as the e-receipt email in Pro Xtra.
+- **Laline may offer discounts in follow-ups — with owner approval** (approve button).
+- **Daily digest at 6:00 PM.**
+- **Payment schedules are always custom per project** — no fixed template; editor starts
+  blank (or "copy from a past project").
+- **Joist estimate format** (sample #553): logo, Prepared For, estimate #, date, line item
+  with long scope text, notes ("1600 downpayment / 16,000 finance" → owner offers financing),
+  subtotal/total, signature page. Joist app: Pending/Approved/Declined lists + open icon.
+- **Customer-facing pages built (prototype):** `/p/estimate/[id]` (mobile estimate with
+  add-on options, live total, payment schedule, pay methods, Approve & sign / Meet again /
+  Ask) and `/p/sign/[id]` (Form 203 pages with sign/initial tags at the exact spots +
+  generated Additional Description pages + checklist of all 13 spots). Form page images
+  are licensed material → kept local only (`public/forms/` is git-ignored).
+- Open-tracking for our own estimates: every view of the link is logged (count, time spent,
+  sections viewed, add-ons toggled) → push notification "Rachel is viewing your estimate now".
+
+## 19. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

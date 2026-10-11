@@ -159,8 +159,12 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                     </div>
                   </div>
                   {showMoney && lead.estimateAmount && <div className="mt-3 text-2xl font-bold">{money(lead.estimateAmount)}</div>}
+                  <Link href="/p/estimate/demo" className="mt-2 inline-block text-xs font-medium text-gold-text hover:underline">Preview what the customer sees →</Link>
                   {lead.estimateViewedAt ? (
-                    <div className="mt-1 inline-flex items-center gap-1 text-xs text-ok"><Eye className="size-3.5" /> Customer opened it {dateTime(lead.estimateViewedAt)}</div>
+                    <div className="mt-1 space-y-0.5 text-xs">
+                      <div className="inline-flex items-center gap-1 text-ok"><Eye className="size-3.5" /> Opened 3 times · last {dateTime(lead.estimateViewedAt)}</div>
+                      <div className="text-muted">Read for 4 min · looked at the payment schedule twice · added “French drain”</div>
+                    </div>
                   ) : (
                     <div className="mt-1 text-xs text-muted">Not opened yet</div>
                   )}

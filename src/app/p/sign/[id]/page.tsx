@@ -118,7 +118,7 @@ export default async function SignPage({ searchParams }: { searchParams: Promise
             Each signature is stamped with date, time, IP and device. You&apos;ll receive the fully signed PDF by email. You have 3 business days to cancel (5 if 65 or older).
           </div>
 
-          <button className="gold-gradient w-full rounded-xl py-3 text-sm font-bold text-black opacity-60">Finish & sign ({required.length - doneCount} left)</button>
+          <Link href="/p/pay/demo" className="gold-gradient block w-full rounded-xl py-3 text-center text-sm font-bold text-black">Finish & sign ({required.length - doneCount} left)</Link>
         </aside>
       </div>
     </div>

@@ -467,7 +467,26 @@ export) → match job name → project; ask the owner which sub when unclear.
   SMS preview page `/p/email/[id]`. Real sending starts once CRM@ mailbox + email service
   are connected (this environment cannot send email).
 
-## 20. Working rules for me
+## 20. Discovery round 8 (2026-10-11)
+
+- **Email buttons:** contract email → "Review & Sign Contract"; estimate email → "View Estimate"
+  (Approve & sign lives inside the estimate page). Preview: `/p/email/demo?type=estimate`.
+- **Additional Description must look formal** (it is the whole project): double gold/black page
+  frame, faint logo watermark, contract-no/date/page box, parties table, numbered sections
+  with ruled lines, payments table with grid, terms, warranty, signature block, initials on
+  every page. Generator: `tools/make_contract_sample.py`.
+- **Contracts go out already signed by MD Golden Builders** (owner's e-signature + timestamp
+  on page 1, arbitration initials, every Additional Description page).
+- **After the customer signs → "choose how to pay" the down payment** (Zelle recommended,
+  Venmo, card, check, cash). One choice and done; we confirm by text when received.
+  Page: `/p/pay/[id]`.
+- **Foundation Finance:** owner handles the paperwork; they pay at completion; owner posts the
+  payment screenshot in the project chat → smart capture records it.
+- "Marketing manager" = the external person the owner already pays ($1,000/mo) who runs
+  Google ads and marks spam leads for LSA refunds. Option: a limited "Marketing" login
+  (leads + spam/refund fields only, no money/projects).
+
+## 21. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

@@ -1,11 +1,12 @@
 import { FileText, Paperclip, Star } from "lucide-react";
-import { COMPANY, DEMO_CONTRACT as K } from "@/lib/demo-docs";
+import { COMPANY, DEMO_CONTRACT as K, DEMO_ESTIMATE as E } from "@/lib/demo-docs";
 import { money } from "@/lib/format";
 
 export const metadata = { title: "Email preview — contract ready to sign" };
 
 /** Preview of the email (and text message) the customer receives when a contract is sent. */
-export default function EmailPreview() {
+export default async function EmailPreview({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
+  if ((await searchParams).type === "estimate") return <EstimateEmail />;
   return (
     <div className="mx-auto grid max-w-5xl gap-6 px-4 py-6 lg:grid-cols-[1fr_300px]">
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -83,6 +84,41 @@ export default function EmailPreview() {
           <div className="mt-2 ml-auto max-w-[60%] rounded-2xl rounded-br-sm bg-info px-3 py-2 text-[13px] text-white">Got it, signing tonight 👍</div>
         </div>
         <p className="mt-3 text-xs text-muted">You choose per customer: email, text, or both. You get a notification when they open it, and again when they sign.</p>
+      </div>
+    </div>
+  );
+}
+
+/** Estimate email: one button, "View Estimate" — approving and signing happens inside. */
+function EstimateEmail() {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-6">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border bg-surface px-5 py-3 text-sm">
+          <div className="text-base font-semibold">Your estimate from MD Golden Builders — {E.title}</div>
+          <div className="mt-1 text-xs text-muted"><b className="text-text">MD Golden Builders</b> &lt;CRM@mdgoldenbuilders.com&gt; → {E.customer.name}</div>
+        </div>
+        <div className="mx-auto max-w-xl px-5 py-6 text-[15px] leading-relaxed">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-light.png" alt="MD Golden Builders" className="mx-auto mb-5 h-16 w-auto" />
+          <p>Hi {E.customer.first},</p>
+          <p className="mt-3">It was great meeting you. As promised, here is your estimate for the <b>{E.title.toLowerCase()}</b> — the full scope, price and payment schedule.</p>
+          <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">
+            <div className="flex justify-between"><span className="text-muted">Estimate #</span><b>{E.number}</b></div>
+            <div className="flex justify-between"><span className="text-muted">Total</span><b>{money(E.base)}</b></div>
+            <div className="flex justify-between"><span className="text-muted">Valid until</span><span>{E.validUntil}</span></div>
+          </div>
+          <div className="my-6 text-center">
+            <a href="/p/estimate/demo" className="gold-gradient inline-block rounded-xl px-10 py-3.5 text-base font-bold text-black shadow">View Estimate</a>
+            <div className="mt-2 text-xs text-muted">You can approve and sign right from the estimate</div>
+          </div>
+          <p>Questions? Just reply here or text me — happy to walk you through it.</p>
+          <p className="mt-3">Meidan Deuitsch<br /><span className="text-sm text-muted">Owner, MD Golden Builders · {COMPANY.phone}</span></p>
+          <div className="mt-8 border-t border-border pt-4 text-center text-xs text-muted">
+            <div className="mb-1 flex justify-center text-gold">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="size-3.5 fill-current" />)}</div>
+            {COMPANY.name} · {COMPANY.license} · {COMPANY.address}
+          </div>
+        </div>
       </div>
     </div>
   );

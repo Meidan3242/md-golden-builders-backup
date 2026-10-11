@@ -512,7 +512,19 @@ export) → match job name → project; ask the owner which sub when unclear.
 - **Document numbering:** YYYY-NNN running number (e.g. 2026-041), shared by project/contract.
 - **After estimate approval + deposit choice, the contract is sent automatically** (no review step).
 
-## 23. Working rules for me
+## 23. Project page = assistant first (round 11, 2026-10-11)
+
+Opening a project lands on **"✦ Assistant & chat"**: a wide composer at the top (text, voice,
+camera, files/videos) + quick actions ("Send payment summary to customer", "Request next
+payment", "Weekly update to customer", "What do we owe the subs?", "What's next on this
+job?", "Create change order"), feed newest-first underneath, and a snapshot panel
+(contract+COs, collected, balance, margin, next payment, needs-attention).
+The assistant: files uploads (photos/videos/receipts/payment screenshots), answers questions
+from project data, and **drafts** anything that leaves the company or moves money
+(customer messages, invoices, pay-run entries) for a one-tap Send/Confirm. Team members can
+@assistant (e.g. reminders for Meidan). Phone: compact header (icon buttons, one-line stage).
+
+## 24. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

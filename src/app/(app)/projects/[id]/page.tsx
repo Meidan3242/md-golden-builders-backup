@@ -12,7 +12,7 @@ import { PROJECT_STAGES, type Project } from "@/lib/types";
 
 export default async function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
-  const { tab = "overview" } = await searchParams;
+  const { tab = "chat" } = await searchParams;
   const p = await getProject(id);
   if (!p) notFound();
   const user = await currentUser();
@@ -21,8 +21,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const stageIdx = PROJECT_STAGES.indexOf(p.stage);
 
   const tabs = [
+    { key: "chat", label: "✦ Assistant & chat" },
     { key: "overview", label: "Overview" },
-    { key: "chat", label: "Chat & updates", count: p.chat?.length ?? 0 },
     { key: "payments", label: "Customer payments", count: p.milestones.length },
     { key: "change-orders", label: "Change orders", count: p.changeOrders.length },
     ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: p.subs.length }, { key: "expenses", label: "Expenses", count: p.expenses.length }] : []),
@@ -35,8 +35,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
     <>
       <div className="mb-1 text-xs text-muted"><Link href="/projects" className="hover:underline">Projects</Link> / #{p.number}</div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{p.customer} <span className="font-normal text-muted">· {p.type}</span></h1>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{p.customer} <span className="font-normal text-muted">· {p.type}</span></h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <ProjectStageBadge stage={p.stage} />
             <span>{p.address}, {p.city}</span>
@@ -44,19 +44,23 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button href={`tel:${p.phone}`}><Phone className="size-4" /> Call</Button>
-          <Button><Camera className="size-4" /> Upload media</Button>
-          <Button><FilePlus2 className="size-4" /> Change order</Button>
+          <Button href={`tel:${p.phone}`}><Phone className="size-4" /><span className="hidden sm:inline"> Call</span></Button>
+          <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
+          <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
           {p.stage === "Punch List" || p.stage === "Completed" ? (
-            <Button variant="primary"><FileSignature className="size-4" /> Send completion form</Button>
+            <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
           ) : (
-            <Button variant="primary"><Mail className="size-4" /> Send invoice</Button>
+            <Button variant="primary"><Mail className="size-4" /> <span className="hidden sm:inline">Send </span>Invoice</Button>
           )}
         </div>
       </div>
 
       {/* stage stepper */}
-      <Card className="scrollbar-thin mb-5 overflow-x-auto p-3">
+      <div className="mb-4 flex items-center gap-2 text-xs text-muted md:hidden">
+        <span className="gold-gradient flex size-5 items-center justify-center rounded-full text-[10px] font-bold text-black">{stageIdx + 1}</span>
+        Stage {stageIdx + 1} of {PROJECT_STAGES.length} · <b className="text-text">{p.stage}</b> · next: {PROJECT_STAGES[stageIdx + 1] ?? "—"}
+      </div>
+      <Card className="scrollbar-thin mb-5 hidden overflow-x-auto p-3 md:block">
         <ol className="flex min-w-[720px] items-center">
           {PROJECT_STAGES.map((s, i) => (
             <li key={s} className="flex flex-1 items-center">
@@ -75,7 +79,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       <Tabs tabs={tabs} active={tab} base={`/projects/${p.id}`} />
 
       {tab === "overview" && <Overview p={p} f={f} showMoney={showMoney} />}
-      {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
+      {tab === "chat" && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2"><ProjectChat messages={p.chat ?? []} me={user.id} /></div>
+          <Snapshot p={p} f={f} showMoney={showMoney} />
+        </div>
+      )}
       {tab === "payments" && <MilestoneTable milestones={p.milestones} />}
       {tab === "change-orders" && <ChangeOrders p={p} showMoney={showMoney} />}
       {tab === "subs" && showMoney && (
@@ -292,5 +301,42 @@ function Documents({ p }: { p: Project }) {
         ))}
       </ul>
     </Card>
+  );
+}
+
+/** Compact side panel next to the assistant: the numbers you need while chatting. */
+function Snapshot({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projectFinancials>; showMoney: boolean }) {
+  const next = p.milestones.find((m) => m.status !== "Paid");
+  const alerts = showMoney ? projectAlerts(p).slice(0, 4) : [];
+  return (
+    <div className="space-y-4">
+      {showMoney && (
+        <Card className="p-4">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><div className="text-xs text-muted">Contract + COs</div><div className="text-lg font-bold">{money(f.revenue)}</div></div>
+            <div><div className="text-xs text-muted">Collected</div><div className="text-lg font-bold text-ok">{money(f.collected)}</div></div>
+            <div><div className="text-xs text-muted">Balance</div><div className="text-lg font-bold">{money(f.balance)}</div></div>
+            <div><div className="text-xs text-muted">Est. profit</div><div className="text-lg font-bold text-gold-text">{pct(f.margin)}</div></div>
+          </div>
+          <Progress value={f.collected / f.revenue} className="mt-3" />
+        </Card>
+      )}
+      {next && (
+        <Card className="p-4">
+          <div className="text-xs text-muted">Next customer payment</div>
+          <div className="mt-0.5 font-semibold">{next.name}</div>
+          <div className="text-2xl font-bold">{money(next.amount)}</div>
+          <div className="text-xs text-muted">{next.status === "Invoiced" ? `Invoiced · due ${date(next.dueDate)}` : "Not invoiced yet"}</div>
+        </Card>
+      )}
+      {alerts.length > 0 && (
+        <Card>
+          <CardHeader title="Needs attention" />
+          <ul className="divide-y divide-border">
+            {alerts.map((a) => <li key={a} className="flex gap-2 px-4 py-2 text-xs"><AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warn" />{a}</li>)}
+          </ul>
+        </Card>
+      )}
+    </div>
   );
 }

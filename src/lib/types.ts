@@ -247,8 +247,10 @@ export interface ChatMessage {
   at: string;
   by: string;
   text: string;
-  attachment?: { name: string; kind: "image" | "pdf" };
+  attachment?: { name: string; kind: "image" | "pdf" | "video" };
   capture?: CaptureResult;
+  /** Assistant reply: an answer, or a draft that waits for one-tap approval. */
+  reply?: { title: string; body: string[]; channel?: string; actions?: string[]; done?: string };
 }
 
 export interface Subcontractor {

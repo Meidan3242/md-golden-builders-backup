@@ -21,7 +21,7 @@ export default async function EmailPreview({ searchParams }: { searchParams: Pro
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-light.png" alt="MD Golden Builders" className="mx-auto mb-5 h-16 w-auto" />
           <p>Hi {K.customer.first},</p>
-          <p className="mt-3">Thank you for choosing MD Golden Builders! Your contract for the <b>{K.title}</b> at {K.customer.address} is ready. Please review and sign — it takes about 3 minutes from your phone.</p>
+          <p className="mt-3">Thank you for choosing MD Golden Builders! Your contract for the <b>{K.title}</b> at {K.customer.address} is ready. Please review and sign it from your phone or computer.</p>
 
           <div className="mt-5 rounded-xl border border-border bg-surface p-4 text-sm">
             <div className="flex justify-between"><span className="text-muted">Contract price</span><b>{money(K.price)}</b></div>
@@ -79,7 +79,7 @@ export default async function EmailPreview({ searchParams }: { searchParams: Pro
           <div className="mb-3 text-center text-[11px] text-muted">MD Golden Builders · (858) 332-2168</div>
           <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-surface px-3 py-2 text-[13px]">
             Hi {K.customer.first}, it&apos;s Meidan from MD Golden Builders 🙂 Your contract for the garden wall is ready to sign: <span className="text-info underline">app.mdgoldenbuilders.com/s/x7K2</span>
-            <br />Takes ~3 min on your phone. Any questions, text me here!
+            <br />Any questions, text me here!
           </div>
           <div className="mt-2 ml-auto max-w-[60%] rounded-2xl rounded-br-sm bg-info px-3 py-2 text-[13px] text-white">Got it, signing tonight 👍</div>
         </div>

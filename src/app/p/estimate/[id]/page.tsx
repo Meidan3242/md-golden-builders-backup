@@ -19,7 +19,7 @@ export default function EstimatePage() {
       schedule={E.schedule}
       withDeposit
       warranty={E.warranty}
-      signHref="/p/sign/demo"
+      signHref="/p/pay/demo?from=estimate"
     />
   );
 }

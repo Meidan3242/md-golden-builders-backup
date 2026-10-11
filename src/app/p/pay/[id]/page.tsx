@@ -13,8 +13,10 @@ const OPTIONS = [
 ];
 
 /** Shown right after the customer finishes signing: pick a deposit payment method, done. */
-export default async function PayPage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
-  const { m } = await searchParams;
+export default async function PayPage({ searchParams }: { searchParams: Promise<{ m?: string; from?: string }> }) {
+  const { m, from } = await searchParams;
+  const fromEstimate = from === "estimate";
+  const q = fromEstimate ? "&from=estimate" : "";
   const chosen = OPTIONS.find((o) => o.key === m);
 
   return (
@@ -24,8 +26,12 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
 
       <div className="rounded-2xl border border-border bg-card p-5 text-center">
         <CheckCircle2 className="mx-auto size-12 text-ok" />
-        <h1 className="mt-2 text-xl font-bold">Contract signed — welcome aboard, {K.customer.first}!</h1>
-        <p className="mt-1 text-sm text-muted">A fully signed copy is on its way to your email.</p>
+        <h1 className="mt-2 text-xl font-bold">{fromEstimate ? "Estimate approved" : "Contract signed"} — welcome aboard, {K.customer.first}!</h1>
+        <p className="mt-1 text-sm text-muted">
+          {fromEstimate
+            ? "Next: secure your spot with the deposit below. Your official contract will be sent to you shortly for digital signature."
+            : "A fully signed copy is on its way to your email."}
+        </p>
       </div>
 
       {!chosen ? (
@@ -40,7 +46,7 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
           <div className="mt-4 text-sm font-semibold">How would you like to pay?</div>
           <div className="mt-2 space-y-2">
             {OPTIONS.map(({ key, icon: Icon, title, detail, note, best }) => (
-              <a key={key} href={`?m=${key}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-gold hover:bg-gold-soft">
+              <a key={key} href={`?m=${key}${q}`} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:border-gold hover:bg-gold-soft">
                 <Icon className="size-5 text-gold-text" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold">{title} {best && <span className="ml-1 rounded-full bg-ok-soft px-1.5 text-[10px] text-ok">Recommended</span>}</span>

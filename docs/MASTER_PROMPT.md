@@ -486,7 +486,26 @@ export) → match job name → project; ask the owner which sub when unclear.
   Google ads and marks spam leads for LSA refunds. Option: a limited "Marketing" login
   (leads + spam/refund fields only, no money/projects).
 
-## 21. Working rules for me
+## 21. Document flow (round 9, 2026-10-11)
+
+- Marketing manager handles LSA spam/refunds himself inside Google LSA → **no spam tracking
+  in our app**.
+- **Estimate ≠ contract.** Estimate (full scope) → customer **Approve & sign** → choose how to
+  pay the deposit → message "your official contract will be sent shortly for digital
+  signature" → contract (Form 203 + Additional Description, pre-signed by us) → customer signs.
+- Sometimes a contract is sent directly (no estimate); sometimes generated from a specific
+  estimate.
+- **One "Create a document" builder** (`/documents/new`) with a type picker:
+  Estimate · Contract · Change Order · Additional Description · Subcontractor Agreement.
+  Sub agreement = same structure (scope + payment stages, sub signs) but **no deposit and no
+  customer payment links — we pay the sub**.
+- **Where the details come from:** lead record (robot/Laline: name, phone, email, address,
+  service) → site-visit notes/photos/voice memo → estimate scope + price (typed, dictated or
+  AI-drafted) → contract/CO/sub agreement start from the project; nothing is retyped.
+  Auto-checks: deposit limit, schedule sums to price, 65+ → 5-day cancel.
+- Customer messages: removed the "takes ~3 minutes" line.
+
+## 22. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

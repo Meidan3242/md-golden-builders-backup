@@ -535,7 +535,16 @@ PM: budget vs actual per scope line · crew/sub schedule board · task templates
 type · job-costing report by project type (feeds future estimates) · customer portal link ·
 warranty tickets on closed projects.
 
-## 25. Working rules for me
+## 25. Owner picks (2026-10-11)
+
+Owner approved **all ideas in §24 except the punch-list feature** (he runs punch lists in the
+field himself). The project chat is a **real conversational AI assistant** (Claude, with
+tools over project data): free conversation, follow-ups and corrections ("show me before you
+send", "make it 475", "shorter", "send in Spanish", "not now, remind me Friday").
+Default approval rules: anything to a customer/sub or touching money = preview + confirm;
+owner can switch a type to "send automatically" later. Every action logged and undoable.
+
+## 26. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

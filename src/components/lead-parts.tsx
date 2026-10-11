@@ -14,19 +14,9 @@ export function LeadOutcome({ lead }: { lead: Lead }) {
 
   if (lead.stage === "No Response") {
     return (
-      <Card className="border-bad/40 p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-semibold">No response after {RELEASE_AFTER_DAYS} days · {MAX_ATTEMPTS} attempts</div>
-            <div className="text-xs text-muted">Released from the active list — still counted as a received {lead.source} lead. If they reply, it comes back automatically.</div>
-          </div>
-          <Badge tone="bad">Needs a decision</Badge>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium">One last try (text)</button>
-          <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium">Archive</button>
-          <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium">Mark spam → LSA refund</button>
-        </div>
+      <Card className="p-4">
+        <div className="text-sm font-semibold">Released — no answer for {RELEASE_AFTER_DAYS} days ({MAX_ATTEMPTS} attempts)</div>
+        <div className="text-xs text-muted">Removed from all working lists so nobody keeps chasing it. Still counted as a received {lead.source} lead in reports. If the customer replies, it comes back automatically.</div>
       </Card>
     );
   }

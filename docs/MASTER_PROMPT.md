@@ -553,12 +553,13 @@ owner can switch a type to "send automatically" later. Every action logged and u
 - Stage "Trying to Reach" with an attempt tracker: Day 0 call+text → Day 1 → Day 2 → Day 4 →
   Day 7 (max 5 attempts). After every attempt one tap: **Scheduled · Still trying ·
   Not a fit · Spam/wrong #**.
-- **No reply in 7 days → auto-release to "No Response"**: off the active board, still
-  counted as a received lead for that source, shown in **Needs attention** for a final
-  decision (one last text / archive / mark spam). If the customer replies later it
-  reactivates automatically.
-- Board starts with a **Needs attention** column: not contacted in time, last attempts,
-  released.
+- **No reply in 7 days → auto-release to "No Response" and REMOVED from every working list**
+  (board, Needs attention, follow-ups) — no load on the team. Still counted as a received
+  lead for that source in reports; reactivates automatically if the customer replies.
+- **Leads are tracked week by week**: weekly summary (received · contacted · scheduled ·
+  no response) for this week and last week at the top of Leads.
+- Board starts with a **Needs attention** column: not contacted in time, and last attempts
+  before the 7-day release.
 - Reports: speed-to-lead, contact rate, schedule rate per source.
 
 **Projects map** (`/map`): San Diego County, Chula Vista → Fallbrook, coast → Ramona/Julian.

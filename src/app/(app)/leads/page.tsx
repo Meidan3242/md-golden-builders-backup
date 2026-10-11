@@ -13,7 +13,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const view = sp.view === "list" ? "list" : "board";
   const user = await currentUser();
   const showMoney = canSeeMoney(user);
-  let leads = await getLeads();
+  const allLeads = await getLeads();
+  // Released leads (no answer for a week) leave every working list — they only live in reports.
+  let leads = sp.stage ? allLeads : allLeads.filter((l) => l.stage !== "No Response");
   if (sp.source) leads = leads.filter((l) => l.source === sp.source);
   if (sp.stage) leads = leads.filter((l) => l.stage === sp.stage);
 
@@ -36,6 +38,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </>
         }
       />
+
+      <WeekSummary leads={allLeads} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
@@ -147,24 +151,53 @@ function Table({ leads, showMoney, stage, q }: { leads: Lead[]; showMoney: boole
 /** Leads that need a human decision: not contacted in time, or released after 7 days of silence. */
 function NeedsAttention({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
   const items = leads.filter(
-    (l) => l.stage === "No Response" || (l.stage === "New" && -daysFrom(l.createdAt, TODAY) >= 1) || (l.stage === "Trying to Reach" && (l.attempts ?? 0) >= 4),
+    (l) => (l.stage === "New" && -daysFrom(l.createdAt, TODAY) >= 1) || (l.stage === "Trying to Reach" && (l.attempts ?? 0) >= 4),
   );
   return (
     <div className="flex w-72 shrink-0 flex-col rounded-xl border border-bad/30 bg-bad-soft/40 p-2">
       <div className="mb-2 px-1">
         <span className="text-xs font-semibold text-bad">Needs attention <span className="ml-1">{items.length}</span></span>
-        <div className="text-[10px] text-muted">Not contacted in time · last attempts · released (no reply 7 days)</div>
+        <div className="text-[10px] text-muted">Not contacted in time · last attempts before the 7-day release</div>
       </div>
       <div className="flex flex-col gap-2">
         {items.map((l) => (
           <div key={l.id}>
             <div className="mb-0.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-bad">
-              {l.stage === "No Response" ? "Released — no response" : l.stage === "New" ? "Not contacted yet" : `Attempt ${l.attempts} of 5`}
+              {l.stage === "New" ? "Not contacted yet" : `Attempt ${l.attempts} of 5 — last chance`}
             </div>
             <LeadCard l={l} showMoney={showMoney} />
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** This week's leads at a glance: lead tracking runs week by week. */
+function WeekSummary({ leads }: { leads: Lead[] }) {
+  const weekAgo = (n: number) => leads.filter((l) => { const d = -daysFrom(l.createdAt, TODAY); return d >= n * 7 && d < (n + 1) * 7; });
+  const weeks = [0, 1].map((n) => {
+    const ls = weekAgo(n);
+    return {
+      label: n === 0 ? "This week" : "Last week",
+      received: ls.length,
+      contacted: ls.filter((l) => l.stage !== "New").length,
+      scheduled: ls.filter((l) => !["New", "Trying to Reach", "No Response", "Not a Fit"].includes(l.stage)).length,
+      released: ls.filter((l) => l.stage === "No Response").length,
+    };
+  });
+  return (
+    <div className="mb-4 grid gap-3 md:grid-cols-2">
+      {weeks.map((w) => (
+        <div key={w.label} className="rounded-xl border border-border bg-card p-3">
+          <div className="mb-2 text-xs font-semibold text-muted">{w.label}</div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {[["Received", w.received, ""], ["Contacted", w.contacted, ""], ["Scheduled", w.scheduled, "text-ok"], ["No response", w.released, "text-bad"]].map(([k, v, c]) => (
+              <div key={k as string}><div className={`text-xl font-bold ${c}`}>{v}</div><div className="text-[11px] text-muted">{k}</div></div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

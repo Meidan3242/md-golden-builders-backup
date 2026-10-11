@@ -27,11 +27,6 @@ export const DEMO_ESTIMATE = {
   ],
   exclusions: ["New electrical or plumbing", "Flooring / new floor area (remains soil)", "Permit and engineering fees (billed at cost)"],
   base: 85760,
-  options: [
-    { id: "drain", title: "French drain behind the wall", detail: "Perforated pipe, gravel and filter fabric along the full 95 ft", price: 3200 },
-    { id: "cap", title: "Precast concrete wall cap", detail: "Finished cap on top of the wall", price: 2450 },
-    { id: "lights", title: "Low-voltage wall lights (6)", detail: "Includes transformer and timer", price: 1900 },
-  ],
   schedule: [
     { name: "Deposit (on signing)", pct: null as number | null, amount: 1000 },
     { name: "Upon start of demo", pct: 0.4 },
@@ -84,3 +79,40 @@ export const SIGN_PAGES = [
   { n: 6, title: "Additional Description — scope of work", img: null },
   { n: 7, title: "Additional Description — price & payments", img: null },
 ];
+
+export const DEMO_CHANGE_ORDER = {
+  number: 1,
+  contractRef: "Contract #2026-031 signed Aug 25, 2026",
+  date: "Oct 10, 2026",
+  customer: DEMO_ESTIMATE.customer,
+  title: "Add 20 LF of wall + french drain",
+  note: "As we discussed on site — while the crew is already set up, we can extend the wall 20 ft toward the side yard and add drainage behind it. Here are the details.",
+  sections: [
+    { title: "Wall extension — 20 LF", items: ["Excavate and pour reinforced footings for 20 additional feet", "Extend CMU wall at matching height", "Stucco finish to match the existing wall"] },
+    { title: "French drain", items: ["Perforated pipe, gravel and filter fabric behind the full wall", "Tie into existing side-yard drain"] },
+  ],
+  exclusions: ["Irrigation changes", "Additional permit fees, if required by the City (billed at cost)"],
+  base: 14800,
+  schedule: [
+    { name: "Upon signing this change order", pct: 0.5 },
+    { name: "Upon completion of added wall", pct: 0.5 },
+  ],
+  daysAdded: 6,
+};
+
+/** Sample contract used for the email simulation (fictional customer). */
+export const DEMO_CONTRACT = {
+  customer: { name: "Daniel & Sarah Whitman", first: "Daniel", email: "whitman.sample@example.com", address: "1450 Palm Ridge Dr, San Diego, CA 92117" },
+  title: "50 LF CMU garden wall — footings, plans & stucco",
+  price: 35000,
+  start: "Dec 1, 2026 (after permit)",
+  finish: "Jan 15, 2027",
+  schedule: [
+    { name: "Deposit — upon signing", amount: 1000 },
+    { name: "Architectural & structural plans completed", amount: 3500 },
+    { name: "Plans submitted to the City of San Diego", amount: 1500 },
+    { name: "Demolition, excavation & footing forms/rebar", amount: 11000 },
+    { name: "Footings poured & 50 LF CMU wall built", amount: 12000 },
+    { name: "Stucco finish, final inspection & clean-up", amount: 6000 },
+  ],
+};

@@ -438,7 +438,36 @@ export) → match job name → project; ask the owner which sub when unclear.
 - Open-tracking for our own estimates: every view of the link is logged (count, time spent,
   sections viewed, add-ons toggled) → push notification "Rachel is viewing your estimate now".
 
-## 19. Working rules for me
+## 19. Discovery round 7 (2026-10-11)
+
+- **Estimate page:** no interactive add-ons; "Approve & sign / Meet / Ask" at the TOP next to
+  the total. Zelle email must wrap inside its card. → done (`CustomerDoc` component).
+- **Change Order = same page as the estimate, titled "Change Order"** (owner's paper CO form
+  dropped). Shows original contract → +CO → new total and schedule impact.
+  Laline creates it; customer signs from the link (email and/or text — both options).
+- **Financing: Foundation Finance.** Pattern: customer pays a down payment (e.g. $1,600)
+  and Foundation Finance pays the financed balance at the END of the project. Project flag
+  "Financed" + lender milestone "Foundation Finance payout on completion".
+- **System email: CRM@mdgoldenbuilders.com** (sends contracts/estimates; receives HD
+  receipts and forwarded lead emails).
+- **Google: $6,000/mo LSA only;** regular Google Ads just added (~+$3,000/mo). Marketing
+  manager runs it and marks spam leads for **LSA refunds** → track per lead: spam?,
+  dispute filed, refund received ($).
+- InstantResponse.AI details: owner will ask the marketing manager (who installed it).
+- **Cancelled projects** → status "Cancelled", moved to a "Cancelled projects" list
+  (owner decides; no automatic refund flow).
+- **Late payments & disappearing subs → owner decides.** System only collects facts from
+  every source, flags, and reminds the owner.
+- **Engineer/architect = a subcontractor** (same payments + documents).
+- **Repeat customer:** one customer profile across projects; each new project still counts
+  in that month's sales.
+- **Only the owner takes project photos.**
+- Simulation produced: filled Form 203 (5 pp.) + generated Additional Description (2 pp.)
+  for a fictional $35,000 50-LF garden wall, sign/initial tags at all spots; email +
+  SMS preview page `/p/email/[id]`. Real sending starts once CRM@ mailbox + email service
+  are connected (this environment cannot send email).
+
+## 20. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

@@ -353,7 +353,15 @@ undoable; audit trail. Later: same capture from SMS/WhatsApp forwarded to a syst
 **Phones:** keep RingCentral (calls, recordings, AI notes, SMS via API). Customer chats stay
 on SMS/iMessage from the business line; internal WhatsApp groups move into the app.
 
-## 16. Working rules for me
+## 16. Clarifications (2026-10-11)
+
+- **Phones:** owner's number **858-933-1694** is printed on contracts and customer
+  documents. RingCentral business line **(858) 332-2168** is used by the office for calls/SMS.
+- **❌ in WhatsApp group names = active/running project** (not cancelled).
+- **"Second / third / fourth contract" = change orders.** In the UI, label change orders so
+  the team recognises both terms, e.g. "Change Order #1 (Contract #2)".
+
+## 17. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

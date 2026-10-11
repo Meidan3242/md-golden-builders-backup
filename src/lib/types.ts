@@ -24,13 +24,15 @@ export type LeadSource = (typeof LEAD_SOURCES)[number];
 
 export const LEAD_STAGES = [
   "New",
-  "Contacted",
+  "Trying to Reach",
   "Appointment Set",
   "Need to Send Estimate",
   "Estimate Sent",
   "Second Meeting",
   "Won",
   "Paused",
+  "No Response",
+  "Not a Fit",
   "Lost",
 ] as const;
 export type LeadStage = (typeof LEAD_STAGES)[number];
@@ -38,12 +40,23 @@ export type LeadStage = (typeof LEAD_STAGES)[number];
 /** Stages shown as columns on the pipeline board (closed stages live in filters). */
 export const PIPELINE_STAGES: LeadStage[] = [
   "New",
-  "Contacted",
+  "Trying to Reach",
   "Appointment Set",
   "Need to Send Estimate",
   "Estimate Sent",
   "Second Meeting",
 ];
+
+/** First-contact rules: attempts until scheduled; no reply after 7 days → "No Response". */
+export const MAX_ATTEMPTS = 5;
+export const RELEASE_AFTER_DAYS = 7;
+
+export interface ThreadMessage {
+  at: string;
+  from: "customer" | "us" | "robot";
+  channel: "Text" | "Thumbtack" | "Yelp" | "Email" | "Call";
+  text: string;
+}
 
 export interface CallRecording {
   id: string;
@@ -82,6 +95,10 @@ export interface Lead {
   notes?: string;
   calls: CallRecording[];
   activity: Activity[];
+  attempts?: number;
+  thread?: ThreadMessage[];
+  lat?: number;
+  lng?: number;
 }
 
 export type ConfirmationStatus = "Confirmed" | "Awaiting reply" | "Reminder scheduled" | "No response";

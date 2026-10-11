@@ -82,6 +82,7 @@ function LeadCard({ l, showMoney }: { l: Lead; showMoney: boolean }) {
 function Board({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
   return (
     <div className="scrollbar-thin -mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
+      <NeedsAttention leads={leads} showMoney={showMoney} />
       {PIPELINE_STAGES.map((stage) => {
         const items = leads.filter((l) => l.stage === stage);
         const total = items.reduce((a, l) => a + (l.estimateAmount ?? 0), 0);
@@ -140,5 +141,30 @@ function Table({ leads, showMoney, stage, q }: { leads: Lead[]; showMoney: boole
         </table>
       </Card>
     </>
+  );
+}
+
+/** Leads that need a human decision: not contacted in time, or released after 7 days of silence. */
+function NeedsAttention({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
+  const items = leads.filter(
+    (l) => l.stage === "No Response" || (l.stage === "New" && -daysFrom(l.createdAt, TODAY) >= 1) || (l.stage === "Trying to Reach" && (l.attempts ?? 0) >= 4),
+  );
+  return (
+    <div className="flex w-72 shrink-0 flex-col rounded-xl border border-bad/30 bg-bad-soft/40 p-2">
+      <div className="mb-2 px-1">
+        <span className="text-xs font-semibold text-bad">Needs attention <span className="ml-1">{items.length}</span></span>
+        <div className="text-[10px] text-muted">Not contacted in time · last attempts · released (no reply 7 days)</div>
+      </div>
+      <div className="flex flex-col gap-2">
+        {items.map((l) => (
+          <div key={l.id}>
+            <div className="mb-0.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-bad">
+              {l.stage === "No Response" ? "Released — no response" : l.stage === "New" ? "Not contacted yet" : `Attempt ${l.attempts} of 5`}
+            </div>
+            <LeadCard l={l} showMoney={showMoney} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LeadConversation, LeadOutcome } from "@/components/lead-parts";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, KeyValue } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLead, userById } from "@/lib/data";
@@ -60,6 +61,8 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
+          <LeadOutcome lead={lead} />
+          <LeadConversation lead={lead} />
           <Card>
             <CardHeader title="Call recordings" subtitle="Pulled automatically from RingCentral and matched by phone number" action={<Badge tone="info"><Mic className="size-3" /> {lead.calls.length}</Badge>} />
             <ul className="divide-y divide-border">

@@ -544,7 +544,33 @@ send", "make it 475", "shorter", "send in Spanish", "not now, remind me Friday")
 Default approval rules: anything to a customer/sub or touching money = preview + confirm;
 owner can switch a type to "send automatically" later. Every action logged and undoable.
 
-## 26. Working rules for me
+## 26. Lead system + map (round 12, 2026-10-12)
+
+**Lead first-contact system:**
+- Every lead from every source lands in one list with one **Conversation** thread
+  (platform messages + robot replies + texts from the business line); reply from the app
+  (text by default, platform/email when available).
+- Stage "Trying to Reach" with an attempt tracker: Day 0 call+text → Day 1 → Day 2 → Day 4 →
+  Day 7 (max 5 attempts). After every attempt one tap: **Scheduled · Still trying ·
+  Not a fit · Spam/wrong #**.
+- **No reply in 7 days → auto-release to "No Response"**: off the active board, still
+  counted as a received lead for that source, shown in **Needs attention** for a final
+  decision (one last text / archive / mark spam). If the customer replies later it
+  reactivates automatically.
+- Board starts with a **Needs attention** column: not contacted in time, last attempts,
+  released.
+- Reports: speed-to-lead, contact rate, schedule rate per source.
+
+**Projects map** (`/map`): San Diego County, Chula Vista → Fallbrook, coast → Ramona/Julian.
+Pins: active projects, completed jobs, open estimates, new leads (filterable). Tap → card
+with photos, value, Open. Uses: plan the day (estimates near appointments), sales ("we built
+3 on your street"), revenue by area. Live version: real street map (Google/Mapbox).
+
+**How we continue:** finish lead + map logic in the prototype, then deploy the prototype
+(demo data) so the owner can click it on his phone; then switch to real data module by
+module, starting with Leads.
+
+## 27. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

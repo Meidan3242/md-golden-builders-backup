@@ -61,13 +61,13 @@ const services: [string, number][] = [
 const sources: LeadSource[] = ["Google", "Yelp", "Thumbtack", "Google", "Yelp", "Thumbtack", "Instagram", "Referral", "Google", "Thumbtack", "Yelp", "Facebook"];
 const stagePlan: LeadStage[] = [
   "New", "New", "New", "New",
-  "Contacted", "Contacted", "Contacted",
+  "Trying to Reach", "Trying to Reach", "Trying to Reach",
   "Appointment Set", "Appointment Set", "Appointment Set", "Appointment Set",
   "Need to Send Estimate", "Need to Send Estimate", "Need to Send Estimate",
   "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent",
   "Second Meeting", "Second Meeting",
   "Won", "Won", "Won", "Won", "Won",
-  "Paused", "Lost", "Lost", "Lost",
+  "Paused", "No Response", "Not a Fit", "Lost",
 ];
 const lostReasons = ["Price too high", "Went with another contractor", "Project cancelled", "No response after 5 follow-ups"];
 
@@ -80,9 +80,36 @@ function phone(i: number) {
 const estimateAge = [1, 3, 2, 7, 14, 9, 30];
 let estimateIdx = 0;
 
+export const CITY_COORDS: Record<string, [number, number]> = {
+  "San Diego": [32.7157, -117.1611], "La Jolla": [32.8328, -117.2713], "Chula Vista": [32.6401, -117.0842],
+  Escondido: [33.1192, -117.0864], Carlsbad: [33.1581, -117.3506], "El Cajon": [32.7948, -116.9625],
+  Oceanside: [33.1959, -117.3795], Poway: [32.9628, -117.0359], Santee: [32.8384, -116.9739],
+  Encinitas: [33.037, -117.292], "National City": [32.6781, -117.0992], "La Mesa": [32.7678, -117.0231],
+  Fallbrook: [33.3764, -117.2511], Ramona: [33.0417, -116.8681], Julian: [33.0787, -116.602], "Spring Valley": [32.7448, -116.9989],
+};
+export const jitter = (i: number, scale = 0.02) => [((i * 37) % 11 - 5) * scale / 5, ((i * 53) % 13 - 6) * scale / 6] as const;
+
+function demoThread(i: number, name: string, source: LeadSource, stage: LeadStage, created: number, service: string) {
+  const ch = source === "Thumbtack" ? "Thumbtack" : source === "Yelp" ? "Yelp" : "Text";
+  const first = name.split(" ")[0];
+  const t: { at: string; from: "customer" | "us" | "robot"; channel: "Text" | "Thumbtack" | "Yelp" | "Email" | "Call"; text: string }[] = [
+    { at: iso(created, 9, 10), from: "customer", channel: ch, text: `Hi, I'm looking for a quote for ${service.toLowerCase()}. When can someone come take a look?` },
+    { at: iso(created, 9, 11), from: "robot", channel: ch, text: `Hi ${first}! Thanks for reaching out to MD Golden Builders. What's the best number to reach you, and what days work for a free on-site estimate?` },
+  ];
+  if (stage === "New") return t;
+  t.push({ at: iso(created, 11, 30), from: "us", channel: "Text", text: `Hi ${first}, this is Laline with MD Golden Builders 🙂 Meidan can stop by Tue or Wed afternoon — what works for you?` });
+  if (stage === "Trying to Reach" || stage === "No Response") {
+    t.push({ at: iso(created + 2, 10), from: "us", channel: "Text", text: `Hi ${first}, just following up — would you still like a free estimate this week?` });
+    return t;
+  }
+  t.push({ at: iso(created, 12, 5), from: "customer", channel: "Text", text: "Wednesday after 3 works great." });
+  t.push({ at: iso(created, 12, 7), from: "us", channel: "Text", text: "Perfect — Wednesday 3:30 PM. You'll get a reminder the day before. Thank you!" });
+  return t;
+}
+
 export const LEADS: Lead[] = stagePlan.map((stage, i) => {
   const [service, base] = services[i % services.length];
-  const created = -Math.floor(i * 1.6) - (stage === "New" ? 0 : 3);
+  const created = stage === "Trying to Reach" ? -((i % 3) + 1) * 2 + 1 : -Math.floor(i * 1.6) - (stage === "New" ? 0 : 3);
   const name = `${first[i]} ${last[i]}`;
   const assignedTo = i % 5 === 3 ? "u-rep" : "u-owner";
   const hasEstimate = ["Estimate Sent", "Second Meeting", "Won", "Paused", "Lost"].includes(stage);
@@ -116,6 +143,10 @@ export const LEADS: Lead[] = stagePlan.map((stage, i) => {
       ...(stage !== "New" ? [{ id: `c-${i}-2`, at: iso(created + 1, 11), direction: "Outbound" as const, durationSec: 95 + ((i * 31) % 200), by: "u-office" }] : []),
     ],
     activity: activity.reverse(),
+    attempts: stage === "New" ? 0 : stage === "Trying to Reach" ? 1 + (i % 4) : stage === "No Response" ? 5 : undefined,
+    thread: demoThread(i, name, sources[i % sources.length], stage, created, service),
+    lat: (CITY_COORDS[cities[i % cities.length]] ?? CITY_COORDS["San Diego"])[0] + jitter(i)[0],
+    lng: (CITY_COORDS[cities[i % cities.length]] ?? CITY_COORDS["San Diego"])[1] + jitter(i)[1],
   };
 });
 
@@ -501,3 +532,23 @@ export const MARKETING_SPEND: MarketingSpend[] = ["2026-08", "2026-09", "2026-10
   { month, source: "Yelp" as const, amount: 1500 },
   { month, source: "Marketing manager" as const, amount: 1000 },
 ]);
+
+// ---------------------------------------------------------------- Map: past (completed) jobs
+
+export const PAST_JOBS = [
+  { id: "J-1", customer: "Kitchen — Morales", city: "Fallbrook", type: "Kitchen Remodel", year: 2025, value: 64000 },
+  { id: "J-2", customer: "ADU — Patel", city: "Escondido", type: "ADU Construction", year: 2025, value: 228000 },
+  { id: "J-3", customer: "Bathroom — Kim", city: "Ramona", type: "Bathroom Remodel", year: 2026, value: 31000 },
+  { id: "J-4", customer: "Deck — Rivera", city: "Julian", type: "Patio / Deck", year: 2026, value: 27000 },
+  { id: "J-5", customer: "Garage conversion — Foster", city: "Chula Vista", type: "Garage Conversion", year: 2025, value: 96000 },
+  { id: "J-6", customer: "Full remodel — Brooks", city: "Carlsbad", type: "Full Home Remodel", year: 2025, value: 305000 },
+  { id: "J-7", customer: "Retaining wall — Ward", city: "La Mesa", type: "Retaining Wall", year: 2026, value: 48000 },
+  { id: "J-8", customer: "Bathroom — Hayes", city: "Oceanside", type: "Bathroom Remodel", year: 2026, value: 29000 },
+  { id: "J-9", customer: "Kitchen — Reed", city: "Poway", type: "Kitchen Remodel", year: 2026, value: 71000 },
+  { id: "J-10", customer: "Room addition — Long", city: "Santee", type: "Room Addition", year: 2025, value: 138000 },
+].map((j, i) => ({ ...j, lat: CITY_COORDS[j.city][0] + jitter(i + 50)[0], lng: CITY_COORDS[j.city][1] + jitter(i + 50)[1] }));
+
+export const PROJECT_COORDS: Record<string, [number, number]> = {
+  "P-2026-031": [32.8401, -117.2652], "P-2026-034": [32.7766, -117.2523], "P-2026-036": [32.6302, -117.0605],
+  "P-2026-029": [32.7121, -117.1402], "P-2026-022": [33.0503, -117.2701],
+};

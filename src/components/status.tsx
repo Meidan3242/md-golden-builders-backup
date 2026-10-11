@@ -3,13 +3,15 @@ import type { ConfirmationStatus, LeadSource, LeadStage, LienWaiver, PaymentMile
 
 const stageTone: Record<LeadStage, Parameters<typeof Badge>[0]["tone"]> = {
   New: "info",
-  Contacted: "neutral",
+  "Trying to Reach": "warn",
   "Appointment Set": "gold",
   "Need to Send Estimate": "bad",
   "Estimate Sent": "warn",
   "Second Meeting": "gold",
   Won: "ok",
   Paused: "neutral",
+  "No Response": "bad",
+  "Not a Fit": "neutral",
   Lost: "neutral",
 };
 export const LeadStageBadge = ({ stage }: { stage: LeadStage }) => <Badge tone={stageTone[stage]}>{stage}</Badge>;

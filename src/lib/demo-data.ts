@@ -26,7 +26,7 @@ const iso = (offsetDays: number, hour = 10, min = 0) => new Date(Date.UTC(2026, 
 
 export const USERS: User[] = [
   { id: "u-owner", name: "Meidan D.", role: "admin", initials: "MD", title: "Owner" },
-  { id: "u-office", name: "Office Manager", role: "office", initials: "OM", title: "Office Manager" },
+  { id: "u-office", name: "Laline", role: "office", initials: "LA", title: "Office Manager" },
   { id: "u-rep", name: "Demo Sales Rep", role: "sales", initials: "SR", title: "Sales Rep" },
 ];
 
@@ -89,7 +89,7 @@ export const LEADS: Lead[] = stagePlan.map((stage, i) => {
   const sentOffset = stage === "Estimate Sent" ? -estimateAge[estimateIdx++ % estimateAge.length] : created + 4;
   const amount = Math.round((base * (0.8 + ((i * 7) % 9) / 10)) / 100) * 100;
   const activity: Activity[] = [
-    { id: `a-${i}-1`, at: iso(created, 9, 12), by: "u-office", kind: "call", text: `Inbound call from ${sources[i % sources.length]} — lead created by Office Manager` },
+    { id: `a-${i}-1`, at: iso(created, 9, 12), by: "u-office", kind: "call", text: `Inbound call from ${sources[i % sources.length]} — lead created by Laline` },
   ];
   if (stage !== "New") activity.push({ id: `a-${i}-2`, at: iso(created + 1, 11), by: "u-office", kind: "sms", text: "Texted customer to schedule a site visit" });
   if (hasEstimate) activity.push({ id: `a-${i}-3`, at: iso(sentOffset, 16), by: "u-owner", kind: "estimate", text: `Joist estimate sent — $${amount.toLocaleString()}` });

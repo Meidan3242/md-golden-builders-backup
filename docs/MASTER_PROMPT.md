@@ -361,7 +361,59 @@ on SMS/iMessage from the business line; internal WhatsApp groups move into the a
 - **"Second / third / fourth contract" = change orders.** In the UI, label change orders so
   the team recognises both terms, e.g. "Change Order #1 (Contract #2)".
 
-## 17. Working rules for me
+## 17. Discovery round 5 (2026-10-11)
+
+**Office manager's name: Laline.**
+
+**Unified lead inbox.** Owner already runs an auto-responder "robot" on Yelp + Thumbtack
+(Google not yet). Goal: every lead from every platform lands in the app; reply from the app.
+- Intake per source, best available: Thumbtack partner API · Yelp Leads API (partner
+  approval needed) · Google Local Services leads via Google Ads API · calls via RingCentral ·
+  **fallback for all: email-notification parsing** (forward lead emails to a system inbox).
+- Reply: via API where the platform allows; otherwise SMS from the business line when
+  there's a phone; otherwise deep link to the platform thread.
+- **Hot lead = has phone number** (call + text). **Cold = no phone** (auto message on platform).
+- **End-of-day digest** (owner + Laline): leads not answered yet, by hot/cold.
+
+**Joist.** No public API known → (1) auto-capture from Joist emails (estimate sent/viewed,
+PDF) if available, else drag-and-drop PDF; (2) later build estimates in-app (same scope +
+payment schedule feeds the contract in one click, own open-tracking). Owner likes Joist's
+"opened" notification — must keep that.
+
+**Follow-up = goal is a second meeting** ("second meeting is a near-certain close").
+Re-engagement message library, e.g. "crew opening — project delayed by city inspection, can
+start you earlier, I'm in your area tomorrow 2–4pm", limited-time 10% discount, price increase
+coming. AI personalises with name/project. **"Nearby open estimates"**: when the owner has an
+appointment, suggest open-estimate leads in the same area to swing by. Track which message
+wins second meetings. Discounts need owner approval.
+
+**Contract package = Form 203 + Additional Description pages (scope of work) — all signed.**
+App fills the owner's PDF and places e-sign fields at every required spot (see §10 list +
+every Additional Description page: contractor + owner signature). Notice of Cancellation
+copies are delivered, not signed. Change Order form: owner will send.
+
+**Customer payment options** (show all on every invoice / payment page):
+Zelle MDgoldenbuilders@gmail.com · Venmo https://venmo.com/code?user_id=3483491786294445630 ·
+check payable to "MD Golden Builders" · cash · card via Square payment link (Square API:
+create link, webhook marks paid). Owner wants to pass the card fee (~3.5%) to the customer →
+must check rules first (card networks cap surcharges ~3%, no surcharge on debit, CA
+SB 478 price-transparency rules) — confirm with accountant/attorney; alternative is a
+"cash/Zelle price" framing. Zelle has no API → mark paid from screenshot (smart capture) or
+bank alert email. Goal: collect fast — auto reminders on due/overdue invoices.
+
+**Weekly sub pay run:** every **Thursday** the app lists each sub's balance per project and
+proposes Friday payments; owner adjusts/approves; app texts each sub "Tomorrow you'll get $X
+for <project> via Zelle — reply 1 to confirm"; Friday: grouped list by method (Zelle list,
+checks to write, cash, Venmo); mark paid with proof. Subs keep requesting on WhatsApp for now
+(capture via project chat).
+
+**Home Depot Pro Xtra.** Receipts are tagged with a job name (usually the street/area, e.g.
+"6390 Lakeshore", "Spring Valley"). Purchase-approval SMS ("Arturo at store … reply 1")
+arrives on the **RingCentral line** → app can show Approve/Deny and reply via RingCentral SMS
+API. Receipts: no public HD API known → email e-receipts to a system inbox (or Pro Xtra
+export) → match job name → project; ask the owner which sub when unclear.
+
+## 18. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

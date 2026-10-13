@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { Camera, CheckCircle2, FileText, Image as ImageIcon, Mic, Paperclip, Send, Sparkles, Video } from "lucide-react";
+import Link from "next/link";
 import { Avatar, Badge, Card } from "./ui";
 import { userById } from "@/lib/data";
 import { dateTime } from "@/lib/format";
@@ -19,8 +20,8 @@ const QUICK = [
  * screenshots/receipts, and asks for things. The assistant files what it can and
  * prepares anything that goes to a customer or moves money for a one-tap approval.
  */
-export function ProjectChat({ messages, me }: { messages: ChatMessage[]; me: string }) {
-  const feed = [...messages].reverse(); // newest first, right under the composer
+export function ProjectChat({ messages, me, limit, moreHref }: { messages: ChatMessage[]; me: string; limit?: number; moreHref?: string }) {
+  const feed = [...messages].reverse().slice(0, limit ?? messages.length); // newest first, right under the composer
 
   return (
     <Card className="overflow-hidden">
@@ -114,6 +115,11 @@ export function ProjectChat({ messages, me }: { messages: ChatMessage[]; me: str
           );
         })}
       </div>
+      {moreHref && messages.length > feed.length && (
+        <Link href={moreHref} className="block border-t border-border py-2.5 text-center text-xs font-medium text-gold-text hover:bg-surface">
+          See all {messages.length} messages →
+        </Link>
+      )}
     </Card>
   );
 }

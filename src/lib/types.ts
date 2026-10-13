@@ -25,6 +25,7 @@ export type LeadSource = (typeof LEAD_SOURCES)[number];
 export const LEAD_STAGES = [
   "New",
   "Trying to Reach",
+  "Talking",
   "Appointment Set",
   "Need to Send Estimate",
   "Estimate Sent",

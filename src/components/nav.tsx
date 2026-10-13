@@ -9,9 +9,7 @@ import {
   FolderKanban,
   HardHat,
   LayoutDashboard,
-  ListTodo,
   Map,
-  MessageSquare,
   Settings,
   Users,
 } from "lucide-react";
@@ -19,9 +17,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export const NAV = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Home", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Users },
-  { href: "/follow-ups", label: "Follow-ups", icon: ListTodo },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/map", label: "Map", icon: Map },
@@ -29,7 +26,6 @@ export const NAV = [
   { href: "/payments", label: "Payments", icon: CreditCard, money: true },
   { href: "/subcontractors", label: "Subcontractors", icon: HardHat },
   { href: "/reports", label: "Reports", icon: BarChart3, money: true },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare, soon: true },
   { href: "/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];
 
@@ -43,7 +39,7 @@ export function SidebarNav({ showMoney, isAdmin, badges }: { showMoney: boolean;
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter((n) => (showMoney || !n.money) && (isAdmin || !n.adminOnly)).map(({ href, label, icon: Icon, soon }) => {
+      {NAV.filter((n) => (showMoney || !n.money) && (isAdmin || !n.adminOnly)).map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href);
         return (
           <Link
@@ -56,7 +52,6 @@ export function SidebarNav({ showMoney, isAdmin, badges }: { showMoney: boolean;
           >
             <Icon className={clsx("size-4", active && "text-gold")} />
             <span className="flex-1">{label}</span>
-            {soon && <span className="rounded bg-white/10 px-1.5 text-[10px] text-sidebar-text/70">Soon</span>}
             {!!badges[href] && <span className="gold-gradient rounded-full px-1.5 text-[10px] font-bold text-black">{badges[href]}</span>}
           </Link>
         );

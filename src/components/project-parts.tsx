@@ -1,4 +1,5 @@
 import { Camera, Check, FileText, Paperclip, Play, Receipt, X } from "lucide-react";
+import Link from "next/link";
 import { PayStatusBadge, WaiverBadge } from "./status";
 import { Badge, Card, CardHeader, Empty } from "./ui";
 import { subById } from "@/lib/data";
@@ -11,7 +12,24 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
   return (
     <Card className="overflow-x-auto">
       <CardHeader title={title} subtitle={`${money(paid)} of ${money(total)} collected`} action={<button className="text-xs font-medium text-gold-text">+ Milestone</button>} />
-      <table className="w-full min-w-[640px] text-sm">
+      <ul className="divide-y divide-border sm:hidden">
+        {milestones.map((m, i) => (
+          <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+            <span className="text-xs text-muted">{i + 1}</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{m.name}</div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                <PayStatusBadge status={m.status} />
+                {m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : ""}{m.method ? ` · ${m.method}` : ""}
+                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-ok">· receipt sent ✓</Link>}
+              </div>
+            </div>
+            <span className="font-semibold">{money(m.amount)}</span>
+          </li>
+        ))}
+        <li className="flex justify-between bg-surface/60 px-4 py-2 text-sm font-semibold"><span>Total</span><span>{money(total)}</span></li>
+      </ul>
+      <table className="hidden w-full min-w-[640px] text-sm sm:table">
         <thead className="text-left text-xs text-muted">
           <tr className="border-b border-border">
             <th className="px-4 py-2 font-medium">#</th>
@@ -33,9 +51,9 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <td className="px-4 py-2.5 text-muted">{m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : "—"}</td>
               <td className="px-4 py-2.5 text-muted">{m.method ?? "—"}</td>
               <td className="px-4 py-2.5 text-right">
-                {m.status === "Upcoming" && <button className="text-xs font-medium text-gold-text">Send invoice</button>}
-                {m.status === "Invoiced" && <button className="text-xs font-medium text-gold-text">Record payment</button>}
-                {m.status === "Paid" && <button className="text-xs text-muted">Receipt</button>}
+                {m.status === "Upcoming" && <button className="text-xs font-medium text-gold-text">Request payment</button>}
+                {m.status === "Invoiced" && <button className="text-xs font-medium text-gold-text">Payment received</button>}
+                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-xs text-ok hover:underline">Receipt sent ✓</Link>}
               </td>
             </tr>
           ))}
@@ -68,7 +86,24 @@ export function SubAssignmentCard({ a }: { a: SubAssignment }) {
           </div>
         }
       />
-      <table className="w-full min-w-[680px] text-sm">
+      <ul className="divide-y divide-border sm:hidden">
+        {a.payments.map((p) => (
+          <li key={p.id} className="px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">{p.name}</span>
+              <span className="font-semibold">{money(p.amount)}</span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+              <PayStatusBadge status={p.status} />
+              {p.paidAt && date(p.paidAt)}
+              {p.method && ` · ${p.method}`}
+              {p.status === "Paid" && (p.proof ? <span className="text-ok">· proof ✓</span> : <Badge tone="bad">No proof</Badge>)}
+              {p.lienWaiver !== "N/A" && <WaiverBadge w={p.lienWaiver} />}
+            </div>
+          </li>
+        ))}
+      </ul>
+      <table className="hidden w-full min-w-[680px] text-sm sm:table">
         <thead className="text-left text-xs text-muted">
           <tr className="border-b border-border">
             <th className="px-4 py-2 font-medium">Payment</th>

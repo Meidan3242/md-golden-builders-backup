@@ -1,31 +1,32 @@
 import clsx from "clsx";
-import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, Mail, Phone, Plus, Star } from "lucide-react";
+import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, HandCoins, MessageSquare, Plus, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
-import { DocIcon, ExpensesTable, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
+import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
-import { Avatar, Badge, Button, Card, CardHeader, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
-import { canSeeMoney, currentUser, getProject, projectAlerts, projectFinancials, userById } from "@/lib/data";
+import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
+import { canSeeMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
 
 export default async function ProjectPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { id } = await params;
-  const { tab = "chat" } = await searchParams;
+  const { tab = "overview" } = await searchParams;
   const p = await getProject(id);
   if (!p) notFound();
   const user = await currentUser();
   const showMoney = canSeeMoney(user);
   const f = projectFinancials(p);
   const stageIdx = PROJECT_STAGES.indexOf(p.stage);
+  const contracts = contractsOf(p);
 
   const tabs = [
-    { key: "chat", label: "✦ Assistant & chat" },
     { key: "overview", label: "Overview" },
-    { key: "payments", label: "Customer payments", count: p.milestones.length },
-    { key: "change-orders", label: "Change orders", count: p.changeOrders.length },
-    ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: p.subs.length }, { key: "expenses", label: "Expenses", count: p.expenses.length }] : []),
+    { key: "chat", label: "✦ Chat", count: p.chat?.length ?? 0 },
+    { key: "contracts", label: "Contracts", count: contracts.length },
+    { key: "payments", label: "Customer payments" },
+    ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: contracts.reduce((a, c) => a + c.subs.length, 0) }, { key: "expenses", label: "Expenses" }] : []),
     { key: "permits", label: "Permits", count: p.permits.length },
     { key: "media", label: "Photos & videos", count: p.media.length },
     { key: "documents", label: "Documents", count: p.documents.length },
@@ -44,13 +45,13 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button href={`tel:${p.phone}`}><Phone className="size-4" /><span className="hidden sm:inline"> Call</span></Button>
+          <Button><MessageSquare className="size-4" /><span className="hidden sm:inline"> Text</span></Button>
           <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
           <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
           {p.stage === "Punch List" || p.stage === "Completed" ? (
             <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
           ) : (
-            <Button variant="primary"><Mail className="size-4" /> <span className="hidden sm:inline">Send </span>Invoice</Button>
+            <Button variant="primary"><HandCoins className="size-4" /> Request payment</Button>
           )}
         </div>
       </div>
@@ -78,23 +79,17 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
       <Tabs tabs={tabs} active={tab} base={`/projects/${p.id}`} />
 
-      {tab === "overview" && <Overview p={p} f={f} showMoney={showMoney} />}
-      {tab === "chat" && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2"><ProjectChat messages={p.chat ?? []} me={user.id} /></div>
-          <Snapshot p={p} f={f} showMoney={showMoney} />
-        </div>
-      )}
-      {tab === "payments" && <MilestoneTable milestones={p.milestones} />}
-      {tab === "change-orders" && <ChangeOrders p={p} showMoney={showMoney} />}
-      {tab === "subs" && showMoney && (
+      {tab === "overview" && (
         <div className="space-y-4">
-          {p.subs.map((a) => <SubAssignmentCard key={a.id} a={a} />)}
-          {!p.subs.length && <Card><Empty>No subcontractors assigned yet</Empty></Card>}
-          <Button><Plus className="size-4" /> Assign subcontractor</Button>
+          <ProjectChat messages={p.chat ?? []} me={user.id} limit={2} moreHref={`/projects/${p.id}?tab=chat`} />
+          <Overview p={p} f={f} showMoney={showMoney} />
         </div>
       )}
-      {tab === "expenses" && showMoney && <ExpensesTable expenses={p.expenses} />}
+      {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
+      {tab === "contracts" && <Contracts contracts={contracts} showMoney={showMoney} />}
+      {tab === "payments" && <PaymentsByContract contracts={contracts} />}
+      {tab === "subs" && showMoney && <SubsByContract contracts={contracts} />}
+      {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} />}
       {tab === "permits" && <Permits p={p} />}
       {tab === "media" && (
         <Card className="p-4">
@@ -115,7 +110,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
   const has = (k: string) => p.documents.some((d) => d.kind === k);
   const checklist: [string, boolean][] = [
     ["Contract signed (Form 203 + Additional Description)", has("Contract")],
-    ["Welcome email sent with contract & payment schedule", true],
+    ["Welcome email sent (contract, scope, license, payments)", true],
     ["Permit approved", p.permits.length === 0 || p.permits.some((x) => x.status === "Approved" || x.status === "Finaled")],
     ["Before photos uploaded", p.media.some((m) => m.phase === "Before")],
     ["All subcontractor agreements signed", p.subs.every((s) => s.agreement === "Signed")],
@@ -171,7 +166,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
           <KeyValue
             items={[
               ["Customer", p.customer],
-              ["Phone", <a key="p" href={`tel:${p.phone}`} className="text-gold-text">{p.phone}</a>],
+              ["Phone", p.phone],
               ["Signed", dateLong(p.signedAt)],
               ["Start", p.startDate ? dateLong(p.startDate) : "Waiting on permit"],
               ["Target finish", dateLong(p.targetCompletion)],
@@ -198,8 +193,9 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
               <div className="p-4">
                 <div className="text-sm font-medium">{next.name}</div>
                 <div className="text-2xl font-bold">{money(next.amount)}</div>
-                <div className="mt-1 text-xs text-muted">{next.status === "Invoiced" ? `Invoiced · due ${date(next.dueDate)}` : "Not invoiced yet"}</div>
-                <div className="mt-3 flex gap-2"><Button variant="primary">Send Square link</Button><Button>Record Zelle/check</Button></div>
+                <div className="mt-1 text-xs text-muted">{next.status === "Invoiced" ? `Requested · due ${date(next.dueDate)}` : "Not requested yet"}</div>
+                <div className="mt-3 flex flex-wrap gap-2"><Button variant="primary">Request payment</Button><Button>Payment received</Button></div>
+                <p className="mt-2 text-[11px] text-muted">Mark it received with the check photo / Zelle screenshot → the customer gets a receipt by email + text automatically. <Link href="/p/receipt/demo" className="text-gold-text hover:underline">See the receipt</Link></p>
               </div>
             ) : (
               <Empty>Paid in full ✓</Empty>
@@ -213,41 +209,6 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
           </Card>
         )}
       </div>
-    </div>
-  );
-}
-
-function ChangeOrders({ p, showMoney }: { p: Project; showMoney: boolean }) {
-  if (!p.changeOrders.length)
-    return (
-      <Card>
-        <Empty>
-          No change orders yet. A change order is a mini-project: its own scope, signature, customer payments, subcontractors and costs.
-          <div className="mt-3"><Button variant="primary"><FilePlus2 className="size-4" /> New change order</Button></div>
-        </Empty>
-      </Card>
-    );
-  return (
-    <div className="space-y-6">
-      {p.changeOrders.map((co) => (
-        <section key={co.id} className="rounded-xl border-2 border-gold/40 p-3 sm:p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-text">Change order #{co.number}</div>
-              <div className="text-lg font-bold">{co.title}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge tone={co.status === "Signed" ? "ok" : co.status === "Sent" ? "warn" : "neutral"}>{co.status}{co.signedAt ? ` · ${date(co.signedAt)}` : ""}</Badge>
-              <span className="text-lg font-bold">{money(co.amount)}</span>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <MilestoneTable milestones={co.milestones} title="Customer payments — this change order" />
-            {showMoney && co.subs.map((a) => <SubAssignmentCard key={a.id} a={a} />)}
-            {showMoney && co.expenses.length > 0 && <ExpensesTable expenses={co.expenses} />}
-          </div>
-        </section>
-      ))}
     </div>
   );
 }
@@ -304,39 +265,148 @@ function Documents({ p }: { p: Project }) {
   );
 }
 
-/** Compact side panel next to the assistant: the numbers you need while chatting. */
-function Snapshot({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projectFinancials>; showMoney: boolean }) {
-  const next = p.milestones.find((m) => m.status !== "Paid");
-  const alerts = showMoney ? projectAlerts(p).slice(0, 4) : [];
+/** One line per contract: "Contract #1 · Original contract · $85,760 · Signed". */
+function ContractTitle({ c, extra }: { c: ContractView; extra?: React.ReactNode }) {
   return (
-    <div className="space-y-4">
-      {showMoney && (
-        <Card className="p-4">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><div className="text-xs text-muted">Contract + COs</div><div className="text-lg font-bold">{money(f.revenue)}</div></div>
-            <div><div className="text-xs text-muted">Collected</div><div className="text-lg font-bold text-ok">{money(f.collected)}</div></div>
-            <div><div className="text-xs text-muted">Balance</div><div className="text-lg font-bold">{money(f.balance)}</div></div>
-            <div><div className="text-xs text-muted">Est. profit</div><div className="text-lg font-bold text-gold-text">{pct(f.margin)}</div></div>
-          </div>
-          <Progress value={f.collected / f.revenue} className="mt-3" />
-        </Card>
-      )}
-      {next && (
-        <Card className="p-4">
-          <div className="text-xs text-muted">Next customer payment</div>
-          <div className="mt-0.5 font-semibold">{next.name}</div>
-          <div className="text-2xl font-bold">{money(next.amount)}</div>
-          <div className="text-xs text-muted">{next.status === "Invoiced" ? `Invoiced · due ${date(next.dueDate)}` : "Not invoiced yet"}</div>
-        </Card>
-      )}
-      {alerts.length > 0 && (
-        <Card>
-          <CardHeader title="Needs attention" />
-          <ul className="divide-y divide-border">
-            {alerts.map((a) => <li key={a} className="flex gap-2 px-4 py-2 text-xs"><AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warn" />{a}</li>)}
-          </ul>
-        </Card>
-      )}
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <span className="font-bold">{c.label}</span>
+      <span className="text-xs text-muted">{c.kind} · {c.title}</span>
+      {c.status !== "Signed" && <Badge tone="warn">Not signed yet</Badge>}
+      {extra}
+    </div>
+  );
+}
+
+function Contracts({ contracts, showMoney }: { contracts: ContractView[]; showMoney: boolean }) {
+  return (
+    <div className="space-y-3">
+      {contracts.map((c, i) => {
+        const paid = c.milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
+        return (
+          <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={showMoney && <span className="font-bold">{money(c.amount)}</span>}>
+            <KeyValue
+              items={[
+                ["Status", c.status === "Signed" ? `Signed ${date(c.signedAt)}` : c.status],
+                ["Customer paid", showMoney ? `${money(paid)} of ${money(c.amount)}` : "—"],
+                ["Payments", `${c.milestones.length} steps`],
+                ["Subcontractors", c.subs.map((s) => subById(s.subId)?.company).join(", ") || "—"],
+              ]}
+            />
+            <div className="flex flex-wrap gap-2"><Button>View signed PDF</Button>{c.status !== "Signed" && <Button variant="primary">Resend for signature</Button>}</div>
+          </Collapse>
+        );
+      })}
+      <Button variant="primary"><FilePlus2 className="size-4" /> New change order (Contract #{contracts.length + 1})</Button>
+    </div>
+  );
+}
+
+function PaymentsByContract({ contracts }: { contracts: ContractView[] }) {
+  const all = contracts.flatMap((c) => c.milestones);
+  const paid = all.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
+  const total = all.reduce((a, m) => a + m.amount, 0);
+  return (
+    <div className="space-y-3">
+      <Card className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
+        <span>All contracts: <b>{money(total)}</b></span>
+        <span className="text-ok">Paid <b>{money(paid)}</b></span>
+        <span>Left <b>{money(total - paid)}</b></span>
+      </Card>
+      {contracts.map((c, i) => {
+        const cp = c.milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
+        return (
+          <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted"><b className="text-text">{money(cp)}</b> / {money(c.amount)}</span>}>
+            <MilestoneTable milestones={c.milestones} title={`Payments — ${c.label}`} />
+          </Collapse>
+        );
+      })}
+    </div>
+  );
+}
+
+function SubsByContract({ contracts }: { contracts: ContractView[] }) {
+  return (
+    <div className="space-y-3">
+      {contracts.map((c, i) => (
+        <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted">{c.subs.length} sub{c.subs.length === 1 ? "" : "s"}</span>}>
+          {c.subs.map((a) => <SubAssignmentCard key={a.id} a={a} />)}
+          {!c.subs.length && <div className="py-4 text-center text-xs text-muted">No subcontractors on this contract</div>}
+          <button className="text-xs font-medium text-gold-text"><Plus className="inline size-3.5" /> Add a sub to {c.label}</button>
+        </Collapse>
+      ))}
+    </div>
+  );
+}
+
+/** Everything that went out on the project: sub payments + materials and other expenses, per contract. */
+function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
+  const rowsOf = (c: ContractView) =>
+    [
+      ...c.subs.flatMap((a) =>
+        a.payments.filter((x) => x.status !== "Upcoming").map((x) => ({
+          id: x.id, at: x.paidAt, to: subById(a.subId)?.company ?? "Sub", what: `Sub · ${x.name}`, amount: x.amount, proof: x.proof, requested: x.status === "Requested",
+        })),
+      ),
+      ...c.expenses.map((e) => ({ id: e.id, at: e.date, to: e.vendor, what: e.category, amount: e.amount, proof: e.receipt, requested: false })),
+    ].sort((a, z) => (z.at ?? "9").localeCompare(a.at ?? "9"));
+  const all = contracts.flatMap(rowsOf).filter((r) => !r.requested);
+  const subs = all.filter((r) => r.what.startsWith("Sub")).reduce((a, r) => a + r.amount, 0);
+  const other = all.reduce((a, r) => a + r.amount, 0) - subs;
+  return (
+    <div className="space-y-3">
+      <Card className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
+        <span>Subs paid <b>{money(subs)}</b></span>
+        <span>Materials & other <b>{money(other)}</b></span>
+        <span>Total out <b>{money(subs + other)}</b></span>
+        <button className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</button>
+      </Card>
+      {contracts.map((c, i) => {
+        const rows = rowsOf(c);
+        const out = rows.filter((r) => !r.requested).reduce((a, r) => a + r.amount, 0);
+        return (
+          <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted">Out <b className="text-text">{money(out)}</b></span>}>
+            {rows.length ? (
+              <>
+              <ul className="divide-y divide-border sm:hidden">
+                {rows.map((r) => (
+                  <li key={r.id} className="py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{r.to}</span>
+                      <span className="font-semibold">{money(r.amount)}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                      {r.at ? date(r.at) : ""}
+                      <Badge tone={r.what.startsWith("Sub") ? "info" : "neutral"}>{r.what}</Badge>
+                      {r.requested ? <Badge tone="warn">Requested — not paid</Badge> : r.proof ? <span className="text-ok">receipt ✓</span> : <Badge tone="bad">No receipt</Badge>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden overflow-x-auto sm:block">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead className="text-left text-xs text-muted">
+                    <tr className="border-b border-border"><th className="px-3 py-2 font-medium">Date</th><th className="px-3 py-2 font-medium">Paid to</th><th className="px-3 py-2 font-medium">What</th><th className="px-3 py-2 font-medium">Proof</th><th className="px-3 py-2 text-right font-medium">Amount</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {rows.map((r) => (
+                      <tr key={r.id}>
+                        <td className="px-3 py-2 text-muted">{r.at ? date(r.at) : "—"}</td>
+                        <td className="px-3 py-2 font-medium">{r.to}</td>
+                        <td className="px-3 py-2"><Badge tone={r.what.startsWith("Sub") ? "info" : "neutral"}>{r.what}</Badge>{r.requested && <Badge tone="warn">Requested — not paid</Badge>}</td>
+                        <td className="px-3 py-2">{r.requested ? <span className="text-xs text-muted">—</span> : r.proof ? <span className="text-xs text-ok">✓ Attached</span> : <Badge tone="bad">Missing</Badge>}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{money(r.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              </>
+            ) : (
+              <div className="py-4 text-center text-xs text-muted">Nothing paid out on this contract yet</div>
+            )}
+          </Collapse>
+        );
+      })}
     </div>
   );
 }

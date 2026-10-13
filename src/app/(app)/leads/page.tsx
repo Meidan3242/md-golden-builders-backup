@@ -1,203 +1,185 @@
 import clsx from "clsx";
-import { Eye, LayoutGrid, List, Plus, Upload } from "lucide-react";
+import { BarChart3, CalendarCheck, Check, FileClock, ListTodo, MessageSquare, Plus, Users } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { LeadsReport } from "@/components/leads-report";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
-import { Avatar, Button, Card, PageHeader } from "@/components/ui";
-import { canSeeMoney, currentUser, getLeads, userById } from "@/lib/data";
+import { BackLink, Button, Card, Tile } from "@/components/ui";
+import { canSeeMoney, currentUser, getFollowUps, getLeads, userById } from "@/lib/data";
 import { TODAY } from "@/lib/demo-data";
-import { date, daysFrom, money } from "@/lib/format";
-import { LEAD_SOURCES, LEAD_STAGES, PIPELINE_STAGES, type Lead } from "@/lib/types";
+import { date, dayKey, daysFrom, money } from "@/lib/format";
+import { RELEASE_AFTER_DAYS, type Lead, type LeadStage } from "@/lib/types";
 
-export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ view?: string; source?: string; stage?: string }> }) {
-  const sp = await searchParams;
-  const view = sp.view === "list" ? "list" : "board";
+const BOXES: Record<string, { title: string; hint: string; stages: LeadStage[] }> = {
+  "need-estimate": { title: "Need to send estimate", hint: "We visited — the estimate didn't go out yet", stages: ["Need to Send Estimate"] },
+  "second-meeting": { title: "Second meeting", hint: "Close the deal", stages: ["Second Meeting"] },
+};
+
+/** The weekly list: every lead from the last 7 days, until it books a meeting, is completed, or goes quiet for a week. */
+const VIEWS = {
+  open: { label: "Still open", stages: ["New", "Trying to Reach", "Talking"] as LeadStage[] },
+  meeting: { label: "Became a meeting", stages: ["Appointment Set"] as LeadStage[] },
+  complete: { label: "Completed", stages: ["Paused", "Not a Fit", "Lost"] as LeadStage[] },
+  dropped: { label: `No answer ${RELEASE_AFTER_DAYS} days`, stages: ["No Response"] as LeadStage[] },
+};
+
+const age = (l: Lead) => -daysFrom(l.createdAt, TODAY);
+
+export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ box?: string; view?: string }> }) {
+  const { box, view = "open" } = await searchParams;
   const user = await currentUser();
   const showMoney = canSeeMoney(user);
-  const allLeads = await getLeads();
-  // Released leads (no answer for a week) leave every working list — they only live in reports.
-  let leads = sp.stage ? allLeads : allLeads.filter((l) => l.stage !== "No Response");
-  if (sp.source) leads = leads.filter((l) => l.source === sp.source);
-  if (sp.stage) leads = leads.filter((l) => l.stage === sp.stage);
+  const leads = await getLeads();
 
-  const q = (patch: Record<string, string | undefined>) => {
-    const p = new URLSearchParams();
-    const merged = { view, source: sp.source, stage: sp.stage, ...patch };
-    for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
-    return `/leads?${p}`;
-  };
+  if (box === "all") return <LeadsReport showMoney={showMoney} />;
+  if (box === "list") return <ListPage title="Every lead" hint="All leads ever, newest first" rows={leads} showMoney={showMoney} back="/leads?box=all" backLabel="All leads" />;
+  if (box) {
+    const b = BOXES[box];
+    if (!b) notFound();
+    return <ListPage title={b.title} hint={b.hint} rows={leads.filter((l) => b.stages.includes(l.stage))} showMoney={showMoney} back="/leads" backLabel="Leads" />;
+  }
+
+  const today = dayKey(TODAY);
+  const followUps = await getFollowUps();
+  const week = leads.filter((l) => age(l) < RELEASE_AFTER_DAYS || (l.stage === "No Response" && age(l) < 2 * RELEASE_AFTER_DAYS));
+  const cameInToday = leads.filter((l) => dayKey(l.createdAt) === today);
+  const v = VIEWS[view as keyof typeof VIEWS] ?? VIEWS.open;
+  const rows = week.filter((l) => v.stages.includes(l.stage)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const byDay = rows.reduce<Record<string, Lead[]>>((acc, l) => ((acc[dayKey(l.createdAt)] ??= []).push(l), acc), {});
+  const dayLabel = (k: string) => (k === today ? "Today" : -daysFrom(`${k}T19:00:00Z`, TODAY) === 1 ? "Yesterday" : date(`${k}T19:00:00Z`));
 
   return (
     <>
-      <PageHeader
-        title="Leads"
-        subtitle={user.role === "sales" ? "Only the leads assigned to you" : `${leads.length} leads · all sources`}
-        actions={
-          <>
-            {user.role !== "sales" && <Button><Upload className="size-4" /> Import from monday</Button>}
-            <Button variant="primary" href="/leads/new"><Plus className="size-4" /> New lead</Button>
-          </>
-        }
-      />
-
-      <WeekSummary leads={allLeads} />
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
-          <Link href={q({ view: "board" })} className={clsx("inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium", view === "board" ? "bg-surface text-text" : "text-muted")}><LayoutGrid className="size-3.5" /> Pipeline</Link>
-          <Link href={q({ view: "list" })} className={clsx("inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium", view === "list" ? "bg-surface text-text" : "text-muted")}><List className="size-3.5" /> List</Link>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
+          <p className="text-sm text-muted">This week — last {RELEASE_AFTER_DAYS} days</p>
         </div>
-        <div className="scrollbar-thin flex gap-1 overflow-x-auto">
-          <Link href={q({ source: undefined })} className={clsx("rounded-full border px-2.5 py-1 text-xs", !sp.source ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>All sources</Link>
-          {LEAD_SOURCES.map((s) => (
-            <Link key={s} href={q({ source: s })} className={clsx("whitespace-nowrap rounded-full border px-2.5 py-1 text-xs", sp.source === s ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>{s}</Link>
-          ))}
-        </div>
+        <Button variant="primary" href="/leads/new"><Plus className="size-4" /> New lead</Button>
       </div>
 
-      {view === "board" ? <Board leads={leads} showMoney={showMoney} /> : <Table leads={leads} showMoney={showMoney} stage={sp.stage} q={q} />}
+      <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-4">
+        <div className="col-span-3 rounded-2xl border-2 border-gold/50 bg-gold-soft/40 p-4 md:col-span-1">
+          <div className="text-sm text-muted">Came in today</div>
+          <div className="text-4xl font-bold">{cameInToday.length}</div>
+          <div className="mt-1 flex flex-wrap gap-2">{cameInToday.map((l) => <SourceBadge key={l.id} source={l.source} />)}</div>
+        </div>
+        {(Object.keys(VIEWS) as (keyof typeof VIEWS)[]).filter((k) => k !== "open").map((k) => (
+          <Link key={k} href={`/leads?view=${k}`} className={clsx("rounded-2xl border bg-card p-3 hover:border-gold sm:p-4", view === k ? "border-gold" : "border-border")}>
+            <div className="text-xs text-muted sm:text-sm">{VIEWS[k].label}</div>
+            <div className={clsx("text-3xl font-bold", k === "meeting" && "text-ok", k === "dropped" && "text-muted")}>{week.filter((l) => VIEWS[k].stages.includes(l.stage)).length}</div>
+            <div className="text-[11px] text-muted">this week</div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="scrollbar-thin mb-3 flex gap-1 overflow-x-auto">
+        {(Object.keys(VIEWS) as (keyof typeof VIEWS)[]).map((k) => (
+          <Link key={k} href={`/leads?view=${k}`} className={clsx("whitespace-nowrap rounded-full border px-3 py-1 text-sm", (VIEWS[k] === v) ? "border-gold bg-gold-soft font-semibold text-gold-text" : "border-border text-muted")}>
+            {VIEWS[k].label} <span className="opacity-70">{week.filter((l) => VIEWS[k].stages.includes(l.stage)).length}</span>
+          </Link>
+        ))}
+      </div>
+
+      <Card className="overflow-hidden">
+        {Object.entries(byDay).map(([k, ls]) => (
+          <div key={k}>
+            <div className="border-b border-border bg-surface px-4 py-1.5 text-xs font-semibold text-muted">{dayLabel(k)} · {ls.length}</div>
+            <ul className="divide-y divide-border border-b border-border">
+              {ls.map((l) => <WeekRow key={l.id} l={l} open={v === VIEWS.open} />)}
+            </ul>
+          </div>
+        ))}
+        {!rows.length && <div className="p-8 text-center text-sm text-muted">Nothing here this week</div>}
+        {v === VIEWS.open && (
+          <div className="px-4 py-2.5 text-[11px] text-muted">
+            Tap <b>Meeting</b> when they book — they move to the calendar. Tap <b>Complete</b> when they&apos;re done for now (e.g. next year). No answer for {RELEASE_AFTER_DAYS} days → they drop off by themselves.
+          </div>
+        )}
+      </Card>
+
+      <h2 className="mb-3 mt-6 text-sm font-semibold text-muted">After the meeting</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Tile href="/leads?box=need-estimate" icon={<FileClock />} title="Need to send estimate" count={leads.filter((l) => l.stage === "Need to Send Estimate").length} tone="gold" hint="Visited, no estimate yet" />
+        <Tile href="/leads?box=second-meeting" icon={<Users />} title="Second meeting" count={leads.filter((l) => l.stage === "Second Meeting").length} hint="Close the deal" />
+        <Tile href="/follow-ups" icon={<ListTodo />} title="Estimate follow-ups" count={followUps.filter((f) => !f.done && dayKey(f.due) <= today).length} hint="Due today" />
+        <Tile href="/leads?box=all" icon={<BarChart3 />} title="All leads" hint="By month, channel, sales" />
+      </div>
     </>
   );
 }
 
-function LeadCard({ l, showMoney }: { l: Lead; showMoney: boolean }) {
-  const owner = userById(l.assignedTo);
-  const age = -daysFrom(l.createdAt, TODAY);
+const STATUS: Partial<Record<LeadStage, { label: (l: Lead) => string; cls: string }>> = {
+  New: { label: () => "Not called yet", cls: "bg-bad-soft text-bad" },
+  "Trying to Reach": { label: (l) => `No answer · try ${l.attempts ?? 1} of 5`, cls: "bg-warn-soft text-warn" },
+  Talking: { label: () => "Talking", cls: "bg-ok-soft text-ok" },
+  "Appointment Set": { label: () => "Meeting booked", cls: "bg-gold-soft text-gold-text" },
+  "No Response": { label: () => "Dropped — no answer", cls: "bg-surface text-muted" },
+};
+
+function WeekRow({ l, open }: { l: Lead; open: boolean }) {
+  const st = STATUS[l.stage] ?? { label: () => l.stage, cls: "bg-surface text-muted" };
+  const last = (l.thread ?? []).at(-1);
   return (
-    <Link href={`/leads/${l.id}`} className="block rounded-lg border border-border bg-card p-3 shadow-sm transition hover:border-gold">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-semibold leading-tight">{l.name}</span>
-        {owner && <Avatar initials={owner.initials} />}
-      </div>
-      <div className="mt-0.5 text-xs text-muted">{l.service} · {l.city}</div>
-      <div className="mt-2 flex items-center justify-between">
-        <SourceBadge source={l.source} />
-        <span className="text-[11px] text-muted">{age === 0 ? "today" : `${age}d ago`}</span>
-      </div>
-      {(l.estimateAmount || l.estimateViewedAt) && (
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-xs">
-          {showMoney && l.estimateAmount ? <span className="font-semibold">{money(l.estimateAmount)}</span> : <span />}
-          {l.estimateViewedAt && <span className="inline-flex items-center gap-1 text-ok"><Eye className="size-3" /> Viewed</span>}
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+      <Link href={`/leads/${l.id}`} className="min-w-0 flex-1 basis-56">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold hover:underline">{l.name}</span>
+          <SourceBadge source={l.source} />
+        </div>
+        <div className="truncate text-xs text-muted">{l.service} · {l.city} · {l.phone}</div>
+        {last && <div className="mt-0.5 truncate text-xs text-muted">{last.from === "customer" ? "💬 " : "↩ "}{last.text}</div>}
+      </Link>
+      <span className={clsx("rounded-full px-2.5 py-1 text-xs font-semibold", st.cls)}>{st.label(l)}</span>
+      {open && (
+        <div className="flex gap-1.5">
+          <Link href={`/leads/${l.id}`} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface"><MessageSquare className="size-3.5" /> Message</Link>
+          <button className="inline-flex items-center gap-1 rounded-lg bg-ok px-2.5 py-1.5 text-xs font-semibold text-white"><CalendarCheck className="size-3.5" /> Meeting</button>
+          <button className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-surface"><Check className="size-3.5" /> Complete</button>
         </div>
       )}
-    </Link>
+    </li>
   );
 }
 
-function Board({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
-  return (
-    <div className="scrollbar-thin -mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
-      <NeedsAttention leads={leads} showMoney={showMoney} />
-      {PIPELINE_STAGES.map((stage) => {
-        const items = leads.filter((l) => l.stage === stage);
-        const total = items.reduce((a, l) => a + (l.estimateAmount ?? 0), 0);
-        return (
-          <div key={stage} className="flex w-72 shrink-0 flex-col rounded-xl bg-surface p-2">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <span className="text-xs font-semibold">{stage} <span className="ml-1 text-muted">{items.length}</span></span>
-              {showMoney && total > 0 && <span className="text-[11px] text-muted">{money(total)}</span>}
-            </div>
-            <div className="flex flex-col gap-2">
-              {items.map((l) => <LeadCard key={l.id} l={l} showMoney={showMoney} />)}
-              {!items.length && <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted">No leads</div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function Table({ leads, showMoney, stage, q }: { leads: Lead[]; showMoney: boolean; stage?: string; q: (p: Record<string, string | undefined>) => string }) {
+function ListPage({ title, hint, rows, showMoney, back, backLabel }: { title: string; hint: string; rows: Lead[]; showMoney: boolean; back: string; backLabel: string }) {
   return (
     <>
-      <div className="scrollbar-thin mb-3 flex gap-1 overflow-x-auto">
-        <Link href={q({ stage: undefined })} className={clsx("rounded-full border px-2.5 py-1 text-xs", !stage ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>All stages</Link>
-        {LEAD_STAGES.map((s) => (
-          <Link key={s} href={q({ stage: s })} className={clsx("whitespace-nowrap rounded-full border px-2.5 py-1 text-xs", stage === s ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>{s}</Link>
-        ))}
-      </div>
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead className="border-b border-border text-left text-xs text-muted">
-            <tr>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Service</th>
-              <th className="px-4 py-2 font-medium">Source</th>
-              <th className="px-4 py-2 font-medium">Stage</th>
-              {showMoney && <th className="px-4 py-2 text-right font-medium">Estimate</th>}
-              <th className="px-4 py-2 font-medium">Created</th>
-              <th className="px-4 py-2 font-medium">Owner</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {leads.map((l) => (
-              <tr key={l.id} className="hover:bg-surface">
-                <td className="px-4 py-2.5"><Link href={`/leads/${l.id}`} className="font-medium hover:underline">{l.name}</Link><div className="text-xs text-muted">{l.phone}</div></td>
-                <td className="px-4 py-2.5">{l.service}<div className="text-xs text-muted">{l.city}</div></td>
-                <td className="px-4 py-2.5"><SourceBadge source={l.source} /></td>
-                <td className="px-4 py-2.5"><LeadStageBadge stage={l.stage} /></td>
-                {showMoney && <td className="px-4 py-2.5 text-right font-medium">{l.estimateAmount ? money(l.estimateAmount) : "—"}</td>}
-                <td className="px-4 py-2.5 text-muted">{date(l.createdAt)}</td>
-                <td className="px-4 py-2.5 text-muted">{userById(l.assignedTo)?.name}</td>
+      <BackLink href={back} label={backLabel} />
+      <h1 className="text-2xl font-bold tracking-tight">{title} <span className="text-muted">{rows.length}</span></h1>
+      <p className="mb-4 text-sm text-muted">{hint}</p>
+      {rows.length ? (
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead className="border-b border-border text-left text-xs text-muted">
+              <tr>
+                <th className="px-4 py-2 font-medium">Name</th>
+                <th className="px-4 py-2 font-medium">Service</th>
+                <th className="px-4 py-2 font-medium">Source</th>
+                <th className="px-4 py-2 font-medium">Step</th>
+                {showMoney && <th className="px-4 py-2 text-right font-medium">Estimate</th>}
+                <th className="px-4 py-2 font-medium">Came in</th>
+                <th className="px-4 py-2 font-medium">Owner</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {rows.map((l) => (
+                <tr key={l.id} className="hover:bg-surface">
+                  <td className="px-4 py-2.5"><Link href={`/leads/${l.id}`} className="font-medium hover:underline">{l.name}</Link><div className="text-xs text-muted">{l.phone}</div></td>
+                  <td className="px-4 py-2.5">{l.service}<div className="text-xs text-muted">{l.city}</div></td>
+                  <td className="px-4 py-2.5"><SourceBadge source={l.source} /></td>
+                  <td className="px-4 py-2.5"><LeadStageBadge stage={l.stage} /></td>
+                  {showMoney && <td className="px-4 py-2.5 text-right font-medium">{l.estimateAmount ? money(l.estimateAmount) : "—"}</td>}
+                  <td className="px-4 py-2.5 text-muted">{age(l) === 0 ? "Today" : date(l.createdAt)}</td>
+                  <td className="px-4 py-2.5 text-muted">{userById(l.assignedTo)?.name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      ) : (
+        <Card className="p-8 text-center text-sm text-muted">Nothing here right now</Card>
+      )}
     </>
-  );
-}
-
-/** Leads that need a human decision: not contacted in time, or released after 7 days of silence. */
-function NeedsAttention({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
-  const items = leads.filter(
-    (l) => (l.stage === "New" && -daysFrom(l.createdAt, TODAY) >= 1) || (l.stage === "Trying to Reach" && (l.attempts ?? 0) >= 4),
-  );
-  return (
-    <div className="flex w-72 shrink-0 flex-col rounded-xl border border-bad/30 bg-bad-soft/40 p-2">
-      <div className="mb-2 px-1">
-        <span className="text-xs font-semibold text-bad">Needs attention <span className="ml-1">{items.length}</span></span>
-        <div className="text-[10px] text-muted">Not contacted in time · last attempts before the 7-day release</div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {items.map((l) => (
-          <div key={l.id}>
-            <div className="mb-0.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-bad">
-              {l.stage === "New" ? "Not contacted yet" : `Attempt ${l.attempts} of 5 — last chance`}
-            </div>
-            <LeadCard l={l} showMoney={showMoney} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** This week's leads at a glance: lead tracking runs week by week. */
-function WeekSummary({ leads }: { leads: Lead[] }) {
-  const weekAgo = (n: number) => leads.filter((l) => { const d = -daysFrom(l.createdAt, TODAY); return d >= n * 7 && d < (n + 1) * 7; });
-  const weeks = [0, 1].map((n) => {
-    const ls = weekAgo(n);
-    return {
-      label: n === 0 ? "This week" : "Last week",
-      received: ls.length,
-      contacted: ls.filter((l) => l.stage !== "New").length,
-      scheduled: ls.filter((l) => !["New", "Trying to Reach", "No Response", "Not a Fit"].includes(l.stage)).length,
-      released: ls.filter((l) => l.stage === "No Response").length,
-    };
-  });
-  return (
-    <div className="mb-4 grid gap-3 md:grid-cols-2">
-      {weeks.map((w) => (
-        <div key={w.label} className="rounded-xl border border-border bg-card p-3">
-          <div className="mb-2 text-xs font-semibold text-muted">{w.label}</div>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[["Received", w.received, ""], ["Contacted", w.contacted, ""], ["Scheduled", w.scheduled, "text-ok"], ["No response", w.released, "text-bad"]].map(([k, v, c]) => (
-              <div key={k as string}><div className={`text-xl font-bold ${c}`}>{v}</div><div className="text-[11px] text-muted">{k}</div></div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }

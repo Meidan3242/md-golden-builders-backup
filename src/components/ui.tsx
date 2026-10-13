@@ -1,8 +1,8 @@
 import clsx from "clsx";
 import Link from "next/link";
 
-export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={clsx("rounded-xl border border-border bg-card", className)}>{children}</div>;
+export function Card({ className, children, id }: { className?: string; children: React.ReactNode; id?: string }) {
+  return <div id={id} className={clsx("rounded-xl border border-border bg-card", className)}>{children}</div>;
 }
 
 export function CardHeader({ title, action, subtitle }: { title: React.ReactNode; action?: React.ReactNode; subtitle?: React.ReactNode }) {
@@ -126,5 +126,68 @@ export function KeyValue({ items }: { items: [string, React.ReactNode][] }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/** A big tappable box that leads to a page. The whole app is navigated with these. */
+export function Tile({
+  href,
+  icon,
+  title,
+  count,
+  hint,
+  tone,
+  children,
+}: {
+  href: string;
+  icon?: React.ReactNode;
+  title: string;
+  count?: React.ReactNode;
+  hint?: React.ReactNode;
+  tone?: "gold" | "bad" | "ok";
+  children?: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={clsx(
+        "group flex flex-col rounded-2xl border bg-card p-4 transition hover:border-gold hover:shadow-md",
+        tone === "bad" ? "border-bad/40" : tone === "gold" ? "border-gold/50" : "border-border",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        {icon && <span className="flex size-10 items-center justify-center rounded-xl bg-gold-soft text-gold-text [&>svg]:size-5">{icon}</span>}
+        {count !== undefined && (
+          <span className={clsx("text-3xl font-bold leading-none", tone === "bad" && "text-bad", tone === "ok" && "text-ok")}>{count}</span>
+        )}
+      </div>
+      <div className="mt-3 flex items-center gap-1 font-semibold">
+        {title} <span className="text-muted transition group-hover:translate-x-0.5 group-hover:text-gold-text">→</span>
+      </div>
+      {hint && <div className="mt-0.5 text-xs text-muted">{hint}</div>}
+      {children}
+    </Link>
+  );
+}
+
+/** A section that opens on tap and can always be closed again. */
+export function Collapse({ title, right, open, children }: { title: React.ReactNode; right?: React.ReactNode; open?: boolean; children: React.ReactNode }) {
+  return (
+    <details open={open} className="group rounded-xl border border-border bg-card [&[open]>summary_.chev]:rotate-90">
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <span className="chev text-muted transition">▸</span>
+        <div className="min-w-0 flex-1">{title}</div>
+        {right}
+      </summary>
+      <div className="space-y-3 border-t border-border p-3">{children}</div>
+    </details>
+  );
+}
+
+export function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className="mb-2 inline-flex items-center gap-1 text-sm font-medium text-gold-text hover:underline">
+      ← {label}
+    </Link>
   );
 }

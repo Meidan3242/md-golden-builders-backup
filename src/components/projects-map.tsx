@@ -3,7 +3,9 @@
 import clsx from "clsx";
 import { ArrowRight, MapPin, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import type * as Leaflet from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useState } from "react";
 
 export type MapPoint = {
   id: string;
@@ -18,27 +20,6 @@ export type MapPoint = {
   photos?: number[]; // demo thumbnails (hues)
 };
 
-// San Diego County window: Chula Vista / border → Fallbrook, coast → Julian.
-const B = { n: 33.47, s: 32.52, w: -117.62, e: -116.5 };
-const W = 1000;
-const H = Math.round(W * ((B.n - B.s) / (B.e - B.w)) * 1.19); // ~cos(33°) aspect
-const x = (lng: number) => ((lng - B.w) / (B.e - B.w)) * W;
-const y = (lat: number) => ((B.n - lat) / (B.n - B.s)) * H;
-
-const COAST: [number, number][] = [
-  [33.47, -117.62], [33.38, -117.58], [33.3, -117.47], [33.2, -117.39], [33.16, -117.35], [33.1, -117.32], [33.04, -117.3],
-  [32.96, -117.27], [32.88, -117.255], [32.85, -117.275], [32.8, -117.26], [32.76, -117.255], [32.72, -117.25], [32.67, -117.245],
-  [32.69, -117.2], [32.68, -117.17], [32.63, -117.14], [32.58, -117.13], [32.53, -117.125],
-];
-const LAND = `M${COAST.map(([la, ln]) => `${x(ln)},${y(la)}`).join(" L")} L${W},${H} L${W},0 Z`;
-
-const CITIES: [string, number, number][] = [
-  ["Fallbrook", 33.376, -117.251], ["Oceanside", 33.196, -117.38], ["Carlsbad", 33.158, -117.351], ["Escondido", 33.119, -117.086],
-  ["Ramona", 33.042, -116.868], ["Julian", 33.079, -116.602], ["Encinitas", 33.037, -117.292], ["Poway", 32.963, -117.036],
-  ["La Jolla", 32.833, -117.271], ["Santee", 32.838, -116.974], ["El Cajon", 32.795, -116.962], ["San Diego", 32.716, -117.161],
-  ["La Mesa", 32.768, -117.023], ["Chula Vista", 32.64, -117.084],
-];
-
 const KIND = {
   active: { label: "Active projects", color: "#d09028" },
   completed: { label: "Completed", color: "#15803d" },
@@ -50,6 +31,50 @@ export function ProjectsMap({ points }: { points: MapPoint[] }) {
   const [show, setShow] = useState<Record<string, boolean>>({ active: true, completed: true, estimate: true, lead: false });
   const [sel, setSel] = useState<MapPoint | null>(points.find((p) => p.kind === "active") ?? null);
   const visible = points.filter((p) => show[p.kind]);
+  const el = useRef<HTMLDivElement>(null);
+  const L = useRef<typeof Leaflet | null>(null);
+  const map = useRef<Leaflet.Map | null>(null);
+  const layer = useRef<Leaflet.LayerGroup | null>(null);
+  const [ready, setReady] = useState(false);
+
+  // Real street map (OpenStreetMap data, CARTO tiles). Zoom in to a street, tap a pin.
+  useEffect(() => {
+    let cancelled = false;
+    import("leaflet").then((mod) => {
+      if (cancelled || !el.current || map.current) return;
+      L.current = mod;
+      const m = mod.map(el.current, { zoomControl: true }).setView([32.86, -117.12], 10);
+      mod.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd",
+        maxZoom: 20,
+        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+      }).addTo(m);
+      layer.current = mod.layerGroup().addTo(m);
+      map.current = m;
+      setReady(true);
+    });
+    return () => {
+      cancelled = true;
+      map.current?.remove();
+      map.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !L.current || !layer.current) return;
+    layer.current.clearLayers();
+    for (const p of visible) {
+      const active = sel?.id === p.id;
+      L.current
+        .circleMarker([p.lat, p.lng], { radius: active ? 12 : 8, color: "#fff", weight: active ? 4 : 2, fillColor: KIND[p.kind].color, fillOpacity: 0.95 })
+        .on("click", () => setSel(p))
+        .addTo(layer.current);
+    }
+  }, [ready, visible, sel]);
+
+  useEffect(() => {
+    if (sel && map.current) map.current.panTo([sel.lat, sel.lng]);
+  }, [sel]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
@@ -68,24 +93,9 @@ export function ProjectsMap({ points }: { points: MapPoint[] }) {
           ))}
         </div>
         <div className="overflow-hidden rounded-xl border border-border">
-          <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label="Map of projects in San Diego County">
-            <rect width={W} height={H} fill="#cfe3ef" />
-            <path d={LAND} fill="#f4f1ea" stroke="#b9c9d3" strokeWidth={1.5} />
-            {CITIES.map(([name, la, ln]) => (
-              <text key={name} x={x(ln)} y={y(la) - 16} textAnchor="middle" fontSize={15} fill="#8a8478" fontWeight={600}>{name}</text>
-            ))}
-            {visible.map((p) => {
-              const active = sel?.id === p.id;
-              return (
-                <g key={p.id} transform={`translate(${x(p.lng)},${y(p.lat)})`} onClick={() => setSel(p)} className="cursor-pointer">
-                  <circle r={active ? 13 : 9} fill={KIND[p.kind].color} stroke="#fff" strokeWidth={active ? 4 : 2.5} opacity={0.95} />
-                  {active && <circle r={22} fill="none" stroke={KIND[p.kind].color} strokeWidth={2} opacity={0.5} />}
-                </g>
-              );
-            })}
-          </svg>
+          <div ref={el} className="z-0 h-[420px] w-full bg-surface sm:h-[560px]" role="region" aria-label="Map of projects in San Diego County" />
         </div>
-        <p className="mt-1.5 text-[11px] text-muted">Prototype map. The live version uses a real street map — zoom to a street, tap a pin.</p>
+        <p className="mt-1.5 text-[11px] text-muted">Pinch or scroll to zoom down to the street. Tap a pin to open the job.</p>
       </div>
 
       <div className="space-y-3">

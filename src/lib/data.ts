@@ -107,3 +107,15 @@ export function projectAlerts(p: Project) {
   if (missingReceipts) alerts.push(`${missingReceipts} expense(s) without a receipt`);
   return alerts;
 }
+
+/**
+ * A project as a list of contracts: #1 is the original, #2 is change order 1, #3 is
+ * change order 2… Payments, subs and expenses are always shown under their contract.
+ */
+export function contractsOf(p: Project) {
+  return [
+    { n: 1, label: "Contract #1", kind: "Original contract", title: p.type, amount: p.contractValue, status: "Signed" as const, signedAt: p.signedAt, milestones: p.milestones, subs: p.subs, expenses: p.expenses },
+    ...p.changeOrders.map((c) => ({ n: c.number + 1, label: `Contract #${c.number + 1}`, kind: `Change order #${c.number}`, title: c.title, amount: c.amount, status: c.status, signedAt: c.signedAt, milestones: c.milestones, subs: c.subs, expenses: c.expenses })),
+  ];
+}
+export type ContractView = ReturnType<typeof contractsOf>[number];

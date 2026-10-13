@@ -1,4 +1,5 @@
 import { Camera, Check, FileText, Paperclip, Play, Receipt, X } from "lucide-react";
+import Link from "next/link";
 import { PayStatusBadge, WaiverBadge } from "./status";
 import { Badge, Card, CardHeader, Empty } from "./ui";
 import { subById } from "@/lib/data";
@@ -20,6 +21,7 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 <PayStatusBadge status={m.status} />
                 {m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : ""}{m.method ? ` · ${m.method}` : ""}
+                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-ok">· receipt sent ✓</Link>}
               </div>
             </div>
             <span className="font-semibold">{money(m.amount)}</span>
@@ -49,9 +51,9 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <td className="px-4 py-2.5 text-muted">{m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : "—"}</td>
               <td className="px-4 py-2.5 text-muted">{m.method ?? "—"}</td>
               <td className="px-4 py-2.5 text-right">
-                {m.status === "Upcoming" && <button className="text-xs font-medium text-gold-text">Send invoice</button>}
-                {m.status === "Invoiced" && <button className="text-xs font-medium text-gold-text">Record payment</button>}
-                {m.status === "Paid" && <button className="text-xs text-muted">Receipt</button>}
+                {m.status === "Upcoming" && <button className="text-xs font-medium text-gold-text">Request payment</button>}
+                {m.status === "Invoiced" && <button className="text-xs font-medium text-gold-text">Payment received</button>}
+                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-xs text-ok hover:underline">Receipt sent ✓</Link>}
               </td>
             </tr>
           ))}

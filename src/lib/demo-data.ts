@@ -64,7 +64,7 @@ const stagePlan: LeadStage[] = [
   "Trying to Reach", "Trying to Reach", "Trying to Reach",
   "Appointment Set", "Appointment Set", "Appointment Set", "Appointment Set",
   "Need to Send Estimate", "Need to Send Estimate", "Need to Send Estimate",
-  "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent",
+  "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Estimate Sent", "Talking", "Talking",
   "Second Meeting", "Second Meeting",
   "Won", "Won", "Won", "Won", "Won",
   "Paused", "No Response", "Not a Fit", "Lost",
@@ -98,6 +98,11 @@ function demoThread(i: number, name: string, source: LeadSource, stage: LeadStag
   ];
   if (stage === "New") return t;
   t.push({ at: iso(created, 11, 30), from: "us", channel: "Text", text: `Hi ${first}, this is Laline with MD Golden Builders 🙂 Meidan can stop by Tue or Wed afternoon — what works for you?` });
+  if (stage === "Talking") {
+    t.push({ at: iso(created, 13, 2), from: "customer", channel: ch, text: "Thanks! Can you give me a rough price range before someone comes out?" });
+    t.push({ at: iso(created, 13, 20), from: "us", channel: "Text", text: `Of course ${first} — most projects like yours land between $25k and $45k depending on finishes. Meidan can confirm on site, free. Would Thursday work?` });
+    return t;
+  }
   if (stage === "Trying to Reach" || stage === "No Response") {
     t.push({ at: iso(created + 2, 10), from: "us", channel: "Text", text: `Hi ${first}, just following up — would you still like a free estimate this week?` });
     return t;
@@ -109,7 +114,12 @@ function demoThread(i: number, name: string, source: LeadSource, stage: LeadStag
 
 export const LEADS: Lead[] = stagePlan.map((stage, i) => {
   const [service, base] = services[i % services.length];
-  const created = stage === "Trying to Reach" ? -((i % 3) + 1) * 2 + 1 : -Math.floor(i * 1.6) - (stage === "New" ? 0 : 3);
+  // This week's leads (new, no answer, talking, just booked) are recent; the rest are older history.
+  const created =
+    stage === "Trying to Reach" || stage === "Talking" ? -((i % 3) + 1) * 2 + 1
+    : stage === "Appointment Set" ? -(i % 5) - 1
+    : stage === "No Response" ? -8
+    : -Math.floor(i * 1.6) - (stage === "New" ? 0 : 3);
   const name = `${first[i]} ${last[i]}`;
   const assignedTo = i % 5 === 3 ? "u-rep" : "u-owner";
   const hasEstimate = ["Estimate Sent", "Second Meeting", "Won", "Paused", "Lost"].includes(stage);
@@ -578,3 +588,27 @@ export const PROJECT_COORDS: Record<string, [number, number]> = {
   "P-2026-031": [32.8401, -117.2652], "P-2026-034": [32.7766, -117.2523], "P-2026-036": [32.6302, -117.0605],
   "P-2026-029": [32.7121, -117.1402], "P-2026-022": [33.0503, -117.2701],
 };
+
+// ---------------------------------------------------------------- history (reports + sales goal)
+
+export const SALES_GOAL_DEFAULT = 200_000;
+export const CHANNELS = ["Google", "Yelp", "Thumbtack", "Other"] as const;
+export type Channel = (typeof CHANNELS)[number];
+type ChannelMonth = { leads: number; estimates: number; sold: number; soldValue: number };
+
+const AVG_JOB: Record<Channel, number> = { Google: 19_000, Yelp: 15_500, Thumbtack: 11_500, Other: 25_000 };
+const BASE_LEADS: Record<Channel, number> = { Google: 27, Yelp: 26, Thumbtack: 28, Other: 9 };
+
+/** Jan → this month. This month only counts the days so far. */
+export const MONTHLY_HISTORY: { month: string; channels: Record<Channel, ChannelMonth> }[] = Array.from({ length: 10 }, (_, m) => {
+  const share = m === 9 ? 10 / 31 : 1;
+  const channels = Object.fromEntries(
+    CHANNELS.map((c, ci) => {
+      const leads = Math.round((BASE_LEADS[c] + (((m * 7 + ci * 3) % 9) - 4)) * share);
+      const estimates = Math.round(leads * (0.32 + ((m + ci) % 4) * 0.03));
+      const sold = Math.max(m === 9 ? 1 : 2, Math.round(estimates * (0.26 + ((m * 3 + ci) % 5) * 0.03)));
+      return [c, { leads, estimates, sold, soldValue: Math.round((sold * AVG_JOB[c] * (0.85 + ((m + ci * 2) % 6) * 0.06)) / 100) * 100 }];
+    }),
+  ) as Record<Channel, ChannelMonth>;
+  return { month: `2026-${String(m + 1).padStart(2, "0")}`, channels };
+});

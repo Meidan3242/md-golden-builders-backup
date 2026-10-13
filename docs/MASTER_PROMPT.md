@@ -571,7 +571,46 @@ with photos, value, Open. Uses: plan the day (estimates near appointments), sale
 (demo data) so the owner can click it on his phone; then switch to real data module by
 module, starting with Leads.
 
-## 27. Working rules for me
+## 27. Simplify: everything is boxes (rounds 13–14, 2026-10-13)
+
+Owner wants less information on screen, big boxes that lead to tables. Decisions:
+
+**Home:** Leads to call (not called yet) · Active projects · today's meetings · box
+"Estimates to send" (visited, no estimate yet) · box "New document" · **monthly sales goal**
+(default $200,000, editable; every signed contract / change order adds to the month it was
+signed; last 6 months shown as hit ✓ / missed ✗). No Leads / Estimates / Calendar / Pay-subs
+boxes on home (they live in the bottom bar and inside Projects).
+
+**Leads = a weekly list** (last 7 days), grouped by day, with platform per lead.
+Status per lead: Not called yet · No answer (try n of 5) · Talking. One tap: **Meeting**
+(moves to the calendar, leaves the list) · **Complete** (done for now, e.g. next year —
+leaves the list) · Message. No answer for 7 days → drops off by itself. No pipeline board,
+no Appointment set / Estimate sent / Won / Paused-Lost boxes. After the meeting: Need to
+send estimate · Second meeting · Estimate follow-ups · **All leads** = year report: leads per
+month, leads this year, estimates sent, sold, and by channel (leads → estimates → sold → $).
+
+**Calendar:** real month grid (dots on phone), tap a day for its list.
+
+**Projects page = 4 boxes only:** New project · Ongoing projects (incl. waiting on permit —
+no separate box) · All projects (ongoing + completed, 10 per page) · Map (real street map,
+OpenStreetMap/CARTO tiles via Leaflet).
+
+**Project page:** opens on Overview with the assistant chat on top. Money is always grouped
+**per contract** (Contract #1 = original, #2 = change order 1, … up to 10+), each section
+opens/closes: customer payments, subcontractors (which sub belongs to which contract),
+expenses (sub payments + materials together). No Call button (avoid pocket-dials) → **Text**
+through the RingCentral business line. "Invoice" renamed **Request payment**; marking a
+payment **received** (with check photo / Zelle screenshot) sends the customer a **receipt by
+email + text automatically** (`/p/receipt/demo`).
+
+**Welcome email — automatic when a new project is created** (`/p/welcome/demo`): signed
+contract PDF, scope of work (Additional Description), photo of our CSLB license, payment
+schedule by steps, "Welcome to MD Golden Builders", "we do everything in-house, A to Z", and
+a short text from the business line.
+- **TODO (owner reminder): prepare a short video (≈1 min) or photo collage about what we do**
+  for the welcome email. Placeholder is in the email now. Also needed: a photo of the license.
+
+## 28. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

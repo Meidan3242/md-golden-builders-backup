@@ -27,7 +27,7 @@ export default async function PaymentsPage() {
     <>
       <PageHeader title="Payments" subtitle="Money in from customers (Square, ACH, Zelle, check) and money out to subcontractors — every payment documented." />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Waiting from customers" value={money(sum(awaiting.map((x) => x.m.amount)))} hint={`${awaiting.length} invoices sent`} tone="gold" />
+        <Stat label="Waiting from customers" value={money(sum(awaiting.map((x) => x.m.amount)))} hint={`${awaiting.length} payment requests sent`} tone="gold" />
         <Stat label="Received (all time)" value={money(sum(received.map((x) => x.m.amount)))} tone="ok" />
         <Stat label="Subs requesting payment" value={money(sum(subReq.map((x) => x.pay.amount)))} hint={`${subReq.length} requests`} tone="bad" />
         <Stat label="Paid to subs" value={money(sum(subPaid.map((x) => x.pay.amount)))} />
@@ -35,7 +35,7 @@ export default async function PaymentsPage() {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card className="overflow-x-auto">
-          <CardHeader title="Customer payments" subtitle="Invoiced first, then upcoming" />
+          <CardHeader title="Customer payments" subtitle="Requested first, then upcoming" />
           <table className="w-full min-w-[560px] text-sm">
             <tbody className="divide-y divide-border">
               {[...awaiting, ...incoming.filter((x) => x.m.status === "Upcoming"), ...received].slice(0, 18).map(({ p, m, label }) => (

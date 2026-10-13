@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, Mail, Phone, Plus, Star } from "lucide-react";
+import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, HandCoins, MessageSquare, Plus, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
@@ -45,13 +45,13 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button href={`tel:${p.phone}`}><Phone className="size-4" /><span className="hidden sm:inline"> Call</span></Button>
+          <Button><MessageSquare className="size-4" /><span className="hidden sm:inline"> Text</span></Button>
           <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
           <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
           {p.stage === "Punch List" || p.stage === "Completed" ? (
             <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
           ) : (
-            <Button variant="primary"><Mail className="size-4" /> <span className="hidden sm:inline">Send </span>Invoice</Button>
+            <Button variant="primary"><HandCoins className="size-4" /> Request payment</Button>
           )}
         </div>
       </div>
@@ -110,7 +110,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
   const has = (k: string) => p.documents.some((d) => d.kind === k);
   const checklist: [string, boolean][] = [
     ["Contract signed (Form 203 + Additional Description)", has("Contract")],
-    ["Welcome email sent with contract & payment schedule", true],
+    ["Welcome email sent (contract, scope, license, payments)", true],
     ["Permit approved", p.permits.length === 0 || p.permits.some((x) => x.status === "Approved" || x.status === "Finaled")],
     ["Before photos uploaded", p.media.some((m) => m.phase === "Before")],
     ["All subcontractor agreements signed", p.subs.every((s) => s.agreement === "Signed")],
@@ -166,7 +166,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
           <KeyValue
             items={[
               ["Customer", p.customer],
-              ["Phone", <a key="p" href={`tel:${p.phone}`} className="text-gold-text">{p.phone}</a>],
+              ["Phone", p.phone],
               ["Signed", dateLong(p.signedAt)],
               ["Start", p.startDate ? dateLong(p.startDate) : "Waiting on permit"],
               ["Target finish", dateLong(p.targetCompletion)],
@@ -193,8 +193,9 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
               <div className="p-4">
                 <div className="text-sm font-medium">{next.name}</div>
                 <div className="text-2xl font-bold">{money(next.amount)}</div>
-                <div className="mt-1 text-xs text-muted">{next.status === "Invoiced" ? `Invoiced · due ${date(next.dueDate)}` : "Not invoiced yet"}</div>
-                <div className="mt-3 flex gap-2"><Button variant="primary">Send Square link</Button><Button>Record Zelle/check</Button></div>
+                <div className="mt-1 text-xs text-muted">{next.status === "Invoiced" ? `Requested · due ${date(next.dueDate)}` : "Not requested yet"}</div>
+                <div className="mt-3 flex flex-wrap gap-2"><Button variant="primary">Request payment</Button><Button>Payment received</Button></div>
+                <p className="mt-2 text-[11px] text-muted">Mark it received with the check photo / Zelle screenshot → the customer gets a receipt by email + text automatically. <Link href="/p/receipt/demo" className="text-gold-text hover:underline">See the receipt</Link></p>
               </div>
             ) : (
               <Empty>Paid in full ✓</Empty>

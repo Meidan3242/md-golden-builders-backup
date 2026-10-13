@@ -4,6 +4,7 @@ import type { ConfirmationStatus, LeadSource, LeadStage, LienWaiver, PaymentMile
 const stageTone: Record<LeadStage, Parameters<typeof Badge>[0]["tone"]> = {
   New: "info",
   "Trying to Reach": "warn",
+  Talking: "ok",
   "Appointment Set": "gold",
   "Need to Send Estimate": "bad",
   "Estimate Sent": "warn",
@@ -46,7 +47,7 @@ const projectTone: Record<ProjectStage, Parameters<typeof Badge>[0]["tone"]> = {
 export const ProjectStageBadge = ({ stage }: { stage: ProjectStage }) => <Badge tone={projectTone[stage]}>{stage}</Badge>;
 
 export const PayStatusBadge = ({ status }: { status: PaymentMilestone["status"] | SubPayment["status"] }) => (
-  <Badge tone={status === "Paid" ? "ok" : status === "Invoiced" ? "gold" : status === "Overdue" || status === "Requested" ? "bad" : "neutral"}>{status}</Badge>
+  <Badge tone={status === "Paid" ? "ok" : status === "Invoiced" ? "gold" : status === "Overdue" || status === "Requested" ? "bad" : "neutral"}>{status === "Invoiced" ? "Payment requested" : status}</Badge>
 );
 
 export const WaiverBadge = ({ w }: { w: LienWaiver }) =>

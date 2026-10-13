@@ -365,7 +365,23 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
         return (
           <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted">Out <b className="text-text">{money(out)}</b></span>}>
             {rows.length ? (
-              <div className="overflow-x-auto">
+              <>
+              <ul className="divide-y divide-border sm:hidden">
+                {rows.map((r) => (
+                  <li key={r.id} className="py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{r.to}</span>
+                      <span className="font-semibold">{money(r.amount)}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                      {r.at ? date(r.at) : ""}
+                      <Badge tone={r.what.startsWith("Sub") ? "info" : "neutral"}>{r.what}</Badge>
+                      {r.requested ? <Badge tone="warn">Requested — not paid</Badge> : r.proof ? <span className="text-ok">receipt ✓</span> : <Badge tone="bad">No receipt</Badge>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead className="text-left text-xs text-muted">
                     <tr className="border-b border-border"><th className="px-3 py-2 font-medium">Date</th><th className="px-3 py-2 font-medium">Paid to</th><th className="px-3 py-2 font-medium">What</th><th className="px-3 py-2 font-medium">Proof</th><th className="px-3 py-2 text-right font-medium">Amount</th></tr>
@@ -383,6 +399,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
                   </tbody>
                 </table>
               </div>
+              </>
             ) : (
               <div className="py-4 text-center text-xs text-muted">Nothing paid out on this contract yet</div>
             )}

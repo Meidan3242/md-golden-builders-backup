@@ -50,7 +50,7 @@ export default async function PaymentsPage() {
           </table>
         </Card>
 
-        <Card className="overflow-x-auto">
+        <Card className="scroll-mt-4 overflow-x-auto" id="subs">
           <CardHeader title="Subcontractor payments" subtitle="Collect a conditional waiver before paying, unconditional after" />
           <table className="w-full min-w-[620px] text-sm">
             <tbody className="divide-y divide-border">

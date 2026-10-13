@@ -1,203 +1,152 @@
-import clsx from "clsx";
-import { Eye, LayoutGrid, List, Plus, Upload } from "lucide-react";
+import { Archive, CalendarCheck, FileClock, Inbox, ListTodo, PhoneCall, PhoneForwarded, Plus, Send, Trophy, Users, UserX } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
-import { Avatar, Button, Card, PageHeader } from "@/components/ui";
-import { canSeeMoney, currentUser, getLeads, userById } from "@/lib/data";
+import { BackLink, Button, Card, Tile } from "@/components/ui";
+import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, userById } from "@/lib/data";
 import { TODAY } from "@/lib/demo-data";
-import { date, daysFrom, money } from "@/lib/format";
-import { LEAD_SOURCES, LEAD_STAGES, PIPELINE_STAGES, type Lead } from "@/lib/types";
+import { date, dayKey, daysFrom, money, time } from "@/lib/format";
+import type { Lead, LeadStage } from "@/lib/types";
 
-export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ view?: string; source?: string; stage?: string }> }) {
-  const sp = await searchParams;
-  const view = sp.view === "list" ? "list" : "board";
+/** Every box on the leads page, in the order a lead moves through them. */
+const BOXES: { key: string; title: string; hint: string; stages: LeadStage[]; icon: React.ReactNode; tone?: "bad" | "gold" | "ok" }[] = [
+  { key: "new", title: "New — not called yet", hint: "Call them first", stages: ["New"], icon: <PhoneCall />, tone: "bad" },
+  { key: "trying", title: "Trying to reach", hint: "Called, no answer yet", stages: ["Trying to Reach"], icon: <PhoneForwarded /> },
+  { key: "appointment", title: "Appointment set", hint: "Site visit booked", stages: ["Appointment Set"], icon: <CalendarCheck /> },
+  { key: "need-estimate", title: "Need to send estimate", hint: "Visited, estimate not sent", stages: ["Need to Send Estimate"], icon: <FileClock />, tone: "gold" },
+  { key: "estimate-sent", title: "Estimate sent", hint: "Follow up — get a second meeting", stages: ["Estimate Sent"], icon: <Send /> },
+  { key: "second-meeting", title: "Second meeting", hint: "Close the deal", stages: ["Second Meeting"], icon: <Users /> },
+  { key: "won", title: "Won", hint: "Became a project", stages: ["Won"], icon: <Trophy />, tone: "ok" },
+  { key: "closed", title: "Paused / lost", hint: "Paused, not a fit, lost", stages: ["Paused", "Not a Fit", "Lost"], icon: <Archive /> },
+  { key: "no-answer", title: "No answer (7 days)", hint: "Released — out of every list", stages: ["No Response"], icon: <UserX /> },
+];
+
+export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ box?: string }> }) {
+  const { box } = await searchParams;
   const user = await currentUser();
   const showMoney = canSeeMoney(user);
-  const allLeads = await getLeads();
-  // Released leads (no answer for a week) leave every working list — they only live in reports.
-  let leads = sp.stage ? allLeads : allLeads.filter((l) => l.stage !== "No Response");
-  if (sp.source) leads = leads.filter((l) => l.source === sp.source);
-  if (sp.stage) leads = leads.filter((l) => l.stage === sp.stage);
+  const leads = await getLeads();
 
-  const q = (patch: Record<string, string | undefined>) => {
-    const p = new URLSearchParams();
-    const merged = { view, source: sp.source, stage: sp.stage, ...patch };
-    for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
-    return `/leads?${p}`;
-  };
+  if (box) {
+    const b = box === "all" ? { title: "All leads", hint: "Everything still being worked", stages: null } : BOXES.find((x) => x.key === box);
+    if (!b) notFound();
+    const rows = b.stages ? leads.filter((l) => b.stages!.includes(l.stage)) : leads.filter((l) => l.stage !== "No Response");
+    return (
+      <>
+        <BackLink href="/leads" label="Leads" />
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{b.title} <span className="text-muted">{rows.length}</span></h1>
+            <p className="text-sm text-muted">{b.hint}</p>
+          </div>
+          <Button variant="primary" href="/leads/new"><Plus className="size-4" /> New lead</Button>
+        </div>
+        <LeadTable leads={rows} showMoney={showMoney} />
+      </>
+    );
+  }
+
+  const today = dayKey(TODAY);
+  const [appts, followUps] = await Promise.all([getAppointments(), getFollowUps()]);
+  const cameInToday = leads.filter((l) => dayKey(l.createdAt) === today);
+  const followUpsToday = followUps.filter((f) => !f.done && dayKey(f.due) <= today);
+
+  // "My leads today": who I need to talk to today, in one short list.
+  const todayList: { l: Lead; what: string; urgent?: boolean }[] = [
+    ...appts.filter((a) => dayKey(a.start) === today && a.leadId).map((a) => ({ l: leads.find((x) => x.id === a.leadId)!, what: `${a.type} at ${time(a.start)}` })),
+    ...leads.filter((l) => l.stage === "New").map((l) => ({ l, what: "Call — not called yet", urgent: true })),
+    ...leads.filter((l) => l.stage === "Trying to Reach").map((l) => ({ l, what: `Try again — attempt ${(l.attempts ?? 0) + 1} of 5` })),
+    ...followUpsToday.map((f) => ({ l: leads.find((x) => x.id === f.leadId)!, what: `Follow-up ${f.step}` })),
+  ].filter((x, i, arr) => x.l && arr.findIndex((y) => y.l?.id === x.l.id) === i);
+  const SHOW = 7;
 
   return (
     <>
-      <PageHeader
-        title="Leads"
-        subtitle={user.role === "sales" ? "Only the leads assigned to you" : `${leads.length} leads · all sources`}
-        actions={
-          <>
-            {user.role !== "sales" && <Button><Upload className="size-4" /> Import from monday</Button>}
-            <Button variant="primary" href="/leads/new"><Plus className="size-4" /> New lead</Button>
-          </>
-        }
-      />
+      <h1 className="mb-4 text-2xl font-bold tracking-tight">Leads</h1>
 
-      <WeekSummary leads={allLeads} />
+      <div className="grid items-start gap-3 lg:grid-cols-[220px_1fr]">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+          <Link href="/leads/new" className="gold-gradient flex flex-col justify-center rounded-2xl p-4 text-black shadow-sm lg:min-h-36">
+            <Plus className="size-7" />
+            <div className="mt-1 text-lg font-bold">New lead</div>
+            <div className="text-xs opacity-80">Phone, Yelp, Thumbtack…</div>
+          </Link>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center gap-1.5 text-sm text-muted"><Inbox className="size-4" /> Came in today</div>
+            <div className="mt-1 text-4xl font-bold">{cameInToday.length}</div>
+            <div className="text-xs text-muted">{cameInToday.map((l) => l.source).join(" · ") || "None yet"}</div>
+          </div>
+        </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
-          <Link href={q({ view: "board" })} className={clsx("inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium", view === "board" ? "bg-surface text-text" : "text-muted")}><LayoutGrid className="size-3.5" /> Pipeline</Link>
-          <Link href={q({ view: "list" })} className={clsx("inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium", view === "list" ? "bg-surface text-text" : "text-muted")}><List className="size-3.5" /> List</Link>
-        </div>
-        <div className="scrollbar-thin flex gap-1 overflow-x-auto">
-          <Link href={q({ source: undefined })} className={clsx("rounded-full border px-2.5 py-1 text-xs", !sp.source ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>All sources</Link>
-          {LEAD_SOURCES.map((s) => (
-            <Link key={s} href={q({ source: s })} className={clsx("whitespace-nowrap rounded-full border px-2.5 py-1 text-xs", sp.source === s ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>{s}</Link>
-          ))}
-        </div>
+        <Card>
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="font-semibold">My leads today <span className="text-muted">{todayList.length}</span></h2>
+            <span className="text-xs text-muted">Who to talk to today</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {todayList.slice(0, SHOW).map(({ l, what, urgent }, i) => (
+              <li key={`${l.id}-${i}`}>
+                <Link href={`/leads/${l.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface">
+                  <span className={urgent ? "size-2 shrink-0 rounded-full bg-bad" : "size-2 shrink-0 rounded-full bg-gold"} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{l.name} <span className="font-normal text-muted">· {l.service}</span></div>
+                    <div className={urgent ? "text-xs font-medium text-bad" : "text-xs text-muted"}>{what}</div>
+                  </div>
+                  <span className="hidden text-xs text-muted sm:block">{l.city}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {todayList.length > SHOW && <div className="border-t border-border px-4 py-2.5 text-center text-xs text-muted">+{todayList.length - SHOW} more — they're in the boxes below</div>}
+        </Card>
       </div>
 
-      {view === "board" ? <Board leads={leads} showMoney={showMoney} /> : <Table leads={leads} showMoney={showMoney} stage={sp.stage} q={q} />}
+      <h2 className="mb-3 mt-6 text-sm font-semibold text-muted">All leads by step — tap a box to open the list</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        {BOXES.map((b) => {
+          const n = leads.filter((l) => b.stages.includes(l.stage)).length;
+          return <Tile key={b.key} href={`/leads?box=${b.key}`} icon={b.icon} title={b.title} count={n} hint={b.hint} tone={n ? b.tone : undefined} />;
+        })}
+        <Tile href="/follow-ups" icon={<ListTodo />} title="Follow-ups" count={followUpsToday.length} hint="Due today" />
+        <Tile href="/leads?box=all" icon={<Users />} title="All leads" count={leads.filter((l) => l.stage !== "No Response").length} hint="One big table" />
+      </div>
     </>
   );
 }
 
-function LeadCard({ l, showMoney }: { l: Lead; showMoney: boolean }) {
-  const owner = userById(l.assignedTo);
-  const age = -daysFrom(l.createdAt, TODAY);
+function LeadTable({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
+  if (!leads.length) return <Card className="p-8 text-center text-sm text-muted">Nothing here right now</Card>;
   return (
-    <Link href={`/leads/${l.id}`} className="block rounded-lg border border-border bg-card p-3 shadow-sm transition hover:border-gold">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-semibold leading-tight">{l.name}</span>
-        {owner && <Avatar initials={owner.initials} />}
-      </div>
-      <div className="mt-0.5 text-xs text-muted">{l.service} · {l.city}</div>
-      <div className="mt-2 flex items-center justify-between">
-        <SourceBadge source={l.source} />
-        <span className="text-[11px] text-muted">{age === 0 ? "today" : `${age}d ago`}</span>
-      </div>
-      {(l.estimateAmount || l.estimateViewedAt) && (
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-xs">
-          {showMoney && l.estimateAmount ? <span className="font-semibold">{money(l.estimateAmount)}</span> : <span />}
-          {l.estimateViewedAt && <span className="inline-flex items-center gap-1 text-ok"><Eye className="size-3" /> Viewed</span>}
-        </div>
-      )}
-    </Link>
-  );
-}
-
-function Board({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
-  return (
-    <div className="scrollbar-thin -mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
-      <NeedsAttention leads={leads} showMoney={showMoney} />
-      {PIPELINE_STAGES.map((stage) => {
-        const items = leads.filter((l) => l.stage === stage);
-        const total = items.reduce((a, l) => a + (l.estimateAmount ?? 0), 0);
-        return (
-          <div key={stage} className="flex w-72 shrink-0 flex-col rounded-xl bg-surface p-2">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <span className="text-xs font-semibold">{stage} <span className="ml-1 text-muted">{items.length}</span></span>
-              {showMoney && total > 0 && <span className="text-[11px] text-muted">{money(total)}</span>}
-            </div>
-            <div className="flex flex-col gap-2">
-              {items.map((l) => <LeadCard key={l.id} l={l} showMoney={showMoney} />)}
-              {!items.length && <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted">No leads</div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function Table({ leads, showMoney, stage, q }: { leads: Lead[]; showMoney: boolean; stage?: string; q: (p: Record<string, string | undefined>) => string }) {
-  return (
-    <>
-      <div className="scrollbar-thin mb-3 flex gap-1 overflow-x-auto">
-        <Link href={q({ stage: undefined })} className={clsx("rounded-full border px-2.5 py-1 text-xs", !stage ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>All stages</Link>
-        {LEAD_STAGES.map((s) => (
-          <Link key={s} href={q({ stage: s })} className={clsx("whitespace-nowrap rounded-full border px-2.5 py-1 text-xs", stage === s ? "border-gold bg-gold-soft text-gold-text" : "border-border text-muted")}>{s}</Link>
-        ))}
-      </div>
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead className="border-b border-border text-left text-xs text-muted">
-            <tr>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Service</th>
-              <th className="px-4 py-2 font-medium">Source</th>
-              <th className="px-4 py-2 font-medium">Stage</th>
-              {showMoney && <th className="px-4 py-2 text-right font-medium">Estimate</th>}
-              <th className="px-4 py-2 font-medium">Created</th>
-              <th className="px-4 py-2 font-medium">Owner</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {leads.map((l) => (
+    <Card className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-sm">
+        <thead className="border-b border-border text-left text-xs text-muted">
+          <tr>
+            <th className="px-4 py-2 font-medium">Name</th>
+            <th className="px-4 py-2 font-medium">Service</th>
+            <th className="px-4 py-2 font-medium">Source</th>
+            <th className="px-4 py-2 font-medium">Step</th>
+            {showMoney && <th className="px-4 py-2 text-right font-medium">Estimate</th>}
+            <th className="px-4 py-2 font-medium">Came in</th>
+            <th className="px-4 py-2 font-medium">Owner</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {leads.map((l) => {
+            const age = -daysFrom(l.createdAt, TODAY);
+            return (
               <tr key={l.id} className="hover:bg-surface">
                 <td className="px-4 py-2.5"><Link href={`/leads/${l.id}`} className="font-medium hover:underline">{l.name}</Link><div className="text-xs text-muted">{l.phone}</div></td>
                 <td className="px-4 py-2.5">{l.service}<div className="text-xs text-muted">{l.city}</div></td>
                 <td className="px-4 py-2.5"><SourceBadge source={l.source} /></td>
                 <td className="px-4 py-2.5"><LeadStageBadge stage={l.stage} /></td>
                 {showMoney && <td className="px-4 py-2.5 text-right font-medium">{l.estimateAmount ? money(l.estimateAmount) : "—"}</td>}
-                <td className="px-4 py-2.5 text-muted">{date(l.createdAt)}</td>
+                <td className="px-4 py-2.5 text-muted">{age === 0 ? "Today" : date(l.createdAt)}</td>
                 <td className="px-4 py-2.5 text-muted">{userById(l.assignedTo)?.name}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-    </>
-  );
-}
-
-/** Leads that need a human decision: not contacted in time, or released after 7 days of silence. */
-function NeedsAttention({ leads, showMoney }: { leads: Lead[]; showMoney: boolean }) {
-  const items = leads.filter(
-    (l) => (l.stage === "New" && -daysFrom(l.createdAt, TODAY) >= 1) || (l.stage === "Trying to Reach" && (l.attempts ?? 0) >= 4),
-  );
-  return (
-    <div className="flex w-72 shrink-0 flex-col rounded-xl border border-bad/30 bg-bad-soft/40 p-2">
-      <div className="mb-2 px-1">
-        <span className="text-xs font-semibold text-bad">Needs attention <span className="ml-1">{items.length}</span></span>
-        <div className="text-[10px] text-muted">Not contacted in time · last attempts before the 7-day release</div>
-      </div>
-      <div className="flex flex-col gap-2">
-        {items.map((l) => (
-          <div key={l.id}>
-            <div className="mb-0.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-bad">
-              {l.stage === "New" ? "Not contacted yet" : `Attempt ${l.attempts} of 5 — last chance`}
-            </div>
-            <LeadCard l={l} showMoney={showMoney} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** This week's leads at a glance: lead tracking runs week by week. */
-function WeekSummary({ leads }: { leads: Lead[] }) {
-  const weekAgo = (n: number) => leads.filter((l) => { const d = -daysFrom(l.createdAt, TODAY); return d >= n * 7 && d < (n + 1) * 7; });
-  const weeks = [0, 1].map((n) => {
-    const ls = weekAgo(n);
-    return {
-      label: n === 0 ? "This week" : "Last week",
-      received: ls.length,
-      contacted: ls.filter((l) => l.stage !== "New").length,
-      scheduled: ls.filter((l) => !["New", "Trying to Reach", "No Response", "Not a Fit"].includes(l.stage)).length,
-      released: ls.filter((l) => l.stage === "No Response").length,
-    };
-  });
-  return (
-    <div className="mb-4 grid gap-3 md:grid-cols-2">
-      {weeks.map((w) => (
-        <div key={w.label} className="rounded-xl border border-border bg-card p-3">
-          <div className="mb-2 text-xs font-semibold text-muted">{w.label}</div>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {[["Received", w.received, ""], ["Contacted", w.contacted, ""], ["Scheduled", w.scheduled, "text-ok"], ["No response", w.released, "text-bad"]].map(([k, v, c]) => (
-              <div key={k as string}><div className={`text-xl font-bold ${c}`}>{v}</div><div className="text-[11px] text-muted">{k}</div></div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
+            );
+          })}
+        </tbody>
+      </table>
+    </Card>
   );
 }

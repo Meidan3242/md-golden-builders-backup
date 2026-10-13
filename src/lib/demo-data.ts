@@ -212,6 +212,26 @@ const retainingCO: ChangeOrder = {
   expenses: exp([["Home Depot", "Materials", 1180, -10]]),
 };
 
+const retainingCO2: ChangeOrder = {
+  id: "co-1b",
+  number: 2,
+  title: "Stucco finish on new section + cap",
+  amount: 4600,
+  status: "Sent",
+  milestones: [{ id: "com3", name: "Upon signing", amount: 2300, status: "Upcoming" }, { id: "com4", name: "Upon completion", amount: 2300, status: "Upcoming" }],
+  subs: [
+    {
+      id: "cosa-2",
+      subId: "s-6",
+      scope: "Stucco + cap on added 20 LF",
+      amount: 1900,
+      agreement: "Sent",
+      payments: [{ id: "cosp3", name: "On completion", amount: 1900, status: "Upcoming", proof: false, lienWaiver: "N/A" }],
+    },
+  ],
+  expenses: [],
+};
+
 export const PROJECTS: Project[] = [
   {
     id: "P-2026-031",
@@ -231,7 +251,7 @@ export const PROJECTS: Project[] = [
     targetCompletion: iso(25),
     warrantyYears: 5,
     milestones: schedule(85760, ["Upon start of demo", "Upon installation of footings", "Upon stucco installation", "Project completion"], [0.4, 0.4, 0.1, 0.1], 3, -28),
-    changeOrders: [retainingCO],
+    changeOrders: [retainingCO, retainingCO2],
     subs: [
       {
         id: "sa-1",
@@ -491,6 +511,12 @@ export const APPOINTMENTS: Appointment[] = [
   { id: "ap5", projectId: "P-2026-031", title: "City inspection — grout/reinforcement (Donovan)", type: "Inspection", start: iso(3, 9), durationMin: 60, assignedTo: "u-owner", confirmation: "Confirmed" },
   { id: "ap6", leadId: leadBy("Second Meeting", 1).id, title: `Second meeting — ${leadBy("Second Meeting", 1).name}`, type: "Second Meeting", start: iso(2, 17), durationMin: 45, assignedTo: "u-owner", confirmation: "Reminder scheduled" },
   { id: "ap7", projectId: "P-2026-034", title: "Rough inspection — kitchen (Bell)", type: "Inspection", start: iso(2, 8), durationMin: 60, assignedTo: "u-owner", confirmation: "Confirmed" },
+  { id: "ap9", leadId: leadBy("Estimate Sent", 4).id, title: `Site visit — ${leadBy("Estimate Sent", 4).name}`, type: "Site Visit", start: iso(-8, 10), durationMin: 60, assignedTo: "u-owner", confirmation: "Confirmed" },
+  { id: "ap10", projectId: "P-2026-036", title: "Permit check-in — Shah", type: "Project Meeting", start: iso(-5, 13), durationMin: 30, assignedTo: "u-owner", confirmation: "Confirmed" },
+  { id: "ap11", leadId: leadBy("Estimate Sent", 1).id, title: `Site visit — ${leadBy("Estimate Sent", 1).name}`, type: "Site Visit", start: iso(-2, 16), durationMin: 60, assignedTo: "u-rep", confirmation: "Confirmed" },
+  { id: "ap12", projectId: "P-2026-029", title: "Final walk-through — Gallagher", type: "Project Meeting", start: iso(6, 10), durationMin: 45, assignedTo: "u-owner", confirmation: "Reminder scheduled" },
+  { id: "ap13", projectId: "P-2026-034", title: "Cabinet delivery — Bell", type: "Project Meeting", start: iso(9, 8), durationMin: 30, assignedTo: "u-owner", confirmation: "Reminder scheduled" },
+  { id: "ap14", projectId: "P-2026-031", title: "Final inspection — Donovan", type: "Inspection", start: iso(17, 9), durationMin: 60, assignedTo: "u-owner", confirmation: "Reminder scheduled" },
   { id: "ap8", leadId: leadBy("Appointment Set", 3).id, title: `Site visit — ${leadBy("Appointment Set", 3).name}`, type: "Site Visit", start: iso(4, 12), durationMin: 60, assignedTo: "u-owner", confirmation: "Reminder scheduled" },
 ];
 

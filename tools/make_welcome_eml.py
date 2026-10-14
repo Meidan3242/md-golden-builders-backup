@@ -19,6 +19,7 @@ SCHEDULE = [
     ("Footings poured & 50 LF CMU wall built", 12000, False),
     ("Stucco finish, final inspection & clean-up", 6000, False),
 ]
+TRADES = ["ADU", "Garage Conversion", "Kitchen Remodel", "Bathroom Remodel", "Room Additions", "Full Home Remodel", "Retaining Walls", "Pavers & Hardscape", "Concrete & Driveways", "Patios & Decks", "Stucco & Exterior", "Flooring"]
 TOTAL = sum(a for _, a, _ in SCHEDULE)
 money = lambda n: f"${n:,.0f}"
 
@@ -30,8 +31,6 @@ I've attached a few things for your records:
 - Your signed contract
 - The scope of work — everything we'll build, step by step
 - A copy of our contractor's license (CSLB #1128874)
-
-Something we're proud of: we do everything ourselves, from A to Z — the plans, the permit with the city, demolition, footings, the block wall, stucco, all the way to final inspection and clean-up. One team, and one number to call.
 
 Here's your payment schedule, so there are never any surprises:
 """ + "\n".join(f"{i}. {n} — {money(a)}{' (received, thank you!)' if paid else ''}" for i, (n, a, paid) in enumerate(SCHEDULE, 1)) + f"""
@@ -49,7 +48,10 @@ Laline
 Office Manager · MD Golden Builders
 (858) 332-2168 · info@mdgoldenbuilders.com
 CSLB #1128874 · 4275 Mission Bay Dr #359, San Diego, CA 92109
-"""
+
+A LITTLE ABOUT US
+We do everything ourselves, from A to Z — plans, permits, demolition, construction, finishes, final inspection and clean-up. One team, one contract, one number to call.
+""" + " | ".join(TRADES) + "\n"
 
 P = 'style="margin:0 0 14px"'
 rows = "".join(
@@ -61,7 +63,6 @@ html = f"""<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;font
 <p {P}>My name is Laline, and I'm the office manager here at MD Golden Builders. On behalf of Meidan and the whole team — welcome! We're really happy you chose us for your new garden wall, and we can't wait to get started.</p>
 <p {P}>I've attached a few things for your records:</p>
 <ul style="margin:0 0 14px;padding-left:22px"><li>Your signed contract</li><li>The scope of work — everything we'll build, step by step</li><li>A copy of our contractor's license (CSLB #1128874)</li></ul>
-<p {P}>Something we're proud of: we do everything ourselves, from A to Z — the plans, the permit with the city, demolition, footings, the block wall, stucco, all the way to final inspection and clean-up. One team, and one number to call.</p>
 <p {P}>Here's your payment schedule, so there are never any surprises:</p>
 <ol style="margin:0 0 6px;padding-left:22px">{rows}</ol>
 <p {P}><b>Total: {money(TOTAL)}</b><br>I'll send you a short note each time we reach a step, and a receipt as soon as each payment comes in.</p>
@@ -71,6 +72,10 @@ html = f"""<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;font
 <div style="border-top:1px solid #e5e5ea;padding-top:10px;font-size:13px;line-height:1.45;color:#3a3a3c">
 <b style="color:#1c1c1e">Laline</b><br>Office Manager · MD Golden Builders<br>(858) 332-2168 · info@mdgoldenbuilders.com<br>
 <span style="color:#8e8e93">CSLB #1128874 · 4275 Mission Bay Dr #359, San Diego, CA 92109</span></div>
+<div style="margin-top:22px;background:#f7f4ec;border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.5;color:#3a3a3c">
+<b style="color:#1c1c1e">A little about us</b><br>
+We do everything ourselves, from A to Z — plans, permits, demolition, construction, finishes, final inspection and clean-up. One team, one contract, one number to call.<br>
+<b style="color:#1c1c1e;display:block;margin-top:6px">{" | ".join(TRADES)}</b></div>
 </div>"""
 
 msg = EmailMessage()

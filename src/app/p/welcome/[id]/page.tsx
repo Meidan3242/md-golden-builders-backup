@@ -2,6 +2,8 @@ import { MailFrame, Signature } from "@/components/mail-frame";
 import { DEMO_CONTRACT as K } from "@/lib/demo-docs";
 import { money } from "@/lib/format";
 
+const TRADES = ["ADU", "Garage Conversion", "Kitchen Remodel", "Bathroom Remodel", "Room Additions", "Full Home Remodel", "Retaining Walls", "Pavers & Hardscape", "Concrete & Driveways", "Patios & Decks", "Stucco & Exterior", "Flooring"];
+
 export const metadata = { title: "Welcome email" };
 
 /** Sent automatically the moment a new project is created — written as a personal note from Laline. */
@@ -31,10 +33,6 @@ export default function WelcomeEmail() {
           <li>The scope of work — everything we&apos;ll build, step by step</li>
           <li>A copy of our contractor&apos;s license (CSLB #1128874)</li>
         </ul>
-        <p>
-          Something we&apos;re proud of: we do everything ourselves, from A to Z — the plans, the permit with the city, demolition,
-          footings, the block wall, stucco, all the way to final inspection and clean-up. One team, and one number to call.
-        </p>
         <p>Here&apos;s your payment schedule, so there are never any surprises:</p>
         <ol className="mb-1 list-decimal pl-5">
           {K.schedule.map((m, i) => (
@@ -53,11 +51,6 @@ export default function WelcomeEmail() {
           <b>What&apos;s next:</b> Meidan will text you in the next day or two to go over everything. Our plans go to the City of San
           Diego first, and once the permit is approved we&apos;re on site — right now we&apos;re looking at around December 1.
         </p>
-        <p>
-          And if you have a minute, here&apos;s a short video about who we are:{" "}
-          <span className="text-[#007aff] underline">▶ Meet MD Golden Builders (1 min)</span>{" "}
-          <span className="rounded bg-[#fff4d6] px-1 text-[11px] text-[#8a6d00]">video coming soon</span>
-        </p>
         <p>If anything comes up, just reply to this email or text me at (858) 332-2168 — I&apos;m always happy to help.</p>
         <p className="mb-0">
           Warmly,
@@ -65,6 +58,19 @@ export default function WelcomeEmail() {
           Laline
         </p>
         <Signature />
+
+        <div className="mt-6 rounded-xl bg-[#f7f4ec] px-4 py-3 text-[13px] leading-relaxed text-[#3a3a3c]">
+          <div className="mb-1 font-semibold text-[#1c1c1e]">A little about us</div>
+          <p className="mb-2">
+            We do everything ourselves, from A to Z — plans, permits, demolition, construction, finishes, final inspection and clean-up.
+            One team, one contract, one number to call.
+          </p>
+          <p className="mb-2 font-medium text-[#1c1c1e]">{TRADES.join(" | ")}</p>
+          <p className="mb-0">
+            <span className="text-[#007aff] underline">▶ Meet MD Golden Builders (1 min)</span>{" "}
+            <span className="rounded bg-[#fff4d6] px-1 text-[11px] text-[#8a6d00]">video coming soon</span>
+          </p>
+        </div>
       </MailFrame>
     </div>
   );

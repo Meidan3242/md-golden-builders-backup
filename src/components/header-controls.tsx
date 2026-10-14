@@ -56,7 +56,7 @@ export function UserSwitcher({ users, current }: { users: User[]; current: strin
           document.cookie = `demo_user=${e.target.value}; path=/; max-age=31536000`;
           router.refresh();
         }}
-        className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-medium text-text"
+        className="w-36 truncate rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-medium text-text sm:w-auto"
       >
         {users.map((u) => (
           <option key={u.id} value={u.id}>

@@ -1,6 +1,9 @@
 import { Mic } from "lucide-react";
 import { Button, Card, CardHeader, PageHeader } from "@/components/ui";
-import { allUsers } from "@/lib/data";
+import { WeekPicker, type Busy } from "@/components/week-picker";
+import { allUsers, getAppointments } from "@/lib/data";
+import { TODAY } from "@/lib/demo-data";
+import { dayKey } from "@/lib/format";
 import { LEAD_SOURCES } from "@/lib/types";
 
 const input = "w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold";
@@ -14,7 +17,21 @@ function Field({ label, required, children, wide }: { label: string; required?: 
   );
 }
 
-export default function NewLead() {
+export default async function NewLead() {
+  // Next 7 days, with what's already booked — so the visit is set while looking at the week.
+  const appts = await getAppointments();
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(TODAY.getTime() + (i + 1) * 86_400_000);
+    return {
+      key: dayKey(d.toISOString()),
+      label: d.toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Los_Angeles" }),
+      sub: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Los_Angeles" }),
+    };
+  });
+  const hourLA = (iso: string) => Number(new Date(iso).toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false }));
+  const busy: Busy[] = appts.map((a) => ({ day: dayKey(a.start), hour: hourLA(a.start), label: a.title.split(" — ")[1] ?? a.title }));
+  const now = new Date(TODAY.getTime() - 7 * 3_600_000).toISOString().slice(0, 16); // San Diego local time
+
   return (
     <>
       <PageHeader title="New lead" subtitle="Quick form for the office — takes under a minute while on the phone" />
@@ -37,13 +54,18 @@ export default function NewLead() {
             </select>
           </Field>
           <Field label="Assign to">
-            <select className={input}>{allUsers().filter((u) => u.role !== "office").map((u) => <option key={u.id}>{u.name}</option>)}</select>
+            <select className={input}>{allUsers().filter((u) => u.role === "admin" || u.role === "sales").map((u) => <option key={u.id}>{u.name}</option>)}</select>
           </Field>
-          <Field label="Site visit (optional)"><input type="datetime-local" className={input} /></Field>
+          <Field label="Came in (date & time)"><input type="datetime-local" defaultValue={now} className={input} /></Field>
           <Field label="Call recording">
             <div className={`${input} flex items-center gap-2 text-muted`}><Mic className="size-4" /> Auto-attached from RingCentral</div>
           </Field>
           <Field label="Notes" wide><textarea className={input} rows={3} placeholder="What does the customer want? Budget, timing, gate code…" /></Field>
+        </div>
+        <div className="border-t border-border p-4">
+          <div className="mb-1 text-sm font-semibold">Book the visit — next 7 days</div>
+          <p className="mb-2 text-xs text-muted">Grey = already booked. Tap a free hour.</p>
+          <WeekPicker days={days} busy={busy} />
         </div>
         <div className="flex justify-end gap-2 border-t border-border p-4">
           <Button href="/leads">Cancel</Button>

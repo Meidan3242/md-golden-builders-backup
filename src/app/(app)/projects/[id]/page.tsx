@@ -25,7 +25,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
     { key: "overview", label: "Overview" },
     { key: "chat", label: "✦ Chat", count: p.chat?.length ?? 0 },
     { key: "contracts", label: "Contracts", count: contracts.length },
-    { key: "payments", label: "Customer payments" },
+    ...(showMoney ? [{ key: "payments", label: "Customer payments" }] : []),
     ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: contracts.reduce((a, c) => a + c.subs.length, 0) }, { key: "expenses", label: "Expenses" }] : []),
     { key: "permits", label: "Permits", count: p.permits.length },
     { key: "media", label: "Photos & videos", count: p.media.length },
@@ -41,14 +41,14 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <ProjectStageBadge stage={p.stage} />
             <span>{p.address}, {p.city}</span>
-            <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>
+            {user.role !== "pm" && <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button><MessageSquare className="size-4" /><span className="hidden sm:inline"> Text</span></Button>
           <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
-          <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
-          {p.stage === "Punch List" || p.stage === "Completed" ? (
+          {user.role === "pm" ? null : <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>}
+          {user.role === "pm" ? null : p.stage === "Punch List" || p.stage === "Completed" ? (
             <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
           ) : (
             <Button variant="primary"><HandCoins className="size-4" /> Request payment</Button>
@@ -87,7 +87,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       )}
       {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
       {tab === "contracts" && <Contracts contracts={contracts} showMoney={showMoney} />}
-      {tab === "payments" && <PaymentsByContract contracts={contracts} />}
+      {tab === "payments" && showMoney && <PaymentsByContract contracts={contracts} />}
       {tab === "subs" && showMoney && <SubsByContract contracts={contracts} />}
       {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} />}
       {tab === "permits" && <Permits p={p} />}
@@ -185,7 +185,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
             </ul>
           </Card>
         )}
-        <Card>
+        {showMoney && <Card>
           <CardHeader title="Next customer payment" />
           {(() => {
             const next = p.milestones.find((m) => m.status !== "Paid");
@@ -201,7 +201,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
               <Empty>Paid in full ✓</Empty>
             );
           })()}
-        </Card>
+        </Card>}
         {p.stage === "Completed" && (
           <Card className="p-4">
             <div className="flex items-center gap-2 text-sm font-semibold"><Star className="size-4 fill-gold text-gold" /> Review request sent</div>

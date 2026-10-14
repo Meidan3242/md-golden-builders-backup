@@ -26,6 +26,7 @@ export const allUsers = () => USERS;
 
 export async function getLeads(): Promise<Lead[]> {
   const u = await currentUser();
+  if (u.role === "pm") return []; // project managers never see leads
   return canSeeAll(u) ? LEADS : LEADS.filter((l) => l.assignedTo === u.id);
 }
 
@@ -35,6 +36,7 @@ export async function getLead(id: string) {
 
 export async function getProjects(): Promise<Project[]> {
   const u = await currentUser();
+  if (u.role === "pm") return PROJECTS.filter((p) => p.stage !== "Completed"); // active projects only
   return canSeeAll(u) ? PROJECTS : PROJECTS.filter((p) => p.assignedTo === u.id);
 }
 
@@ -44,7 +46,11 @@ export async function getProject(id: string) {
 
 export async function getAppointments() {
   const u = await currentUser();
-  const list = canSeeAll(u) ? APPOINTMENTS : APPOINTMENTS.filter((a) => a.assignedTo === u.id);
+  const active = new Set(PROJECTS.filter((p) => p.stage !== "Completed").map((p) => p.id));
+  const list =
+    u.role === "pm" ? APPOINTMENTS.filter((a) => a.projectId && active.has(a.projectId))
+    : canSeeAll(u) ? APPOINTMENTS
+    : APPOINTMENTS.filter((a) => a.assignedTo === u.id);
   return [...list].sort((a, b) => a.start.localeCompare(b.start));
 }
 

@@ -28,6 +28,7 @@ export const USERS: User[] = [
   { id: "u-owner", name: "Meidan D.", role: "admin", initials: "MD", title: "Owner" },
   { id: "u-office", name: "Laline", role: "office", initials: "LA", title: "Office Manager" },
   { id: "u-rep", name: "Demo Sales Rep", role: "sales", initials: "SR", title: "Sales Rep" },
+  { id: "u-pm", name: "Demo Project Manager", role: "pm", initials: "PM", title: "Project Manager" },
 ];
 
 export const SUBCONTRACTORS: Subcontractor[] = [

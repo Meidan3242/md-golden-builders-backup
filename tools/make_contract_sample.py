@@ -43,7 +43,8 @@ def tag(c, x, ytop, w, label, optional=False):
     c.drawString(x + 3, H - ytop + 4, label)
 
 def esign(c, x, ytop, text="Meidan Deuitsch", size=17, caption=True):
-    """Contractor's electronic signature (already signed before sending)."""
+    """Contractor signature spot. Contracts are never sent pre-signed — the box stays empty."""
+    return
     c.setFillColor(HexColor("#0b2a6b")); c.setFont("Script", size); c.drawString(x, H - ytop, text)
     if caption:
         c.setFont("Helvetica", 5.5); c.setFillColor(HexColor("#4a6fa5"))
@@ -82,7 +83,7 @@ def overlay(page_no):
         tag(c, 46, 916, 175, "SIGN HERE — OWNER"); t(c, 245, 913, "date", 7)
         tag(c, 46, 939, 175, "SIGN — 2ND OWNER (if any)", optional=True)
         t(c, 350, 913, "MD Golden Builders")
-        esign(c, 410, 935, caption=False); t(c, 540, 935, "10/11/26", 7)
+        esign(c, 410, 935, caption=False)
         t(c, 70, 972, "Meidan Deuitsch")
     elif page_no == 3:
         t(c, 50, 405, O["name"]); t(c, 410, 405, DATE, 8)
@@ -189,7 +190,7 @@ def additional_pages():
             c.drawString(x0, y - 52, "Signature"); c.drawString(x0 + 175, y - 52, "Date")
         c.setFillColor(DARK); c.setFont("Helvetica", 7.5)
         c.drawString(L + 5, y - 66, "Meidan Deuitsch, Owner — MD Golden Builders"); c.drawString(311, y - 66, O["name"])
-        esign(c, L + 10, H - (y - 40)); c.setFont("Helvetica", 8); c.setFillColor(BLUE); c.drawString(L + 182, y - 41, "10/11/2026")
+        esign(c, L + 10, H - (y - 40))
         tag(c, 316, H - (y - 42), 150, "SIGN HERE — OWNER")
 
     # ---- page 1: scope
@@ -233,7 +234,7 @@ def additional_pages():
     c.setFont("Times-Roman", 9.5)
     for line in ["Each progress payment is due only after the described work has been completed. The down payment does not",
                  "exceed $1,000 or 10% of the contract price, whichever is less. Any change to the scope, price or schedule",
-                 "requires a written Change Order signed by both parties. Payment methods: Zelle (MDgoldenbuilders@gmail.com),",
+                 "requires a written Change Order signed by both parties. Payment methods: Zelle (payments@example.com),",
                  "Venmo, check payable to MD Golden Builders, cash, or card through a secure Square link (processing fee applies)."]:
         c.drawString(L, y, line); y -= 12
     y -= 6

@@ -18,7 +18,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LeadConversation, LeadOutcome } from "@/components/lead-parts";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
-import { Avatar, Badge, Button, Card, CardHeader, KeyValue } from "@/components/ui";
+import { Avatar, Badge, Button, Card, CardHeader, KeyValue, Soon } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLead, userById } from "@/lib/data";
 import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, duration, money } from "@/lib/format";
@@ -69,9 +69,9 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               {lead.calls.map((c) => (
                 <li key={c.id} className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <button type="button" className="gold-gradient flex size-9 shrink-0 items-center justify-center rounded-full text-black" aria-label="Play recording">
+                    <Soon className="gold-gradient flex size-9 shrink-0 items-center justify-center rounded-full text-black" aria-label="Play recording">
                       <Play className="size-4 fill-current" />
-                    </button>
+                    </Soon>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         {c.direction === "Inbound" ? <PhoneIncoming className="size-3.5 text-ok" /> : <PhoneOutgoing className="size-3.5 text-info" />}

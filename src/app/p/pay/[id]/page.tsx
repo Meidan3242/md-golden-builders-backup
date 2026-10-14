@@ -30,7 +30,7 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
         <p className="mt-1 text-sm text-muted">
           {fromEstimate
             ? "Next: secure your spot with the deposit below. Your official contract will be sent to you shortly for digital signature."
-            : "A fully signed copy is on its way to your email."}
+            : "Demo: no email is sent and nothing is recorded."}
         </p>
       </div>
 

@@ -8,6 +8,7 @@ import { LeadsReport } from "@/components/leads-report";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { BackLink, Button, Card, Tile } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads } from "@/lib/data";
+import { dbReady } from "@/lib/db";
 import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, daysFrom, money } from "@/lib/format";
 import { LEAD_SOURCES, RELEASE_AFTER_DAYS, type Lead } from "@/lib/types";
@@ -98,13 +99,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <Tile href="/leads?box=need-estimate" icon={<FileClock />} title="Need estimate" count={leads.filter((l) => l.stage === "Need to Send Estimate").length} tone="gold" />
         <Tile href="/follow-ups" icon={<ListTodo />} title="Follow-ups" count={followUps.filter((f) => !f.done && dayKey(f.due) <= today).length} />
         <Tile href="/leads?box=all" icon={<BarChart3 />} title="All leads" />
       </div>
 
-      <LeadList open={open} closed={closed} />
+      <LeadList open={open} closed={closed} demo={!(await dbReady())} />
     </>
   );
 }

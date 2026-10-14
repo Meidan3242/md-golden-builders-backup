@@ -7,7 +7,7 @@ import { money } from "@/lib/format";
 
 const TYPES = [
   { key: "estimate", icon: FileText, title: "Estimate", desc: "Scope + price. Customer approves, pays the deposit, then gets the contract.", who: "Customer" },
-  { key: "contract", icon: FileSignature, title: "Contract", desc: "Form 203 + Additional Description, pre-signed by you. From an estimate or from scratch.", who: "Customer" },
+  { key: "contract", icon: FileSignature, title: "Contract", desc: "Form 203 + Additional Description. From an estimate or from scratch.", who: "Customer" },
   { key: "change-order", icon: FilePlus2, title: "Change Order", desc: "Extra work on a signed project — own price, payments, subs.", who: "Customer" },
   { key: "additional", icon: ScrollText, title: "Additional Description", desc: "Scope + payment pages only, to attach to an existing contract.", who: "Customer" },
   { key: "sub", icon: HardHat, title: "Subcontractor Agreement", desc: "Scope, price and payment stages for a sub. They sign; we pay them.", who: "Subcontractor" },
@@ -55,7 +55,7 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
             <div className="grid gap-3 p-4 sm:grid-cols-2 text-sm">
               <label>
                 <span className="mb-1 block text-xs text-muted">Project</span>
-                <select className={input}><option>#2026-031 · Rachel Donovan · 7025 Neptune Pl (Retaining wall)</option><option>New customer…</option></select>
+                <select className={input}><option>#2026-031 · Rachel Donovan · 100 Example Way (Retaining wall)</option><option>New customer…</option></select>
               </label>
               {type === "contract" || type === "additional" ? (
                 <label>
@@ -74,8 +74,8 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
                 </label>
               )}
               {(isSub
-                ? [["Name", "Carlos M. — CM Concrete & Masonry", "sub profile"], ["Phone", "(619) 555-0141", "sub profile"], ["License / insurance", "C-8 #998812 · insured to Feb 7, 2027", "sub profile"], ["Job address", "7025 Neptune Pl, La Jolla", "project"]]
-                : [["Owner name(s)", "Rachel Donovan", "lead"], ["Phone · email", "(858) 555-1851 · rachel.donovan@example.com", "lead"], ["Property address", "7025 Neptune Pl, La Jolla, CA 92037", "lead"], ["Owner 65 or older?", "No → 3-day right to cancel", "asked once"]]
+                ? [["Name", "Carlos M. — CM Concrete & Masonry", "sub profile"], ["Phone", "(619) 555-0141", "sub profile"], ["License / insurance", "C-8 #998812 · insured to Feb 7, 2027", "sub profile"], ["Job address", "100 Example Way, La Jolla", "project"]]
+                : [["Owner name(s)", "Rachel Donovan", "lead"], ["Phone · email", "(858) 555-1851 · rachel.donovan@example.com", "lead"], ["Property address", "100 Example Way, La Jolla, CA 92037", "lead"], ["Owner 65 or older?", "No → 3-day right to cancel", "asked once"]]
               ).map(([k, v, src]) => (
                 <div key={k}>
                   <span className="mb-1 block text-xs text-muted">{k}<Source>{src}</Source></span>

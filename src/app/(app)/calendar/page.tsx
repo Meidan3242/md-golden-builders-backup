@@ -19,7 +19,10 @@ const DOT: Record<Appointment["type"], string> = { "Site Visit": "bg-info", "Sec
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ m?: string; day?: string }> }) {
   const sp = await searchParams;
   const todayKey = dayKey(now());
-  const [y, m] = (sp.m ?? todayKey.slice(0, 7)).split("-").map(Number);
+  // Only accept ?m=YYYY-MM (and ?day=YYYY-MM-DD); anything else falls back to this month / today.
+  const validM = sp.m && /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.m) ? sp.m : todayKey.slice(0, 7);
+  if (sp.day && !/^\d{4}-\d{2}-\d{2}$/.test(sp.day)) sp.day = undefined;
+  const [y, m] = validM.split("-").map(Number);
   const monthKey = `${y}-${String(m).padStart(2, "0")}`;
   const first = new Date(Date.UTC(y, m - 1, 1, 19)); // noon in San Diego
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -106,7 +109,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             })}
             {!dayItems.length && <li className="px-4 py-8 text-center text-sm text-muted">Nothing on this day</li>}
           </ul>
-          <div className="border-t border-border px-4 py-2.5 text-[11px] text-muted">Customers get a text the day before: reply 1 to confirm, 2 to reschedule.</div>
+          <div className="border-t border-border px-4 py-2.5 text-[11px] text-muted">Coming soon: customers get a text the day before (reply 1 to confirm, 2 to reschedule).</div>
         </Card>
       </div>
     </>

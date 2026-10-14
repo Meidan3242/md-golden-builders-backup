@@ -393,7 +393,7 @@ every Additional Description page: contractor + owner signature). Notice of Canc
 copies are delivered, not signed. Change Order form: owner will send.
 
 **Customer payment options** (show all on every invoice / payment page):
-Zelle MDgoldenbuilders@gmail.com · Venmo https://venmo.com/code?user_id=3483491786294445630 ·
+Zelle + Venmo details: kept privately, never in the repo or on a public page ·
 check payable to "MD Golden Builders" · cash · card via Square payment link (Square API:
 create link, webhook marks paid). Owner wants to pass the card fee (~3.5%) to the customer →
 must check rules first (card networks cap surcharges ~3%, no surcharge on debit, CA
@@ -475,7 +475,7 @@ export) → match job name → project; ask the owner which sub when unclear.
   frame, faint logo watermark, contract-no/date/page box, parties table, numbered sections
   with ruled lines, payments table with grid, terms, warranty, signature block, initials on
   every page. Generator: `tools/make_contract_sample.py`.
-- **Contracts go out already signed by MD Golden Builders** (owner's e-signature + timestamp
+- ~~Contracts go out already signed~~ **Changed 2026-10-14: never show a customer a pre-signed contract.** (owner's e-signature + timestamp
   on page 1, arbitration initials, every Additional Description page).
 - **After the customer signs → "choose how to pay" the down payment** (Zelle recommended,
   Venmo, card, check, cash). One choice and done; we confirm by text when received.
@@ -492,7 +492,7 @@ export) → match job name → project; ask the owner which sub when unclear.
   in our app**.
 - **Estimate ≠ contract.** Estimate (full scope) → customer **Approve & sign** → choose how to
   pay the deposit → message "your official contract will be sent shortly for digital
-  signature" → contract (Form 203 + Additional Description, pre-signed by us) → customer signs.
+  signature" → contract (Form 203 + Additional Description, not pre-signed) → customer signs.
 - Sometimes a contract is sent directly (no estimate); sometimes generated from a specific
   estimate.
 - **One "Create a document" builder** (`/documents/new`) with a type picker:
@@ -705,7 +705,26 @@ Real now: leads (new lead form, ✓ close / undo, need-estimate → amount + PDF
 real once the database is connected. Still demo: projects, payments, subs, sales history.
 Next: import from monday (board → leads), then projects.
 
-## 33. Working rules for me
+## 33. Review fixes (2026-10-14) — rules from now on
+
+- React ≥ 19.1.2 (CVE-2025-55182 "React2Shell"); `npm audit` must stay at 0 (postcss pinned
+  via `overrides`).
+- **No real data in demo or code:** no real payment details (Zelle/Venmo → placeholders), no
+  real customer addresses. Demo data is fictional only. (Old commits still contain them — git
+  history cleanup is a separate decision.)
+- **Never claim what doesn't happen:** no "IP/device recorded", no "copy sent to your email",
+  no pre-signed contracts (contractor never pre-signs; the PDF tool leaves the box empty).
+- Every button either works or is visibly disabled with a **"Soon"** tag (`<Soon>` / `<Button>`
+  without href). Demo mode shows a banner: "changes are not saved and nothing is sent".
+- "View as" is a preview for the owner, not security. The current password login is an
+  interim lock; production = **Supabase Auth** + RLS.
+- robots.txt Disallow: / + `X-Robots-Tag: noindex` until launch; Vercel Deployment
+  Protection on until launch.
+- Mobile: form fields 16px (no Safari zoom); summary boxes 2 per row on phones.
+- Future integrations: monday only server-side (API route + token in env, never client code);
+  Joist has no public API → forward Joist emails into the app; RingCentral/Square later.
+
+## 34. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

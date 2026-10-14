@@ -1,6 +1,6 @@
 import { Eye, FileUp, Mail, MessageSquare, Plus } from "lucide-react";
 import Link from "next/link";
-import { BackLink, Button, Card, CardHeader } from "@/components/ui";
+import { BackLink, Button, Card, CardHeader, Soon } from "@/components/ui";
 import { DEMO_CONTRACT as K } from "@/lib/demo-docs";
 import { money } from "@/lib/format";
 
@@ -59,7 +59,7 @@ export default function NewProject() {
                 </li>
               ))}
             </ul>
-            <div className="border-t border-border px-4 py-2"><button className="inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Plus className="size-3.5" /> Add a payment</button></div>
+            <div className="border-t border-border px-4 py-2"><Soon className="inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Plus className="size-3.5" /> Add a payment</Soon></div>
           </Card>
         </div>
 

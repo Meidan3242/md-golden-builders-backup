@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Camera, CheckCircle2, FileText, Image as ImageIcon, Mic, Paperclip, Send, Sparkles, Video } from "lucide-react";
 import Link from "next/link";
-import { Avatar, Badge, Card } from "./ui";
+import { Avatar, Badge, Card, Soon } from "./ui";
 import { userById } from "@/lib/data";
 import { dateTime } from "@/lib/format";
 import type { ChatMessage } from "@/lib/types";
@@ -30,10 +30,10 @@ export function ProjectChat({ messages, me, limit, moreHref }: { messages: ChatM
         <div className="rounded-2xl border border-gold/50 bg-card p-2 shadow-sm">
           <div className="min-h-12 px-2 py-1.5 text-sm text-muted">Talk, drop a video or a payment screenshot, or ask: “send Rachel what she paid so far”…</div>
           <div className="flex items-center gap-1">
-            <button className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Camera"><Camera className="size-5" /></button>
-            <button className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Attach"><Paperclip className="size-5" /></button>
-            <button className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Voice"><Mic className="size-5" /></button>
-            <button className="gold-gradient ml-auto rounded-xl p-2.5 text-black" aria-label="Send"><Send className="size-4" /></button>
+            <Soon className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Camera"><Camera className="size-5" /></Soon>
+            <Soon className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Attach"><Paperclip className="size-5" /></Soon>
+            <Soon className="rounded-lg p-2 text-muted hover:bg-surface" aria-label="Voice"><Mic className="size-5" /></Soon>
+            <Soon className="gold-gradient ml-auto rounded-xl p-2.5 text-black" aria-label="Send"><Send className="size-4" /></Soon>
           </div>
         </div>
         <div className="scrollbar-thin mt-2 flex gap-1.5 overflow-x-auto pb-1">
@@ -84,8 +84,8 @@ export function ProjectChat({ messages, me, limit, moreHref }: { messages: ChatM
                     <div className="mt-2 flex items-start gap-1.5 border-t border-border pt-2 text-[11px] text-muted"><CheckCircle2 className="mt-px size-3 shrink-0 text-ok" /> {m.capture.destination}</div>
                     {m.capture.status !== "Saved" && (
                       <div className="mt-2 flex gap-2">
-                        <button className="gold-gradient rounded-lg px-3 py-1 text-xs font-semibold text-black">Confirm</button>
-                        <button className="rounded-lg border border-border px-3 py-1 text-xs">Edit</button>
+                        <Soon className="gold-gradient rounded-lg px-3 py-1 text-xs font-semibold text-black">Confirm</Soon>
+                        <Soon className="rounded-lg border border-border px-3 py-1 text-xs">Edit</Soon>
                       </div>
                     )}
                   </div>
@@ -104,7 +104,7 @@ export function ProjectChat({ messages, me, limit, moreHref }: { messages: ChatM
                     {m.reply.actions && (
                       <div className="mt-2.5 flex flex-wrap gap-2">
                         {m.reply.actions.map((a, i) => (
-                          <button key={a} className={i === 0 ? "gold-gradient rounded-lg px-3 py-1.5 text-xs font-semibold text-black" : "rounded-lg border border-border px-3 py-1.5 text-xs"}>{a}</button>
+                          <Soon key={a} className={i === 0 ? "gold-gradient rounded-lg px-3 py-1.5 text-xs font-semibold text-black" : "rounded-lg border border-border px-3 py-1.5 text-xs"}>{a}</Soon>
                         ))}
                       </div>
                     )}

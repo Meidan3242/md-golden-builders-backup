@@ -11,7 +11,7 @@ export function LeadForm({ children }: { children: React.ReactNode }) {
   return (
     <form action={action}>
       <Pending.Provider value={pending}>{children}</Pending.Provider>
-      {msg && <p className={`mt-3 text-sm ${msg.startsWith("Demo") ? "text-muted" : "text-bad"}`}>{msg}</p>}
+      {msg && <p className={`mt-3 text-sm font-semibold ${msg.startsWith("Demo") ? "text-warn" : "text-bad"}`}>{msg.startsWith("Demo") ? "Demo mode — the lead was NOT saved." : msg}</p>}
     </form>
   );
 }

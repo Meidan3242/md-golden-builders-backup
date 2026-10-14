@@ -115,7 +115,7 @@ export default async function SignPage({ searchParams }: { searchParams: Promise
 
           <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted">
             <div className="mb-1 flex items-center gap-1 font-semibold text-text"><Lock className="size-3.5" /> Secure & recorded</div>
-            Each signature is stamped with date, time, IP and device. You&apos;ll receive the fully signed PDF by email. You have 3 business days to cancel (5 if 65 or older).
+            Demo only — signatures here are not recorded and nothing is sent. You have 3 business days to cancel (5 if 65 or older).
           </div>
 
           <Link href="/p/pay/demo" className="gold-gradient block w-full rounded-xl py-3 text-center text-sm font-bold text-black">Finish & sign ({required.length - doneCount} left)</Link>

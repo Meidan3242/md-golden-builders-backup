@@ -50,7 +50,7 @@ export function UserSwitcher({ users, current }: { users: User[]; current: strin
   const router = useRouter();
   return (
     <label className="flex items-center gap-2 text-xs text-muted">
-      <span className="hidden lg:inline">View as</span>
+      <span className="hidden lg:inline" title="Preview only — shows what each role sees. Not a security feature.">View as (preview)</span>
       <select
         value={current}
         onChange={async (e) => {

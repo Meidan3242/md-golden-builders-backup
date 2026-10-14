@@ -20,7 +20,7 @@ export function EstimateEntry({ rows }: { rows: Row[] }) {
       ))}
       {visible.map((r) => <EstimateRow key={r.id} r={r} onDone={() => setDone((d) => [...d, r.id])} />)}
       {!visible.length && <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted">All estimates are out 🎉</div>}
-      <p className="text-[11px] text-muted">Later: connect Joist (forward Joist&apos;s emails to the app) and the PDF + price come in by themselves — the lead leaves this list automatically.</p>
+      <p className="text-[11px] text-muted">The PDF is uploaded to private storage once the database is connected (in demo mode nothing is uploaded). Later: connect Joist (forward Joist&apos;s emails to the app) and the PDF + price come in by themselves — the lead leaves this list automatically.</p>
     </div>
   );
 }
@@ -30,7 +30,7 @@ function EstimateRow({ r, onDone }: { r: Row; onDone: () => void }) {
   const [amount, setAmount] = useState("");
   const [msg, action, pending] = useActionState(async (prev: string | null, form: FormData) => {
     const res = await markEstimateSent(prev, form);
-    if (!res || res.startsWith("Demo")) onDone();
+    if (!res) onDone(); // saved for real
     return res;
   }, null);
   return (
@@ -57,7 +57,7 @@ function EstimateRow({ r, onDone }: { r: Row; onDone: () => void }) {
           <Send className="size-4" /> {pending ? "Saving…" : "Estimate sent"}
         </button>
       </div>
-      {msg && !msg.startsWith("Demo") && <p className="mt-2 text-sm text-bad">{msg}</p>}
+      {msg && <p className={`mt-2 text-sm ${msg.startsWith("Demo") ? "font-semibold text-warn" : "text-bad"}`}>{msg.startsWith("Demo") ? "Demo mode — not saved, nothing was sent." : msg}</p>}
     </form>
   );
 }

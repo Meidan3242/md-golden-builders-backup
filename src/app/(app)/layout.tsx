@@ -1,14 +1,15 @@
 import { Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { UserSwitcher, ThemeToggle } from "@/components/header-controls";
+import { LogoutButton, ThemeToggle, UserSwitcher } from "@/components/header-controls";
 import { BackButton, MobileNav, SidebarNav } from "@/components/nav";
 import { Avatar } from "@/components/ui";
-import { allUsers, currentUser, getFollowUps } from "@/lib/data";
+import { allUsers, currentUser, getFollowUps, loggedInUser } from "@/lib/data";
 import { TODAY } from "@/lib/demo-data";
 import { dayKey } from "@/lib/format";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
+  const me = await loggedInUser();
   const followUps = await getFollowUps();
   const dueToday = followUps.filter((f) => !f.done && dayKey(f.due) <= dayKey(TODAY)).length;
   const home = user.role === "pm" ? "/projects" : "/";
@@ -43,8 +44,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           Search leads, projects, phone numbers…
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <UserSwitcher users={allUsers()} current={user.id} />
+          {me?.role === "admin" && <UserSwitcher users={allUsers()} current={user.id} />}
           <ThemeToggle />
+          <LogoutButton />
           {user.role !== "pm" && <Link href="/leads/new" className="gold-gradient hidden items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-black sm:inline-flex">
             <Plus className="size-4" /> New lead
           </Link>}

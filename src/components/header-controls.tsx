@@ -1,6 +1,7 @@
 "use client";
 
-import { Monitor, Moon, Sun } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { logout, viewAs } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@/lib/types";
@@ -44,26 +45,36 @@ export function ThemeToggle() {
   );
 }
 
-/** Demo only: switch who is "logged in" to see what each role can see. */
+/** Owner only: preview the app the way Laline, a sales rep or the project manager sees it. */
 export function UserSwitcher({ users, current }: { users: User[]; current: string }) {
   const router = useRouter();
   return (
     <label className="flex items-center gap-2 text-xs text-muted">
-      <span className="hidden lg:inline">Viewing as</span>
+      <span className="hidden lg:inline">View as</span>
       <select
         value={current}
-        onChange={(e) => {
-          document.cookie = `demo_user=${e.target.value}; path=/; max-age=31536000`;
+        onChange={async (e) => {
+          await viewAs(e.target.value);
           router.refresh();
         }}
-        className="w-36 truncate rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-medium text-text sm:w-auto"
+        className="w-32 truncate rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-medium text-text sm:w-auto"
       >
         {users.map((u) => (
           <option key={u.id} value={u.id}>
-            {u.name} — {u.title}
+            {u.role === "admin" ? `Me (${u.name})` : `${u.name.replace("Demo ", "")} — ${u.title}`}
           </option>
         ))}
       </select>
     </label>
+  );
+}
+
+export function LogoutButton() {
+  return (
+    <form action={logout}>
+      <button className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted hover:text-text" title="Log out">
+        <LogOut className="size-3.5" /> <span className="hidden sm:inline">Log out</span>
+      </button>
+    </form>
   );
 }

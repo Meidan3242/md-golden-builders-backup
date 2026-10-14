@@ -5,7 +5,7 @@ export const SESSION_COOKIE = "mdg_session";
 export const VIEW_AS_COOKIE = "view_as"; // owner only: preview the app as another role
 export const SESSION_DAYS = 30;
 
-type Payload = { u: string; exp: number };
+type Payload = { u: string; exp: number; v: string };
 
 const enc = new TextEncoder();
 const b64url = (buf: ArrayBuffer | Uint8Array) =>
@@ -21,8 +21,20 @@ export function authSecret() {
   return s && s.length >= 16 ? s : null;
 }
 
+/**
+ * A short fingerprint of the person's current password. It's inside the session, so changing or
+ * deleting that password in Vercel logs that person out everywhere, right away.
+ */
+async function passwordVersion(userId: string, secret: string) {
+  const pw = PASSWORD_ENV[userId] ? envAnyCase(PASSWORD_ENV[userId]) : undefined;
+  if (!pw) return null;
+  const h = await crypto.subtle.digest("SHA-256", enc.encode(`${secret}:${userId}:${pw}`));
+  return b64url(h).slice(0, 16);
+}
+
 export async function signSession(userId: string, secret: string) {
-  const body = b64url(enc.encode(JSON.stringify({ u: userId, exp: Date.now() + SESSION_DAYS * 86_400_000 } satisfies Payload)));
+  const v = (await passwordVersion(userId, secret)) ?? "";
+  const body = b64url(enc.encode(JSON.stringify({ u: userId, exp: Date.now() + SESSION_DAYS * 86_400_000, v } satisfies Payload)));
   const sig = await crypto.subtle.sign("HMAC", await key(secret), enc.encode(body));
   return `${body}.${b64url(sig)}`;
 }
@@ -36,7 +48,9 @@ export async function verifySession(token: string | undefined, secret: string | 
     const ok = await crypto.subtle.verify("HMAC", await key(secret), fromB64url(sig), enc.encode(body));
     if (!ok) return null;
     const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as Payload;
-    return p.exp > Date.now() ? p.u : null;
+    if (p.exp <= Date.now()) return null;
+    const v = await passwordVersion(p.u, secret);
+    return v && v === p.v ? p.u : null; // password changed or removed → logged out
   } catch {
     return null;
   }

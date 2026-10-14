@@ -78,6 +78,7 @@ export async function getAppointments() {
 }
 
 export async function getFollowUps() {
+  if (await dbReady()) dbFollowUps(); // start the query now, in parallel with the leads
   const leads = await getLeads();
   const ids = new Set(leads.map((l) => l.id));
   const all = (await dbReady()) ? await dbFollowUps() : FOLLOW_UPS;

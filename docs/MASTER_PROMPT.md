@@ -625,13 +625,14 @@ calendar). She edits if she wants and taps Send — it goes from the business li
 - Day 7 — check-in: "Hi {first}, it's Laline from MD Golden Builders 🙂 Just wanted to check
   in — did you get a chance to look over the estimate for your {project}? Any questions at
   all, I'm here. Meidan is also happy to go over it with you."
-- Day 14 — the open-crew message (owner's idea): "Hi {first}, it's Laline from MD Golden
-  Builders. Quick heads-up — one of our projects near you got pushed back because of a permit,
-  so we have a crew available for the next couple of weeks. Because of that, Meidan can save
-  you some money on your {project} if we can start soon. He's free tomorrow between {slot} to
-  stop by and explain — would that work for you? The only thing is timing, since we need to
-  keep the guys busy."
-  (Any price reduction still needs the owner's approval; {slot} = Meidan's next free window.)
+- Day 14 — the open-crew message, **from Meidan himself** (first person; the reminder +
+  draft goes to Meidan, not Laline): "Hi {first}, it's Meidan from MD Golden Builders. Quick
+  heads-up — one of our projects near you got pushed back because of a permit, so I have a
+  crew available for the next couple of weeks. Because of that, I can save you some money on
+  your {project} if we can start soon. I'm free tomorrow between {slot} — I can stop by and
+  explain everything. The only thing is timing, since I need to keep the guys busy. Would that
+  work for you?"
+  ({slot} = Meidan's next free window from his calendar.)
 - Day 30 — last, warm: "Hi {first}, hope you're doing well! I don't want to keep bugging you
   about the {project} 🙂 Whenever you're ready we're here — and if anything changed with your
   plans, just tell me and Meidan will update the estimate for you."

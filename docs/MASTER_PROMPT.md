@@ -633,6 +633,9 @@ calendar). She edits if she wants and taps Send — it goes from the business li
   explain everything. The only thing is timing, since I need to keep the guys busy. Would that
   work for you?"
   ({slot} = Meidan's next free window from his calendar.)
+  **Meidan sends it himself from his own phone**: the reminder has "Open in Messages" (opens
+  iPhone Messages to the customer with the draft pre-filled) and "Copy text"; after sending he
+  taps "Sent" so the follow-up plan is updated. The app never sends this one.
 - Day 30 — last, warm: "Hi {first}, hope you're doing well! I don't want to keep bugging you
   about the {project} 🙂 Whenever you're ready we're here — and if anything changed with your
   plans, just tell me and Meidan will update the estimate for you."

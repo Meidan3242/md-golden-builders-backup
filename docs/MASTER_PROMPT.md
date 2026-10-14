@@ -686,7 +686,9 @@ Interim lock until Supabase Auth: every internal page requires login; customer p
 stay public (customers open them from links). Login = pick your name + your own password.
 Passwords live only in Vercel env vars (PASS_MEIDAN, PASS_LALINE, PASS_SALES, PASS_PM) and
 the session cookie is signed with AUTH_SECRET (HMAC-SHA256, httpOnly, 30 days). Wrong
-password → slowed down. Only the owner can "View as" another role. Project managers are
+password → slowed down. Changing or deleting a person's PASS_ variable in Vercel (+ redeploy)
+logs that person out on every device at once (session carries a password fingerprint);
+changing AUTH_SECRET logs everyone out. Only the owner can "View as" another role. Project managers are
 enforced in middleware. Site marked noindex. Next: Supabase Auth (each person's own email +
 password, reset by email, optional 2-step code) + Row-Level Security in the database.
 

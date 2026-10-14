@@ -614,7 +614,24 @@ a short text from the business line.
   then "A little about us" + trades line (ADU | Garage Conversion | Kitchen Remodel | …)
   + video link. No "What's next" paragraph. Written as a personal note from Laline.
 
-## 28. Working rules for me
+## 28. Estimate follow-up texts (round 15, 2026-10-14)
+
+Day 1 + Day 3 = a person calls + texts (Laline / Meidan). **From Day 7 the texts go out
+automatically** from the business line (858) 332-2168, signed by Laline. Proposed drafts
+(waiting for owner OK):
+- Day 7: "Hi {first}, it's Laline from MD Golden Builders 🙂 Just checking in — did you get a
+  chance to look over the estimate for your {project}? Happy to answer any questions, or set
+  up a quick time with Meidan to go over it together."
+- Day 14: "Hi {first}, hope all is well! Any update on timing for your {project}? If it helps,
+  Meidan can stop by and walk through the estimate with you — just let me know a day that works."
+- Day 30: "Hi {first}, just a last friendly check-in on your {project}. If now isn't the right
+  time, no problem at all — reply LATER and I'll reach out in a few months. Here's your
+  estimate again: {link}"
+Rules: stop the sequence the moment the customer replies (reply goes to Laline, she gets an
+alert); send weekdays ~10:00 AM, never weekends/evenings; skip if a meeting is already booked;
+"LATER" → paused, remind in 3 months; "STOP" → never text again.
+
+## 29. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

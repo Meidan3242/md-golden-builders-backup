@@ -5,23 +5,29 @@ import { MIGRATIONS } from "./migrations";
 import { databaseUrl, dbConfigured } from "./clock";
 
 // One connection pool per server instance. Supabase's pooled URL (port 6543) needs prepare: false.
-const g = globalThis as unknown as { __sql?: postgres.Sql };
+const g = globalThis as unknown as { __sql?: postgres.Sql; __schema?: number };
 export function sql() {
   if (!dbConfigured()) throw new Error("Database not connected");
   const url = databaseUrl()!;
-  g.__sql ??= postgres(url, { prepare: false, max: 3, idle_timeout: 20, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : "require" });
+  g.__sql ??= postgres(url, { prepare: false, max: 5, idle_timeout: 60, connect_timeout: 10, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : "require" });
   return g.__sql;
 }
 
-/** Latest schema version applied (0 = tables not created yet, null = no database / can't connect). */
+const LATEST = Math.max(...MIGRATIONS.map((m) => m.version));
+
+/**
+ * Latest schema version applied (0 = tables not created yet, null = no database / can't connect).
+ * Once the database is fully set up we remember it for the life of the server — no extra query per page.
+ */
 export const schemaVersion = cache(async (): Promise<number | null> => {
   if (!dbConfigured()) return null;
+  if (g.__schema === LATEST) return LATEST;
   try {
     const db = sql();
     const [t] = await db`select to_regclass('public.schema_migrations') as t`;
-    if (!t.t) return 0;
-    const [r] = await db`select coalesce(max(version), 0)::int as v from schema_migrations`;
-    return r.v as number;
+    const [r] = t.t ? await db`select coalesce(max(version), 0)::int as v from schema_migrations` : [{ v: 0 }];
+    g.__schema = r.v as number;
+    return g.__schema;
   } catch (e) {
     console.error("db check failed", e);
     return null;
@@ -47,5 +53,6 @@ export async function migrate() {
     });
     applied.push(m.name);
   }
+  g.__schema = undefined; // re-check on next request
   return applied;
 }

@@ -12,7 +12,7 @@ const ROLE_INFO = {
   admin: "Sees everything — all leads, projects, money and settings",
   office: "Sees everything incl. money; manages leads, calendar and documents",
   sales: "Sees only the leads and projects assigned to them",
-  pm: "Sees only active projects (and their calendar) — no leads, no money",
+  pm: "Sees only active projects (with all their money) and their calendar — no leads",
 };
 
 export default async function SettingsPage() {

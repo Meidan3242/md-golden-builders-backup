@@ -17,7 +17,7 @@ async function key(secret: string) {
 }
 
 export function authSecret() {
-  const s = process.env.AUTH_SECRET;
+  const s = envAnyCase("AUTH_SECRET");
   return s && s.length >= 16 ? s : null;
 }
 
@@ -40,6 +40,13 @@ export async function verifySession(token: string | undefined, secret: string | 
   } catch {
     return null;
   }
+}
+
+/** Read an env var by name, ignoring upper/lower case (e.g. "pass_Laline" works for PASS_LALINE). */
+export function envAnyCase(name: string): string | undefined {
+  if (process.env[name]) return process.env[name];
+  const k = Object.keys(process.env).find((x) => x.toUpperCase() === name.toUpperCase());
+  return k ? process.env[k] : undefined;
 }
 
 /** Each person's password comes from a Vercel environment variable — never from the code. */

@@ -4,7 +4,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { USERS } from "@/lib/demo-data";
-import { authSecret, PASSWORD_ENV, SESSION_COOKIE, SESSION_DAYS, signSession, verifySession, VIEW_AS_COOKIE } from "@/lib/session";
+import { authSecret, envAnyCase, PASSWORD_ENV, SESSION_COOKIE, SESSION_DAYS, signSession, verifySession, VIEW_AS_COOKIE } from "@/lib/session";
 
 const sha = (s: string) => createHash("sha256").update(s).digest();
 const sameSecret = (a: string, b: string) => timingSafeEqual(sha(a), sha(b));
@@ -14,7 +14,7 @@ export async function login(_: string | null, form: FormData): Promise<string | 
   const password = String(form.get("password") ?? "");
   const next = String(form.get("next") ?? "/");
   const secret = authSecret();
-  const expected = PASSWORD_ENV[userId] ? process.env[PASSWORD_ENV[userId]] : undefined;
+  const expected = PASSWORD_ENV[userId] ? envAnyCase(PASSWORD_ENV[userId]) : undefined;
   if (!secret || !expected) return "Login isn't set up yet for this person.";
   if (!password || !sameSecret(password, expected)) {
     await new Promise((r) => setTimeout(r, 800)); // slow down guessing

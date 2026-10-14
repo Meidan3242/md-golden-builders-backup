@@ -1,13 +1,13 @@
 import { LoginForm } from "./login-form";
 import { USERS } from "@/lib/demo-data";
-import { authSecret, PASSWORD_ENV } from "@/lib/session";
+import { authSecret, envAnyCase, PASSWORD_ENV } from "@/lib/session";
 
 export const metadata = { title: "Log in — MD Golden Builders" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next = "/" } = await searchParams;
   const ready = !!authSecret();
-  const people = USERS.map((u) => ({ id: u.id, name: u.name, title: u.title, ready: ready && !!process.env[PASSWORD_ENV[u.id]] }));
+  const people = USERS.map((u) => ({ id: u.id, name: u.name, title: u.title, ready: ready && !!envAnyCase(PASSWORD_ENV[u.id]) }));
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
       <div className="w-full max-w-sm">

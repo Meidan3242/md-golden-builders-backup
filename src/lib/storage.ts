@@ -1,8 +1,9 @@
 import "server-only";
+import { envSuffix } from "./clock";
 
 // Supabase Storage over plain HTTPS (private bucket "estimates"). Keys come from the Vercel ↔ Supabase link.
-const base = () => process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = () => process.env.SUPABASE_SERVICE_ROLE_KEY;
+const base = () => envSuffix("SUPABASE_URL");
+const key = () => envSuffix("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
 export const storageReady = () => !!(base() && key());
 
 export async function uploadFile(bucket: string, path: string, file: File) {

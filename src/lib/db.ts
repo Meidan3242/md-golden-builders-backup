@@ -2,13 +2,14 @@ import "server-only";
 import postgres from "postgres";
 import { cache } from "react";
 import { MIGRATIONS } from "./migrations";
-import { dbConfigured } from "./clock";
+import { databaseUrl, dbConfigured } from "./clock";
 
 // One connection pool per server instance. Supabase's pooled URL (port 6543) needs prepare: false.
 const g = globalThis as unknown as { __sql?: postgres.Sql };
 export function sql() {
   if (!dbConfigured()) throw new Error("Database not connected");
-  g.__sql ??= postgres((process.env.POSTGRES_URL || process.env.DATABASE_URL)!, { prepare: false, max: 3, idle_timeout: 20, ssl: /localhost|127\.0\.0\.1/.test(process.env.POSTGRES_URL || process.env.DATABASE_URL || "") ? false : "require" });
+  const url = databaseUrl()!;
+  g.__sql ??= postgres(url, { prepare: false, max: 3, idle_timeout: 20, ssl: /localhost|127\.0\.0\.1/.test(url) ? false : "require" });
   return g.__sql;
 }
 

@@ -1,0 +1,124 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { currentUser, loggedInUser } from "@/lib/data";
+import { dbReady, migrate, sql } from "@/lib/db";
+import { uploadFile } from "@/lib/storage";
+
+const DEMO = "Demo mode — this saves for real once the database is connected.";
+
+async function staff() {
+  const u = await currentUser();
+  if (u.role === "pm") throw new Error("Not allowed");
+  return u;
+}
+
+/** "2026-10-14T09:00" typed in San Diego → the real moment in UTC. */
+function sanDiegoToUtc(local: string) {
+  const guess = new Date(`${local}:00Z`);
+  const shown = new Date(guess.toLocaleString("sv-SE", { timeZone: "America/Los_Angeles" }).replace(" ", "T") + "Z");
+  return new Date(guess.getTime() + (guess.getTime() - shown.getTime()));
+}
+
+const FOLLOW_UP_PLAN = [
+  { step: "Day 1", days: 1, action: "Call + text: did you get the estimate? Offer a second meeting", who: "u-office" },
+  { step: "Day 3", days: 3, action: "Call + text: answer questions, book second meeting", who: "u-office" },
+  { step: "Day 7", days: 7, action: "Text check-in (Laline)", who: "u-office" },
+  { step: "Day 14", days: 14, action: "Your message: crew available — Meidan sends from his phone", who: "u-owner" },
+  { step: "Day 30", days: 30, action: "Last friendly check-in (Laline)", who: "u-office" },
+];
+
+export async function createLead(_: string | null, form: FormData): Promise<string | null> {
+  const u = await staff();
+  if (!(await dbReady())) return DEMO;
+  const f = (k: string) => String(form.get(k) ?? "").trim();
+  if (!f("name") || !f("phone")) return "Name and phone are required.";
+  const address = f("address");
+  const city = address.split(",")[1]?.trim() ?? "";
+  const createdAt = f("cameIn") ? sanDiegoToUtc(f("cameIn")) : new Date();
+  const visitDay = f("visitDay");
+  const visitHour = f("visitHour");
+  const visitType = f("visitType") || "Site visit";
+  const db = sql();
+  const id = await db.begin(async (tx) => {
+    const [lead] = await tx`
+      insert into leads (name, phone, email, address, city, service, source, assigned_to, notes, created_at, stage)
+      values (${f("name")}, ${f("phone")}, ${f("email") || null}, ${address}, ${city}, ${f("service") || "Other"}, ${f("source") || "Other"},
+              ${f("assignTo") || u.id}, ${f("notes") || null}, ${createdAt}, ${visitDay ? (visitType === "Second meeting" ? "Second Meeting" : "Appointment Set") : "New"})
+      returning id`;
+    await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${lead.id}, ${u.id}, 'note', ${`Lead created by ${u.name}`})`;
+    if (visitDay && visitHour) {
+      const start = sanDiegoToUtc(`${visitDay}T${visitHour.padStart(2, "0")}:00`);
+      const type = visitType === "Second meeting" ? "Second Meeting" : visitType === "Phone call" ? "Project Meeting" : "Site Visit";
+      await tx`insert into appointments (lead_id, title, type, start_at, assigned_to) values (${lead.id}, ${`${visitType} — ${f("name")}`}, ${type}, ${start}, ${f("assignTo") || "u-owner"})`;
+      await tx`update leads set closed_at = now() where id = ${lead.id}`;
+    }
+    return lead.id as string;
+  });
+  revalidatePath("/", "layout");
+  redirect(`/leads/${id}`);
+}
+
+/** ✓ in the weekly list: closed (meeting booked or done). */
+export async function closeLead(id: string) {
+  const u = await staff();
+  if (!(await dbReady())) return;
+  await sql()`update leads set closed_at = now(), updated_at = now() where id = ${id}`;
+  await sql()`insert into lead_activity (lead_id, by_user, kind, text) values (${id}, ${u.id}, 'stage', 'Closed ✓')`;
+  revalidatePath("/", "layout");
+}
+
+export async function reopenLead(id: string) {
+  await staff();
+  if (!(await dbReady())) return;
+  await sql()`update leads set closed_at = null, updated_at = now() where id = ${id}`;
+  revalidatePath("/", "layout");
+}
+
+/** Price + Joist PDF → "Estimate sent", and the follow-up plan starts. */
+export async function markEstimateSent(_: string | null, form: FormData): Promise<string | null> {
+  const u = await staff();
+  if (!(await dbReady())) return DEMO;
+  const id = String(form.get("id"));
+  const amount = Number(String(form.get("amount") ?? "").replace(/[^0-9.]/g, ""));
+  if (!amount) return "Type the estimate amount.";
+  const file = form.get("pdf");
+  let pdf: string | null = null;
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 20 * 1024 * 1024) return "PDF is too big (max 20 MB).";
+    pdf = await uploadFile("estimates", `${id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`, file);
+  }
+  const sentAt = new Date();
+  await sql().begin(async (tx) => {
+    await tx`update leads set stage = 'Estimate Sent', estimate_amount = ${amount}, estimate_sent_at = ${sentAt},
+             estimate_pdf = coalesce(${pdf}, estimate_pdf), closed_at = null, updated_at = now() where id = ${id}`;
+    await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${id}, ${u.id}, 'estimate', ${`Estimate sent — $${amount.toLocaleString()}`})`;
+    for (const s of FOLLOW_UP_PLAN) {
+      await tx`insert into follow_ups (lead_id, step, due, action, assigned_to)
+               values (${id}, ${s.step}, ${new Date(sentAt.getTime() + s.days * 86_400_000)}, ${s.action}, ${s.who})`;
+    }
+  });
+  revalidatePath("/", "layout");
+  return null;
+}
+
+export async function finishFollowUp(id: string) {
+  await staff();
+  if (!(await dbReady())) return;
+  await sql()`update follow_ups set done = true where id = ${Number(id)}`;
+  revalidatePath("/", "layout");
+}
+
+/** Settings → "Set up database" (owner only). Safe to press twice. */
+export async function setupDatabase(): Promise<string> {
+  const me = await loggedInUser();
+  if (me?.role !== "admin") return "Only the owner can do this.";
+  try {
+    const applied = await migrate();
+    revalidatePath("/", "layout");
+    return applied.length ? `Done ✓ ${applied.join(" · ")}` : "Already up to date ✓";
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+}

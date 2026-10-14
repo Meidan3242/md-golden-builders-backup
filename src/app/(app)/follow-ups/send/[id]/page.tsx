@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SourceBadge } from "@/components/status";
 import { BackLink, Card } from "@/components/ui";
 import { getLead } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, daysFrom, money } from "@/lib/format";
 
 /** The Day-14 follow-up: Meidan sends it himself from his own phone. */
@@ -16,7 +16,7 @@ export default async function SendFollowUp({ params }: { params: Promise<{ id: s
   const slot = "2–4";
   const text = `Hi ${first}, it's Meidan from MD Golden Builders. Quick heads-up — one of our projects near you got pushed back because of a permit, so I have a crew available for the next couple of weeks. Because of that, I can save you some money on your ${project} if we can start soon. I'm free tomorrow between ${slot} — I can stop by and explain everything. The only thing is timing, since I need to keep the guys busy. Would that work for you?`;
   const phone = l.phone.replace(/[^0-9]/g, "");
-  const days = l.estimateSentAt ? -daysFrom(l.estimateSentAt, TODAY) : 14;
+  const days = l.estimateSentAt ? -daysFrom(l.estimateSentAt, now()) : 14;
 
   return (
     <>

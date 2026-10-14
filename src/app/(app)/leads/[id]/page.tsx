@@ -20,7 +20,7 @@ import { LeadConversation, LeadOutcome } from "@/components/lead-parts";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, KeyValue } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLead, userById } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, duration, money } from "@/lib/format";
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
@@ -99,7 +99,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               <CardHeader title="Follow-up plan" subtitle="Created automatically when the estimate is sent. Goal: book a second meeting." />
               <ol className="divide-y divide-border">
                 {followUps.map((f) => {
-                  const overdue = !f.done && dayKey(f.due) < dayKey(TODAY);
+                  const overdue = !f.done && dayKey(f.due) < dayKey(now());
                   return (
                     <li key={f.id} className="flex items-center gap-3 px-4 py-2.5">
                       {f.done ? <CheckCircle2 className="size-4 text-ok" /> : <Circle className={overdue ? "size-4 text-bad" : "size-4 text-muted"} />}
@@ -157,7 +157,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                   <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                     <FileText className="size-8 text-bad" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">Joist estimate — {lead.name.split(" ")[1]}.pdf</div>
+                      {lead.estimatePdf ? (
+                        <a href={`/leads/${lead.id}/estimate`} target="_blank" className="block truncate text-sm font-medium text-gold-text hover:underline">Open estimate PDF</a>
+                      ) : (
+                        <div className="truncate text-sm font-medium">Joist estimate — {lead.name.split(" ").at(-1)}.pdf</div>
+                      )}
                       <div className="text-xs text-muted">Sent {date(lead.estimateSentAt)}</div>
                     </div>
                   </div>

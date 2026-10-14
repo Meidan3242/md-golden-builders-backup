@@ -4,7 +4,8 @@ import { MorningNotifications } from "@/components/notifications";
 import { SalesGoal } from "@/components/sales-goal";
 import { Tile } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, getProjects } from "@/lib/data";
-import { CHANNELS, MONTHLY_HISTORY, SALES_GOAL_DEFAULT, TODAY } from "@/lib/demo-data";
+import { CHANNELS, MONTHLY_HISTORY, SALES_GOAL_DEFAULT } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { dayKey, daysFrom, money, time } from "@/lib/format";
 
 /** Home: what needs doing today, two boxes, and the monthly sales goal. */
@@ -12,13 +13,13 @@ export default async function Home() {
   const user = await currentUser();
   const [leads, projects, appts, followUps] = await Promise.all([getLeads(), getProjects(), getAppointments(), getFollowUps()]);
   const showMoney = canSeeMoney(user);
-  const today = dayKey(TODAY);
+  const today = dayKey(now());
 
   const notCalled = leads.filter((l) => l.stage === "New");
   const active = projects.filter((p) => p.stage !== "Completed");
   const todaysAppts = appts.filter((a) => dayKey(a.start) === today);
   const needEstimate = leads.filter((l) => l.stage === "Need to Send Estimate");
-  const oldest = needEstimate.reduce((a, l) => Math.max(a, -daysFrom(l.createdAt, TODAY)), 0);
+  const oldest = needEstimate.reduce((a, l) => Math.max(a, -daysFrom(l.createdAt, now())), 0);
   const dueFollowUps = followUps.filter((f) => !f.done && dayKey(f.due) <= today);
   // The 8:00 AM notification, built from today's data.
   const morning = {
@@ -46,7 +47,7 @@ export default async function Home() {
   return (
     <>
       <div className="mb-5">
-        <div className="text-sm text-muted">{TODAY.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+        <div className="text-sm text-muted">{now().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
         <h1 className="text-2xl font-bold tracking-tight">Good morning, {user.name.split(" ")[0]}</h1>
       </div>
 

@@ -12,7 +12,14 @@ import {
   SUBCONTRACTORS,
   USERS,
 } from "./demo-data";
+import { dbReady } from "./db";
+import { dbAppointments, dbFollowUps, dbLeads } from "./lead-repo";
 import type { Lead, Project, User } from "./types";
+
+/** Leads come from the real database once it's set up; until then, the demo leads. */
+async function allLeads() {
+  return (await dbReady()) ? dbLeads() : LEADS;
+}
 
 /** Who is really logged in (from the signed session cookie). */
 export async function loggedInUser(): Promise<User | null> {
@@ -40,7 +47,8 @@ export const allUsers = () => USERS;
 export async function getLeads(): Promise<Lead[]> {
   const u = await currentUser();
   if (u.role === "pm") return []; // project managers never see leads
-  return canSeeAll(u) ? LEADS : LEADS.filter((l) => l.assignedTo === u.id);
+  const leads = await allLeads();
+  return canSeeAll(u) ? leads : leads.filter((l) => l.assignedTo === u.id);
 }
 
 export async function getLead(id: string) {
@@ -60,17 +68,20 @@ export async function getProject(id: string) {
 export async function getAppointments() {
   const u = await currentUser();
   const active = new Set(PROJECTS.filter((p) => p.stage !== "Completed").map((p) => p.id));
+  // Real lead meetings from the database + (still demo) project appointments.
+  const all = (await dbReady()) ? [...(await dbAppointments()), ...APPOINTMENTS.filter((a) => a.projectId)] : APPOINTMENTS;
   const list =
-    u.role === "pm" ? APPOINTMENTS.filter((a) => a.projectId && active.has(a.projectId))
-    : canSeeAll(u) ? APPOINTMENTS
-    : APPOINTMENTS.filter((a) => a.assignedTo === u.id);
+    u.role === "pm" ? all.filter((a) => a.projectId && active.has(a.projectId))
+    : canSeeAll(u) ? all
+    : all.filter((a) => a.assignedTo === u.id);
   return [...list].sort((a, b) => a.start.localeCompare(b.start));
 }
 
 export async function getFollowUps() {
   const leads = await getLeads();
   const ids = new Set(leads.map((l) => l.id));
-  return FOLLOW_UPS.filter((f) => ids.has(f.leadId)).sort((a, b) => a.due.localeCompare(b.due));
+  const all = (await dbReady()) ? await dbFollowUps() : FOLLOW_UPS;
+  return all.filter((f) => ids.has(f.leadId)).sort((a, b) => a.due.localeCompare(b.due));
 }
 
 export const getSubcontractors = async () => SUBCONTRACTORS;

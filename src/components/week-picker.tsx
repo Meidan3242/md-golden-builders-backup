@@ -20,6 +20,9 @@ export function WeekPicker({ days, busy }: { days: { key: string; label: string;
 
   return (
     <div>
+      <input type="hidden" name="visitDay" value={sel?.day ?? ""} />
+      <input type="hidden" name="visitHour" value={sel ? String(sel.hour) : ""} />
+      <input type="hidden" name="visitType" value={type} />
       <div className="mb-2 flex flex-wrap gap-1.5">
         {["Site visit", "Second meeting", "Phone call"].map((t) => (
           <button key={t} type="button" onClick={() => setType(t)} className={clsx("rounded-full border px-3 py-1 text-xs", type === t ? "border-gold bg-gold-soft font-semibold text-gold-text" : "border-border text-muted")}>{t}</button>

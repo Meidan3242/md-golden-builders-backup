@@ -100,6 +100,9 @@ export interface Lead {
   thread?: ThreadMessage[];
   lat?: number;
   lng?: number;
+  /** Tapped ✓ in the weekly list (meeting booked / done). */
+  closedAt?: string;
+  estimatePdf?: string;
 }
 
 export type ConfirmationStatus = "Confirmed" | "Awaiting reply" | "Reminder scheduled" | "No response";

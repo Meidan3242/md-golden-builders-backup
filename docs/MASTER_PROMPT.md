@@ -643,7 +643,17 @@ Rules: if the customer replies, the reminders stop and the conversation continue
 skip if a second meeting is already booked; drafts rotate wording so repeat customers never
 get the same text twice.
 
-## 29. Working rules for me
+## 29. Notifications (round 16, 2026-10-14)
+
+The app is installable on the iPhone Home Screen (manifest + icons + service worker `sw.js`).
+**Morning notification at 8:00 AM** to Meidan: follow-ups to send, today's meetings, estimates
+to send, new leads to call. Separate reminder per Day-14 follow-up → opens
+`/follow-ups/send/{lead}` (draft in Meidan's voice, "Open in Messages" pre-filled, Copy, Sent).
+Prototype: "Turn on notifications" + "Send me a test now" on Home. Real scheduled sending
+needs the database (store each phone's push subscription) + a daily 8:00 job (Vercel Cron)
++ VAPID keys — built together with the Supabase step.
+
+## 30. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

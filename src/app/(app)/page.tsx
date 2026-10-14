@@ -5,6 +5,8 @@ import { SalesGoal } from "@/components/sales-goal";
 import { Tile } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, getProjects } from "@/lib/data";
 import { CHANNELS, MONTHLY_HISTORY, SALES_GOAL_DEFAULT } from "@/lib/demo-data";
+import { dbReady } from "@/lib/db";
+import { lastMonths, monthlyStats } from "@/lib/lead-stats";
 import { now } from "@/lib/clock";
 import { dayKey, daysFrom, money, time } from "@/lib/format";
 
@@ -38,7 +40,9 @@ export default async function Home() {
     body: `${d14.l.service}${d14.l.estimateAmount ? ` · ${money(d14.l.estimateAmount)}` : ""} — estimate sent 2 weeks ago, no meeting yet. Tap to send your message.`,
     url: `/follow-ups/send/${d14.l.id}`,
   };
-  const months = MONTHLY_HISTORY.map((h) => ({
+  // Real data: sold leads by month. Demo: the sample history.
+  const history = (await dbReady()) ? monthlyStats(leads, lastMonths(7, now())) : MONTHLY_HISTORY;
+  const months = history.map((h) => ({
     month: h.month,
     sold: CHANNELS.reduce((a, c) => a + h.channels[c].soldValue, 0),
     jobs: CHANNELS.reduce((a, c) => a + h.channels[c].sold, 0),

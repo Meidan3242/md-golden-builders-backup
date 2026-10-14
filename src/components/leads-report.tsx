@@ -2,16 +2,17 @@ import { List, Trophy } from "lucide-react";
 import Link from "next/link";
 import { sourceColor } from "./status";
 import { BackLink, Card, CardHeader } from "./ui";
-import { CHANNELS, MONTHLY_HISTORY, type Channel } from "@/lib/demo-data";
+import { CHANNELS, type Channel } from "@/lib/demo-data";
+import type { MonthStats } from "@/lib/lead-stats";
 import { compactMoney, money } from "@/lib/format";
 
 const monthName = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
-// Monthly ad spend per channel (demo). Later: read straight from the credit-card charges.
+// Monthly ad spend per channel — the owner's approximate numbers. Later: read straight from the credit-card charges.
 const SPEND_PER_MONTH: Record<Channel, number> = { Google: 9000, Thumbtack: 1600, Yelp: 1500, Other: 0 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 
 /** "All leads": the year at a glance — by month and by channel. */
-export function LeadsReport({ showMoney }: { showMoney: boolean }) {
+export function LeadsReport({ showMoney, history: MONTHLY_HISTORY, year: yearNum, years, spendMonths }: { showMoney: boolean; history: MonthStats[]; year: number; years: number[]; spendMonths: number }) {
   const months = MONTHLY_HISTORY.map((h) => {
     const t = { leads: 0, estimates: 0, sold: 0, soldValue: 0 };
     for (const c of CHANNELS) for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += h.channels[c][k];
@@ -20,21 +21,25 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
   const year = months.reduce((a, m) => ({ leads: a.leads + m.leads, estimates: a.estimates + m.estimates, sold: a.sold + m.sold, soldValue: a.soldValue + m.soldValue }), { leads: 0, estimates: 0, sold: 0, soldValue: 0 });
   const channels = CHANNELS.map((c: Channel) => {
     const t = MONTHLY_HISTORY.reduce((a, h) => ({ leads: a.leads + h.channels[c].leads, estimates: a.estimates + h.channels[c].estimates, sold: a.sold + h.channels[c].sold, soldValue: a.soldValue + h.channels[c].soldValue }), { leads: 0, estimates: 0, sold: 0, soldValue: 0 });
-    const spent = SPEND_PER_MONTH[c] * (MONTHLY_HISTORY.length - 1 + 10 / 31);
+    const spent = SPEND_PER_MONTH[c] * spendMonths;
     return { c, ...t, spent };
   });
   const totalSpent = channels.reduce((a, c) => a + c.spent, 0);
   const best = [...channels].sort((a, b) => b.soldValue - a.soldValue)[0];
-  const maxLeads = Math.max(...months.map((m) => m.leads));
-  const maxSold = Math.max(...channels.map((c) => c.soldValue));
+  const maxLeads = Math.max(1, ...months.map((m) => m.leads));
+  const maxSold = Math.max(1, ...channels.map((c) => c.soldValue));
 
   return (
     <>
       <BackLink href="/leads" label="Leads" />
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">All leads — 2026</h1>
-          <p className="text-sm text-muted">January to today</p>
+          <h1 className="text-2xl font-bold tracking-tight">All leads — {yearNum}</h1>
+          <div className="mt-1 flex gap-1">
+            {years.map((y) => (
+              <Link key={y} href={`/leads?box=all&year=${y}`} className={y === yearNum ? "rounded-full border border-gold bg-gold-soft px-3 py-0.5 text-xs font-semibold text-gold-text" : "rounded-full border border-border px-3 py-0.5 text-xs text-muted"}>{y}</Link>
+            ))}
+          </div>
         </div>
         <Link href="/leads?box=list" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-surface"><List className="size-4" /> See every lead</Link>
       </div>
@@ -44,7 +49,7 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
           ["Leads this year", year.leads.toLocaleString()],
           ["Estimates sent", `${year.estimates}`, `${pct(year.estimates, year.leads)} of leads`],
           ["Sold", `${year.sold} jobs`, `${pct(year.sold, year.estimates)} of estimates`],
-          ...(showMoney ? [["Sold $", compactMoney(year.soldValue), `avg ${compactMoney(year.soldValue / year.sold)} a job`]] : []),
+          ...(showMoney ? [["Sold $", compactMoney(year.soldValue), year.sold ? `avg ${compactMoney(year.soldValue / year.sold)} a job` : ""]] : []),
         ].map(([k, v, h]) => (
           <Card key={k} className="p-4">
             <div className="text-sm text-muted">{k}</div>
@@ -112,8 +117,9 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
 
       {showMoney && (
         <p className="-mt-2 mb-4 text-xs text-muted">
-          Spent this year on ads: <b className="text-text">{money(totalSpent)}</b> · every $1 brought back {money(year.soldValue / totalSpent)} in sales.
-          Demo numbers — once your business card is connected, the app reads the real Google / Yelp / Thumbtack charges each month.
+          Ad spend (your approximate monthly numbers: Google $9,000, Thumbtack $1,600, Yelp $1,500): <b className="text-text">{money(totalSpent)}</b>
+          {totalSpent > 0 && <> · every $1 brought back {money(year.soldValue / totalSpent)} in sales</>}.
+          Sold $ = the estimate amount of leads marked Sold. Once your business card is connected, spend comes from the real charges.
         </p>
       )}
 

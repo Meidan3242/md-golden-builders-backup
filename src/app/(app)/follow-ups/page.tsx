@@ -21,7 +21,7 @@ export default async function FollowUpsPage() {
     <>
       <PageHeader
         title="Follow-ups"
-        subtitle="Automatic after every estimate: Day 1 → Day 3 → Day 7 → Day 14 → Day 30. Hot leads go to the owner, routine check-ins to the office."
+        subtitle="After every estimate: Day 1 → Day 3 → Day 7 → Day 14 → Day 30. Every message is sent by a person — Day 14 comes from Meidan himself."
       />
       <div className="space-y-4">
         <Group title="Overdue" tone="bad" items={overdue} lead={lead} showMoney={showMoney} />
@@ -50,7 +50,11 @@ function Group({ title, tone, items, lead, showMoney }: { title: string; tone: "
               <span className="text-xs text-muted">{date(f.due)} · {userById(f.assignedTo)?.name}</span>
               <div className="flex gap-1">
                 <a href={`tel:${l.phone}`} className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Call"><Phone className="size-4" /></a>
-                <button className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Text"><MessageSquare className="size-4" /></button>
+                {f.step === "Day 14" ? (
+                  <Link href={`/follow-ups/send/${l.id}`} className="gold-gradient inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-black"><MessageSquare className="size-4" /> Your message</Link>
+                ) : (
+                  <button className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Text"><MessageSquare className="size-4" /></button>
+                )}
                 <button className="rounded-lg border border-border p-1.5 text-ok hover:bg-surface" aria-label="Done"><CheckCircle2 className="size-4" /></button>
               </div>
             </li>

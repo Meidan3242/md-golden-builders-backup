@@ -608,9 +608,52 @@ contract PDF, scope of work (Additional Description), photo of our CSLB license,
 schedule by steps, "Welcome to MD Golden Builders", "we do everything in-house, A to Z", and
 a short text from the business line.
 - **TODO (owner reminder): prepare a short video (≈1 min) or photo collage about what we do**
-  for the welcome email. Placeholder is in the email now. Also needed: a photo of the license.
+  for the welcome email. Placeholder is in the email now. License photo: done (owner sent it).
+- **Later (owner, 2026-10-14): talk about a brand video and build a marketing agent.**
+- Welcome email final order: project info first (attachments, payment schedule, contact),
+  then "A little about us" + trades line (ADU | Garage Conversion | Kitchen Remodel | …)
+  + video link. No "What's next" paragraph. Written as a personal note from Laline.
 
-## 28. Working rules for me
+## 28. Estimate follow-up texts (round 15, 2026-10-14)
+
+**Nothing is sent automatically.** Every follow-up is a human message: on the due day Laline
+gets a reminder with a ready, personalized draft (name, project, Meidan's free slot from the
+calendar). She edits if she wants and taps Send — it goes from the business line
+(858) 332-2168. No "reply LATER / STOP" wording, nothing that sounds like a system.
+
+- Day 1 + Day 3: call + text (person).
+- Day 7 — check-in: "Hi {first}, it's Laline from MD Golden Builders 🙂 Just wanted to check
+  in — did you get a chance to look over the estimate for your {project}? Any questions at
+  all, I'm here. Meidan is also happy to go over it with you."
+- Day 14 — the open-crew message, **from Meidan himself** (first person; the reminder +
+  draft goes to Meidan, not Laline): "Hi {first}, it's Meidan from MD Golden Builders. Quick
+  heads-up — one of our projects near you got pushed back because of a permit, so I have a
+  crew available for the next couple of weeks. Because of that, I can save you some money on
+  your {project} if we can start soon. I'm free tomorrow between {slot} — I can stop by and
+  explain everything. The only thing is timing, since I need to keep the guys busy. Would that
+  work for you?"
+  ({slot} = Meidan's next free window from his calendar.)
+  **Meidan sends it himself from his own phone**: the reminder has "Open in Messages" (opens
+  iPhone Messages to the customer with the draft pre-filled) and "Copy text"; after sending he
+  taps "Sent" so the follow-up plan is updated. The app never sends this one.
+- Day 30 — last, warm: "Hi {first}, hope you're doing well! I don't want to keep bugging you
+  about the {project} 🙂 Whenever you're ready we're here — and if anything changed with your
+  plans, just tell me and Meidan will update the estimate for you."
+Rules: if the customer replies, the reminders stop and the conversation continues by hand;
+skip if a second meeting is already booked; drafts rotate wording so repeat customers never
+get the same text twice.
+
+## 29. Notifications (round 16, 2026-10-14)
+
+The app is installable on the iPhone Home Screen (manifest + icons + service worker `sw.js`).
+**Morning notification at 8:00 AM** to Meidan: follow-ups to send, today's meetings, estimates
+to send, new leads to call. Separate reminder per Day-14 follow-up → opens
+`/follow-ups/send/{lead}` (draft in Meidan's voice, "Open in Messages" pre-filled, Copy, Sent).
+Prototype: "Turn on notifications" + "Send me a test now" on Home. Real scheduled sending
+needs the database (store each phone's push subscription) + a daily 8:00 job (Vercel Cron)
++ VAPID keys — built together with the Supabase step.
+
+## 30. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

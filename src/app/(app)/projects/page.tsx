@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectStageBadge } from "@/components/status";
 import { BackLink, Card, Progress, Tile } from "@/components/ui";
-import { canSeeMoney, currentUser, getProjects, projectFinancials } from "@/lib/data";
+import { canSeeProjectMoney, currentUser, getProjects, projectFinancials } from "@/lib/data";
 import { compactMoney, date } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
@@ -17,9 +17,11 @@ const LISTS: Record<string, { title: string; hint: string; match: (p: Project) =
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ box?: string; page?: string }> }) {
   const sp = await searchParams;
   const user = await currentUser();
-  const showMoney = canSeeMoney(user);
+  const showMoney = canSeeProjectMoney(user);
   const projects = await getProjects();
 
+  // Project manager: just the active projects, nothing else.
+  if (user.role === "pm" && !sp.box) sp.box = "ongoing";
   if (sp.box) {
     const b = LISTS[sp.box];
     if (!b) notFound();
@@ -28,7 +30,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
     const page = Math.min(pages, Math.max(1, Number(sp.page) || 1));
     return (
       <>
-        <BackLink href="/projects" label="Projects" />
+        {user.role !== "pm" && <BackLink href="/projects" label="Projects" />}
         <h1 className="text-2xl font-bold tracking-tight">{b.title} <span className="text-muted">{rows.length}</span></h1>
         <p className="mb-4 text-sm text-muted">{b.hint}</p>
         {rows.length ? (

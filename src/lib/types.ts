@@ -1,6 +1,6 @@
 // Domain model. Mirrors the future database schema (Supabase/Postgres).
 
-export type Role = "admin" | "office" | "sales";
+export type Role = "admin" | "office" | "sales" | "pm";
 
 export interface User {
   id: string;

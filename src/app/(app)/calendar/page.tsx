@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { ConfirmBadge } from "@/components/status";
 import { Avatar, Button, Card } from "@/components/ui";
-import { getAppointments, userById } from "@/lib/data";
+import { currentUser, getAppointments, userById } from "@/lib/data";
 import { TODAY } from "@/lib/demo-data";
 import { dateLong, dayKey, time } from "@/lib/format";
 import type { Appointment } from "@/lib/types";
@@ -31,7 +31,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const shift = (n: number) => { const d = new Date(Date.UTC(y, m - 1 + n, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`; };
   const selected = sp.day ?? (todayKey.startsWith(monthKey) ? todayKey : `${monthKey}-01`);
 
-  const appts = await getAppointments();
+  const [appts, user] = await Promise.all([getAppointments(), currentUser()]);
   const on = (k: string) => appts.filter((a) => dayKey(a.start) === k);
   const dayItems = on(selected);
 
@@ -44,7 +44,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           <Link href={`/calendar?m=${shift(1)}`} className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Next month"><ChevronRight className="size-4" /></Link>
           <Link href="/calendar" className="ml-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-surface">Today</Link>
         </div>
-        <Button variant="primary">+ New appointment</Button>
+        <div className="flex gap-2">
+          {user.role !== "pm" && <Button href="/leads/new">+ New lead</Button>}
+          <Button variant="primary">+ New appointment</Button>
+        </div>
       </div>
 
       <div className="mb-3 flex flex-wrap gap-3 text-xs text-muted">

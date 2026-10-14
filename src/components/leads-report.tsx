@@ -6,6 +6,8 @@ import { CHANNELS, MONTHLY_HISTORY, type Channel } from "@/lib/demo-data";
 import { compactMoney, money } from "@/lib/format";
 
 const monthName = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+// Monthly ad spend per channel (demo). Later: read straight from the credit-card charges.
+const SPEND_PER_MONTH: Record<Channel, number> = { Google: 9000, Thumbtack: 1600, Yelp: 1500, Other: 0 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 
 /** "All leads": the year at a glance — by month and by channel. */
@@ -18,8 +20,10 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
   const year = months.reduce((a, m) => ({ leads: a.leads + m.leads, estimates: a.estimates + m.estimates, sold: a.sold + m.sold, soldValue: a.soldValue + m.soldValue }), { leads: 0, estimates: 0, sold: 0, soldValue: 0 });
   const channels = CHANNELS.map((c: Channel) => {
     const t = MONTHLY_HISTORY.reduce((a, h) => ({ leads: a.leads + h.channels[c].leads, estimates: a.estimates + h.channels[c].estimates, sold: a.sold + h.channels[c].sold, soldValue: a.soldValue + h.channels[c].soldValue }), { leads: 0, estimates: 0, sold: 0, soldValue: 0 });
-    return { c, ...t };
+    const spent = SPEND_PER_MONTH[c] * (MONTHLY_HISTORY.length - 1 + 10 / 31);
+    return { c, ...t, spent };
   });
+  const totalSpent = channels.reduce((a, c) => a + c.spent, 0);
   const best = [...channels].sort((a, b) => b.soldValue - a.soldValue)[0];
   const maxLeads = Math.max(...months.map((m) => m.leads));
   const maxSold = Math.max(...channels.map((c) => c.soldValue));
@@ -67,7 +71,7 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
 
       <Card className="mb-4 overflow-x-auto">
         <CardHeader title="By channel" subtitle="Where leads come from — and where we actually sell" action={<span className="inline-flex items-center gap-1 text-xs font-semibold text-gold-text"><Trophy className="size-3.5" /> Most sold: {best.c}</span>} />
-        <table className="w-full min-w-[620px] text-sm">
+        <table className="w-full min-w-[920px] text-sm">
           <thead className="text-left text-xs text-muted">
             <tr className="border-b border-border">
               <th className="px-4 py-2 font-medium">Channel</th>
@@ -76,6 +80,9 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
               <th className="px-4 py-2 text-right font-medium">Sold</th>
               <th className="px-4 py-2 text-right font-medium">Lead → sale</th>
               {showMoney && <th className="px-4 py-2 font-medium">Sold $</th>}
+              {showMoney && <th className="px-4 py-2 text-right font-medium">Spent</th>}
+              {showMoney && <th className="px-4 py-2 text-right font-medium">Per lead</th>}
+              {showMoney && <th className="px-4 py-2 text-right font-medium">Per sale</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -94,11 +101,21 @@ export function LeadsReport({ showMoney }: { showMoney: boolean }) {
                     </div>
                   </td>
                 )}
+                {showMoney && <td className="px-4 py-2.5 text-right">{c.spent ? money(c.spent) : "—"}</td>}
+                {showMoney && <td className="px-4 py-2.5 text-right">{c.spent ? money(c.spent / c.leads) : "—"}</td>}
+                {showMoney && <td className="px-4 py-2.5 text-right font-semibold">{c.spent ? money(c.spent / c.sold) : "—"}</td>}
               </tr>
             ))}
           </tbody>
         </table>
       </Card>
+
+      {showMoney && (
+        <p className="-mt-2 mb-4 text-xs text-muted">
+          Spent this year on ads: <b className="text-text">{money(totalSpent)}</b> · every $1 brought back {money(year.soldValue / totalSpent)} in sales.
+          Demo numbers — once your business card is connected, the app reads the real Google / Yelp / Thumbtack charges each month.
+        </p>
+      )}
 
       <Card className="overflow-x-auto">
         <CardHeader title="Month by month" />

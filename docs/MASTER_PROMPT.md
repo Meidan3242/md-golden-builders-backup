@@ -653,7 +653,34 @@ Prototype: "Turn on notifications" + "Send me a test now" on Home. Real schedule
 needs the database (store each phone's push subscription) + a daily 8:00 job (Vercel Cron)
 + VAPID keys — built together with the Supabase step.
 
-## 30. Working rules for me
+## 30. Round 17 (2026-10-14): back button, leads v3, project manager
+
+- **Back button** in the top bar on every screen except home.
+- **iPhone:** bottom bar = Home · Leads · Calendar · Projects · **More** (Map, Documents,
+  Payments, Subcontractors, Reports, Settings).
+- **Leads main page:** Came in today · Became a meeting (this week, resets Monday) → boxes on
+  top: Need estimate · Follow-ups · All leads → then the weekly list. Each lead: Call ·
+  Message · **✓** (closed). ✓ moves it to "Closed this week"; after a week it's only in All
+  leads. A booked **second meeting comes back into the list** with its date (no separate box).
+  No "Completed" / "No answer" counters.
+- **Need to send estimate:** per lead type the amount + attach the Joist PDF → "Estimate sent"
+  → leaves the list, follow-ups start. Later: Joist emails forwarded to the app fill this in.
+- **All leads:** report (by month, by channel, + ad spend, cost per lead, cost per sale) →
+  "See every lead" with filters: platform, year, month, sold / not sold; grouped by month with
+  leads/sold per month and a side summary by platform. Ad spend: later read from the business
+  credit-card charges (Plaid or monthly statement import).
+- **New lead:** "Came in" date & time + **week view of the next 7 days** (booked hours grey,
+  tap a free hour) to book the visit; Calendar has "+ New lead".
+- **New role: Project Manager** — sees only active projects + their calendar (project
+  appointments only). No leads, no company-wide pages (payments, reports, settings…).
+  **Inside a project he sees all the money** (owner, 2026-10-14): contract/stages, customer
+  payments to collect, subs and their payments, expenses, change orders, request payment.
+  Enforced in middleware + data layer.
+- WhatsApp: personal WhatsApp groups cannot be read by any app. Option: WhatsApp Business API
+  on a business number (customers/subs message it, everything lands in the project chat);
+  until then, forward/share photos and messages into the project chat (or export a group).
+
+## 31. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

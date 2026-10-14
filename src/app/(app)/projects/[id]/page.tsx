@@ -6,7 +6,7 @@ import { ProjectChat } from "@/components/project-chat";
 import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
-import { canSeeMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
+import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const p = await getProject(id);
   if (!p) notFound();
   const user = await currentUser();
-  const showMoney = canSeeMoney(user);
+  const showMoney = canSeeProjectMoney(user);
   const f = projectFinancials(p);
   const stageIdx = PROJECT_STAGES.indexOf(p.stage);
   const contracts = contractsOf(p);
@@ -25,7 +25,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
     { key: "overview", label: "Overview" },
     { key: "chat", label: "✦ Chat", count: p.chat?.length ?? 0 },
     { key: "contracts", label: "Contracts", count: contracts.length },
-    { key: "payments", label: "Customer payments" },
+    ...(showMoney ? [{ key: "payments", label: "Customer payments" }] : []),
     ...(showMoney ? [{ key: "subs", label: "Subcontractors", count: contracts.reduce((a, c) => a + c.subs.length, 0) }, { key: "expenses", label: "Expenses" }] : []),
     { key: "permits", label: "Permits", count: p.permits.length },
     { key: "media", label: "Photos & videos", count: p.media.length },
@@ -41,7 +41,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <ProjectStageBadge stage={p.stage} />
             <span>{p.address}, {p.city}</span>
-            <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>
+            {user.role !== "pm" && <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -87,7 +87,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       )}
       {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
       {tab === "contracts" && <Contracts contracts={contracts} showMoney={showMoney} />}
-      {tab === "payments" && <PaymentsByContract contracts={contracts} />}
+      {tab === "payments" && showMoney && <PaymentsByContract contracts={contracts} />}
       {tab === "subs" && showMoney && <SubsByContract contracts={contracts} />}
       {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} />}
       {tab === "permits" && <Permits p={p} />}
@@ -185,7 +185,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
             </ul>
           </Card>
         )}
-        <Card>
+        {showMoney && <Card>
           <CardHeader title="Next customer payment" />
           {(() => {
             const next = p.milestones.find((m) => m.status !== "Paid");
@@ -201,7 +201,7 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
               <Empty>Paid in full ✓</Empty>
             );
           })()}
-        </Card>
+        </Card>}
         {p.stage === "Completed" && (
           <Card className="p-4">
             <div className="flex items-center gap-2 text-sm font-semibold"><Star className="size-4 fill-gold text-gold" /> Review request sent</div>

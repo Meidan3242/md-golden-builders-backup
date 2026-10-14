@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { EstimateEntry } from "@/components/estimate-entry";
 import { LeadList, type LeadRow } from "@/components/lead-list";
 import { LeadsReport } from "@/components/leads-report";
+import { monthlyStats, monthsOfYear } from "@/lib/lead-stats";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { BackLink, Button, Card, Tile } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads } from "@/lib/data";
@@ -24,7 +25,16 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const showMoney = canSeeMoney(user);
   const leads = await getLeads();
 
-  if (sp.box === "all") return <LeadsReport showMoney={showMoney} />;
+  if (sp.box === "all") {
+    const today = now();
+    const thisYear = Number(dayKey(today.toISOString()).slice(0, 4));
+    const years = [...new Set([thisYear, ...leads.map((l) => Number(dayKey(l.createdAt).slice(0, 4)))])].sort((a, b) => b - a);
+    const year = years.includes(Number(sp.year)) ? Number(sp.year) : thisYear;
+    const months = monthsOfYear(year, today);
+    const d = Number(dayKey(today.toISOString()).slice(8, 10));
+    const spendMonths = year === thisYear ? months.length - 1 + d / 31 : months.length;
+    return <LeadsReport showMoney={showMoney} history={monthlyStats(leads, months)} year={year} years={years} spendMonths={spendMonths} />;
+  }
   if (sp.box === "list") return <AllLeadsTable leads={leads} sp={sp} showMoney={showMoney} />;
   if (sp.box === "need-estimate") {
     const rows = leads

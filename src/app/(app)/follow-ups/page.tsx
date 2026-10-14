@@ -2,7 +2,7 @@ import { CheckCircle2, MessageSquare, Phone } from "lucide-react";
 import Link from "next/link";
 import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
 import { canSeeMoney, currentUser, getFollowUps, getLeads, userById } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, dayKey, money } from "@/lib/format";
 import type { FollowUp, Lead } from "@/lib/types";
 
@@ -11,7 +11,7 @@ export default async function FollowUpsPage() {
   const showMoney = canSeeMoney(user);
   const [all, leads] = await Promise.all([getFollowUps(), getLeads()]);
   const open = all.filter((f) => !f.done);
-  const today0 = dayKey(TODAY);
+  const today0 = dayKey(now());
   const overdue = open.filter((f) => dayKey(f.due) < today0);
   const today = open.filter((f) => dayKey(f.due) === today0);
   const later = open.filter((f) => dayKey(f.due) > today0).slice(0, 12);

@@ -692,7 +692,20 @@ changing AUTH_SECRET logs everyone out. Only the owner can "View as" another rol
 enforced in middleware. Site marked noindex. Next: Supabase Auth (each person's own email +
 password, reset by email, optional 2-step code) + Row-Level Security in the database.
 
-## 32. Working rules for me
+## 32. Real data, step 1: Leads in Supabase (round 19, 2026-10-14)
+
+Connect: Vercel → project → Storage → Create database → **Supabase** (free) → connect to
+md-golden-builders. That adds POSTGRES_URL / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY etc.
+Then Settings → Database → **Set up database** (owner only) creates the tables (migrations in
+`src/lib/migrations.ts`, tracked in `schema_migrations`). RLS on, no public policies: only the
+server (private connection string) reads/writes. Estimate PDFs go to a private Storage bucket
+`estimates`, opened through a 10-minute signed link.
+Real now: leads (new lead form, ✓ close / undo, need-estimate → amount + PDF → Estimate sent
+→ follow-up plan Day 1/3/7/14/30), lead meetings on the calendar, follow-ups. The clock is
+real once the database is connected. Still demo: projects, payments, subs, sales history.
+Next: import from monday (board → leads), then projects.
+
+## 33. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

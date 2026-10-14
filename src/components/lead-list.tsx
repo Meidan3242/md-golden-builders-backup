@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import { Check, MessageSquare, Phone, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { closeLead, reopenLead } from "@/app/actions/leads";
 import { SourceBadge } from "./status";
 import type { LeadSource } from "@/lib/types";
 
@@ -31,15 +32,18 @@ export function LeadList({ open: initialOpen, closed: initialClosed }: { open: L
   const [open, setOpen] = useState(initialOpen);
   const [closed, setClosed] = useState(initialClosed);
   const [tab, setTab] = useState<"open" | "closed">("open");
+  const [, start] = useTransition();
 
   const close = (r: LeadRow) => {
     setOpen((o) => o.filter((x) => x.id !== r.id));
     setClosed((c) => [{ ...r, status: "Closed ✓", tone: "ok", closedOn: "Today" }, ...c]);
+    start(() => closeLead(r.id));
   };
   const undo = (r: LeadRow) => {
     setClosed((c) => c.filter((x) => x.id !== r.id));
     const orig = initialOpen.find((x) => x.id === r.id);
     if (orig) setOpen((o) => [orig, ...o]);
+    start(() => reopenLead(r.id));
   };
 
   const rows = tab === "open" ? open : closed;

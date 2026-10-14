@@ -8,11 +8,11 @@ import { LeadsReport } from "@/components/leads-report";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { BackLink, Button, Card, Tile } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, daysFrom, money } from "@/lib/format";
 import { LEAD_SOURCES, RELEASE_AFTER_DAYS, type Lead } from "@/lib/types";
 
-const age = (l: Lead) => -daysFrom(l.createdAt, TODAY);
+const age = (l: Lead) => -daysFrom(l.createdAt, now());
 const SOLD = (l: Lead) => l.stage === "Won" || !!l.projectId;
 
 type SP = { box?: string; source?: string; year?: string; month?: string; result?: string };
@@ -40,14 +40,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   }
   if (sp.box) notFound();
 
-  const today = dayKey(TODAY);
+  const today = dayKey(now());
   const [followUps, appts] = await Promise.all([getFollowUps(), getAppointments()]);
   // The week starts Monday — "became a meeting" resets every week.
-  const weekday = (TODAY.getUTCDay() + 6) % 7;
-  const weekStart = dayKey(new Date(TODAY.getTime() - weekday * 86_400_000).toISOString());
+  const weekday = (now().getUTCDay() + 6) % 7;
+  const weekStart = dayKey(new Date(now().getTime() - weekday * 86_400_000).toISOString());
   const dayLabel = (iso: string) => {
     const k = dayKey(iso);
-    return k === today ? "Today" : -daysFrom(iso, TODAY) === 1 ? "Yesterday" : date(iso);
+    return k === today ? "Today" : -daysFrom(iso, now()) === 1 ? "Yesterday" : date(iso);
   };
   const lastLine = (l: Lead) => {
     const m = (l.thread ?? []).at(-1);
@@ -57,14 +57,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     id: l.id, name: l.name, source: l.source, service: l.service, city: l.city, phone: l.phone, day: dayLabel(dayIso), status, tone, last: lastLine(l),
   });
 
-  const secondMeetings = leads.filter((l) => l.stage === "Second Meeting").map((l) => {
+  const secondMeetings = leads.filter((l) => l.stage === "Second Meeting" && !l.closedAt).map((l) => {
     const a = appts.find((x) => x.leadId === l.id);
     return row(l, a ? `2nd meeting ${dateTime(a.start)}` : "2nd meeting", "gold", a?.start ?? l.createdAt);
   });
   const open: LeadRow[] = [
     ...secondMeetings,
     ...leads
-      .filter((l) => age(l) < RELEASE_AFTER_DAYS && ["New", "Trying to Reach", "Talking"].includes(l.stage))
+      .filter((l) => !l.closedAt && age(l) < RELEASE_AFTER_DAYS && ["New", "Trying to Reach", "Talking"].includes(l.stage))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .map((l) =>
         l.stage === "New" ? row(l, "Not called yet", "bad")
@@ -72,8 +72,10 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         : row(l, `No answer · try ${l.attempts ?? 1} of 5`, "warn"),
       ),
   ];
-  const closedThisWeek = leads.filter((l) => l.stage === "Appointment Set" && dayKey(l.createdAt) >= weekStart);
-  const closed = closedThisWeek.map((l) => ({ ...row(l, "Meeting booked ✓", "ok"), closedOn: dayLabel(l.createdAt) }));
+  // Closed this week: tapped ✓ (or booked a meeting) since Monday.
+  const closedOn = (l: Lead) => l.closedAt ?? (l.stage === "Appointment Set" ? l.createdAt : undefined);
+  const closedThisWeek = leads.filter((l) => { const c = closedOn(l); return c && dayKey(c) >= weekStart; });
+  const closed = closedThisWeek.map((l) => ({ ...row(l, l.stage === "Appointment Set" ? "Meeting booked ✓" : "Closed ✓", "ok"), closedOn: dayLabel(closedOn(l)!) }));
   const cameInToday = leads.filter((l) => dayKey(l.createdAt) === today);
 
   return (

@@ -4,14 +4,14 @@ import { LogoutButton, ThemeToggle, UserSwitcher } from "@/components/header-con
 import { BackButton, MobileNav, SidebarNav } from "@/components/nav";
 import { Avatar } from "@/components/ui";
 import { allUsers, currentUser, getFollowUps, loggedInUser } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { dayKey } from "@/lib/format";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   const me = await loggedInUser();
   const followUps = await getFollowUps();
-  const dueToday = followUps.filter((f) => !f.done && dayKey(f.due) <= dayKey(TODAY)).length;
+  const dueToday = followUps.filter((f) => !f.done && dayKey(f.due) <= dayKey(now())).length;
   const home = user.role === "pm" ? "/projects" : "/";
 
   return (

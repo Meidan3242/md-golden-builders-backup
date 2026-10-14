@@ -1,7 +1,7 @@
 import { Phone } from "lucide-react";
 import { Badge, Button, Card, PageHeader } from "@/components/ui";
 import { canSeeMoney, currentUser, getProjects, getSubcontractors } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, daysFrom, money } from "@/lib/format";
 
 export default async function SubsPage() {
@@ -17,7 +17,7 @@ export default async function SubsPage() {
         {subs.map((s) => {
           const mine = assignments.filter((x) => x.a.subId === s.id);
           const paid = mine.flatMap((x) => x.a.payments).filter((p) => p.status === "Paid").reduce((a, p) => a + p.amount, 0);
-          const insDays = s.insuranceExpires ? daysFrom(s.insuranceExpires, TODAY) : undefined;
+          const insDays = s.insuranceExpires ? daysFrom(s.insuranceExpires, now()) : undefined;
           return (
             <Card key={s.id} className="p-4">
               <div className="flex items-start justify-between gap-2">

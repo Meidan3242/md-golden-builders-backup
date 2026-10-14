@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { Ban, CalendarCheck, Clock, Mail, MessageSquare, RotateCw, Send, Sparkles, ThumbsDown } from "lucide-react";
 import { Badge, Card, CardHeader } from "./ui";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { date, dateTime, daysFrom } from "@/lib/format";
 import { MAX_ATTEMPTS, RELEASE_AFTER_DAYS, type Lead } from "@/lib/types";
 
@@ -9,7 +9,7 @@ import { MAX_ATTEMPTS, RELEASE_AFTER_DAYS, type Lead } from "@/lib/types";
 export function LeadOutcome({ lead }: { lead: Lead }) {
   const open = lead.stage === "New" || lead.stage === "Trying to Reach";
   const attempts = lead.attempts ?? 0;
-  const age = -daysFrom(lead.createdAt, TODAY);
+  const age = -daysFrom(lead.createdAt, now());
   const releaseIn = Math.max(0, RELEASE_AFTER_DAYS - age);
 
   if (lead.stage === "No Response") {

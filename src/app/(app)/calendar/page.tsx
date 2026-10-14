@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ConfirmBadge } from "@/components/status";
 import { Avatar, Button, Card } from "@/components/ui";
 import { currentUser, getAppointments, userById } from "@/lib/data";
-import { TODAY } from "@/lib/demo-data";
+import { now } from "@/lib/clock";
 import { dateLong, dayKey, time } from "@/lib/format";
 import type { Appointment } from "@/lib/types";
 
@@ -18,7 +18,7 @@ const DOT: Record<Appointment["type"], string> = { "Site Visit": "bg-info", "Sec
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ m?: string; day?: string }> }) {
   const sp = await searchParams;
-  const todayKey = dayKey(TODAY);
+  const todayKey = dayKey(now());
   const [y, m] = (sp.m ?? todayKey.slice(0, 7)).split("-").map(Number);
   const monthKey = `${y}-${String(m).padStart(2, "0")}`;
   const first = new Date(Date.UTC(y, m - 1, 1, 19)); // noon in San Diego

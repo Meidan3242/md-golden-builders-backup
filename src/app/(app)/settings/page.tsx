@@ -1,6 +1,12 @@
 import { redirect } from "next/navigation";
 import { Avatar, Badge, Card, CardHeader, KeyValue, PageHeader } from "@/components/ui";
-import { allUsers, currentUser } from "@/lib/data";
+import { Database } from "lucide-react";
+import { DbSetupButton } from "@/components/db-setup";
+import { dbConfigured } from "@/lib/clock";
+import { allUsers, currentUser, getLeads } from "@/lib/data";
+import { schemaVersion } from "@/lib/db";
+import { MIGRATIONS } from "@/lib/migrations";
+import { storageReady } from "@/lib/storage";
 
 const ROLE_INFO = {
   admin: "Sees everything — all leads, projects, money and settings",
@@ -16,6 +22,7 @@ export default async function SettingsPage() {
     <>
       <PageHeader title="Settings" />
       <div className="grid gap-4 lg:grid-cols-2">
+        <DatabaseCard />
         <Card>
           <CardHeader title="Users & roles" />
           <ul className="divide-y divide-border">
@@ -77,5 +84,29 @@ export default async function SettingsPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+/** Real data: is the database connected and set up? */
+async function DatabaseCard() {
+  const configured = dbConfigured();
+  const version = await schemaVersion();
+  const latest = Math.max(...MIGRATIONS.map((m) => m.version));
+  const ready = (version ?? 0) >= 1;
+  const leads = ready ? (await getLeads()).length : 0;
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader title={<span className="flex items-center gap-2"><Database className="size-4 text-gold-text" /> Database (real data)</span>} />
+      <div className="space-y-3 p-4 text-sm">
+        <ul className="space-y-1">
+          <li>{configured ? "✅" : "⬜"} Supabase connected to Vercel</li>
+          <li>{version === null && configured ? "⚠️ Can't reach the database — check the Supabase connection" : ready ? "✅" : "⬜"} Tables created{ready ? ` (version ${version})` : ""}</li>
+          <li>{storageReady() ? "✅" : "⬜"} File storage (estimate PDFs)</li>
+          <li>{ready ? `✅ Leads are real now — ${leads} in the database` : "⬜ Leads still show demo data"}</li>
+        </ul>
+        {configured && version !== null && <DbSetupButton label={!ready ? "Set up database" : (version ?? 0) < latest ? "Update database" : "Check database"} />}
+        {!configured && <p className="text-xs text-muted">Vercel → md-golden-builders → Storage → Create database → Supabase → connect to this project, then redeploy.</p>}
+      </div>
+    </Card>
   );
 }

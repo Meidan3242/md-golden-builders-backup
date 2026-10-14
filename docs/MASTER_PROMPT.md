@@ -680,7 +680,17 @@ needs the database (store each phone's push subscription) + a daily 8:00 job (Ve
   on a business number (customers/subs message it, everything lands in the project chat);
   until then, forward/share photos and messages into the project chat (or export a group).
 
-## 31. Working rules for me
+## 31. Login (round 18, 2026-10-14)
+
+Interim lock until Supabase Auth: every internal page requires login; customer pages `/p/*`
+stay public (customers open them from links). Login = pick your name + your own password.
+Passwords live only in Vercel env vars (PASS_MEIDAN, PASS_LALINE, PASS_SALES, PASS_PM) and
+the session cookie is signed with AUTH_SECRET (HMAC-SHA256, httpOnly, 30 days). Wrong
+password → slowed down. Only the owner can "View as" another role. Project managers are
+enforced in middleware. Site marked noindex. Next: Supabase Auth (each person's own email +
+password, reset by email, optional 2-step code) + Row-Level Security in the database.
+
+## 32. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

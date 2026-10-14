@@ -2,6 +2,7 @@
 // only ever receives their own leads and projects. When the database is
 // connected, the same rule is enforced again with Row-Level Security.
 import { cookies } from "next/headers";
+import { authSecret, SESSION_COOKIE, verifySession, VIEW_AS_COOKIE } from "./session";
 import {
   APPOINTMENTS,
   FOLLOW_UPS,
@@ -13,9 +14,19 @@ import {
 } from "./demo-data";
 import type { Lead, Project, User } from "./types";
 
+/** Who is really logged in (from the signed session cookie). */
+export async function loggedInUser(): Promise<User | null> {
+  const id = await verifySession((await cookies()).get(SESSION_COOKIE)?.value, authSecret());
+  return USERS.find((u) => u.id === id) ?? null;
+}
+
+/** Who the app is shown for: the logged-in user — or, for the owner only, the role he chose to preview. */
 export async function currentUser(): Promise<User> {
-  const id = (await cookies()).get("demo_user")?.value;
-  return USERS.find((u) => u.id === id) ?? USERS[0];
+  const me = await loggedInUser();
+  if (!me) throw new Error("Not logged in"); // middleware already redirects to /login
+  if (me.role !== "admin") return me;
+  const viewAs = (await cookies()).get(VIEW_AS_COOKIE)?.value;
+  return USERS.find((u) => u.id === viewAs) ?? me;
 }
 
 export const canSeeAll = (u: User) => u.role === "admin" || u.role === "office";

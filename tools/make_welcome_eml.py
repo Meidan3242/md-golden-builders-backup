@@ -37,8 +37,6 @@ Here's your payment schedule, so there are never any surprises:
 Total: {money(TOTAL)}
 I'll send you a short note each time we reach a step, and a receipt as soon as each payment comes in.
 
-What's next: Meidan will text you in the next day or two to go over everything. Our plans go to the City of San Diego first, and once the permit is approved we're on site — right now we're looking at around December 1.
-
 If anything comes up, just reply to this email or text me at (858) 332-2168 — I'm always happy to help.
 
 Warmly,
@@ -66,7 +64,6 @@ html = f"""<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;font
 <p {P}>Here's your payment schedule, so there are never any surprises:</p>
 <ol style="margin:0 0 6px;padding-left:22px">{rows}</ol>
 <p {P}><b>Total: {money(TOTAL)}</b><br>I'll send you a short note each time we reach a step, and a receipt as soon as each payment comes in.</p>
-<p {P}><b>What's next:</b> Meidan will text you in the next day or two to go over everything. Our plans go to the City of San Diego first, and once the permit is approved we're on site — right now we're looking at around December 1.</p>
 <p {P}>If anything comes up, just reply to this email or text me at (858) 332-2168 — I'm always happy to help.</p>
 <p {P}>Warmly,<br>Laline</p>
 <div style="border-top:1px solid #e5e5ea;padding-top:10px;font-size:13px;line-height:1.45;color:#3a3a3c">

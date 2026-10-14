@@ -47,10 +47,6 @@ export default function WelcomeEmail() {
           <br />
           I&apos;ll send you a short note each time we reach a step, and a receipt as soon as each payment comes in.
         </p>
-        <p>
-          <b>What&apos;s next:</b> Meidan will text you in the next day or two to go over everything. Our plans go to the City of San
-          Diego first, and once the permit is approved we&apos;re on site — right now we&apos;re looking at around December 1.
-        </p>
         <p>If anything comes up, just reply to this email or text me at (858) 332-2168 — I&apos;m always happy to help.</p>
         <p className="mb-0">
           Warmly,

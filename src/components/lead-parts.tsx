@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Ban, CalendarCheck, Clock, Mail, MessageSquare, RotateCw, Send, Sparkles, ThumbsDown } from "lucide-react";
-import { Badge, Card, CardHeader } from "./ui";
+import { Badge, Card, CardHeader, Soon } from "./ui";
 import { now } from "@/lib/clock";
 import { date, dateTime, daysFrom } from "@/lib/format";
 import { MAX_ATTEMPTS, RELEASE_AFTER_DAYS, type Lead } from "@/lib/types";
@@ -36,10 +36,10 @@ export function LeadOutcome({ lead }: { lead: Lead }) {
         ))}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <button className="flex items-center justify-center gap-1.5 rounded-xl bg-ok py-2.5 text-sm font-semibold text-white"><CalendarCheck className="size-4" /> Scheduled</button>
-        <button className="flex items-center justify-center gap-1.5 rounded-xl border border-gold bg-gold-soft py-2.5 text-sm font-semibold text-gold-text"><RotateCw className="size-4" /> Still trying</button>
-        <button className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium"><ThumbsDown className="size-4" /> Not a fit</button>
-        <button className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium"><Ban className="size-4" /> Spam / wrong #</button>
+        <Soon className="flex items-center justify-center gap-1.5 rounded-xl bg-ok py-2.5 text-sm font-semibold text-white"><CalendarCheck className="size-4" /> Scheduled</Soon>
+        <Soon className="flex items-center justify-center gap-1.5 rounded-xl border border-gold bg-gold-soft py-2.5 text-sm font-semibold text-gold-text"><RotateCw className="size-4" /> Still trying</Soon>
+        <Soon className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium"><ThumbsDown className="size-4" /> Not a fit</Soon>
+        <Soon className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium"><Ban className="size-4" /> Spam / wrong #</Soon>
       </div>
       <div className="mt-2 text-[11px] text-muted">Next automatic touch: {attempts < 2 ? "call + text today" : "text tomorrow 9:00 AM"} · plan: Day 0 call+text → Day 1 → Day 2 → Day 4 → Day 7 release</div>
     </Card>
@@ -82,7 +82,7 @@ export function LeadConversation({ lead }: { lead: Lead }) {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex-1 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted">Write a reply… or ask the assistant to draft one</div>
-          <button className="gold-gradient rounded-full p-2 text-black" aria-label="Send"><Send className="size-4" /></button>
+          <Soon className="gold-gradient rounded-full p-2 text-black" aria-label="Send"><Send className="size-4" /></Soon>
         </div>
         <div className="mt-1.5 text-[11px] text-muted">Received {date(lead.createdAt)} from {lead.source}</div>
       </div>

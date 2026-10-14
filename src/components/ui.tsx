@@ -70,8 +70,17 @@ export function Button({ children, variant = "secondary", href, className }: { c
       {children}
     </Link>
   ) : (
-    <button type="button" className={cls}>
+    // Not wired yet → visibly disabled with a "Soon" tag, so nobody taps it and thinks it worked.
+    <Soon className={cls}>{children}</Soon>
+  );
+}
+
+/** A button for something that isn't built yet: greyed out, can't be tapped, says "Soon". */
+export function Soon({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <button type="button" disabled title="Coming soon — not working yet" className={clsx(className, "cursor-not-allowed opacity-50")}>
       {children}
+      <span className="ml-1 rounded bg-surface px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-muted">Soon</span>
     </button>
   );
 }

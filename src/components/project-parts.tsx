@@ -1,7 +1,7 @@
 import { Camera, Check, FileText, Paperclip, Play, Receipt, X } from "lucide-react";
 import Link from "next/link";
 import { PayStatusBadge, WaiverBadge } from "./status";
-import { Badge, Card, CardHeader, Empty } from "./ui";
+import { Badge, Card, CardHeader, Empty, Soon } from "./ui";
 import { subById } from "@/lib/data";
 import { date, money } from "@/lib/format";
 import type { Expense, MediaItem, PaymentMilestone, SubAssignment } from "@/lib/types";
@@ -11,7 +11,7 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
   const paid = milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
   return (
     <Card className="overflow-x-auto">
-      <CardHeader title={title} subtitle={`${money(paid)} of ${money(total)} collected`} action={<button className="text-xs font-medium text-gold-text">+ Milestone</button>} />
+      <CardHeader title={title} subtitle={`${money(paid)} of ${money(total)} collected`} action={<Soon className="text-xs font-medium text-gold-text">+ Milestone</Soon>} />
       <ul className="divide-y divide-border sm:hidden">
         {milestones.map((m, i) => (
           <li key={m.id} className="flex items-center gap-3 px-4 py-3">
@@ -51,8 +51,8 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <td className="px-4 py-2.5 text-muted">{m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : "—"}</td>
               <td className="px-4 py-2.5 text-muted">{m.method ?? "—"}</td>
               <td className="px-4 py-2.5 text-right">
-                {m.status === "Upcoming" && <button className="text-xs font-medium text-gold-text">Request payment</button>}
-                {m.status === "Invoiced" && <button className="text-xs font-medium text-gold-text">Payment received</button>}
+                {m.status === "Upcoming" && <Soon className="text-xs font-medium text-gold-text">Request payment</Soon>}
+                {m.status === "Invoiced" && <Soon className="text-xs font-medium text-gold-text">Payment received</Soon>}
                 {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-xs text-ok hover:underline">Receipt sent ✓</Link>}
               </td>
             </tr>
@@ -129,7 +129,7 @@ export function SubAssignmentCard({ a }: { a: SubAssignment }) {
       </table>
       <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-muted">
         <span>Paid {money(paid)} of {money(a.amount)} · prefers {sub?.preferredMethod}</span>
-        <button className="font-medium text-gold-text">Record payment</button>
+        <Soon className="font-medium text-gold-text">Record payment</Soon>
       </div>
     </Card>
   );
@@ -139,7 +139,7 @@ export function ExpensesTable({ expenses }: { expenses: Expense[] }) {
   const total = expenses.reduce((a, e) => a + e.amount, 0);
   return (
     <Card className="overflow-x-auto">
-      <CardHeader title="Expenses & receipts" subtitle={`${money(total)} total`} action={<button className="inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</button>} />
+      <CardHeader title="Expenses & receipts" subtitle={`${money(total)} total`} action={<Soon className="inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</Soon>} />
       {expenses.length ? (
         <table className="w-full min-w-[560px] text-sm">
           <tbody className="divide-y divide-border">

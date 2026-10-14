@@ -1,7 +1,8 @@
-import { Check, Copy, MessageSquare } from "lucide-react";
+import { Check, MessageSquare } from "lucide-react";
 import { notFound } from "next/navigation";
+import { CopyButton } from "@/components/copy-button";
 import { SourceBadge } from "@/components/status";
-import { BackLink, Card } from "@/components/ui";
+import { BackLink, Card, Soon } from "@/components/ui";
 import { getLead } from "@/lib/data";
 import { now } from "@/lib/clock";
 import { date, daysFrom, money } from "@/lib/format";
@@ -38,8 +39,8 @@ export default async function SendFollowUp({ params }: { params: Promise<{ id: s
             <MessageSquare className="size-5" /> Open in Messages
           </a>
           <div className="grid grid-cols-2 gap-2">
-            <button className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium"><Copy className="size-4" /> Copy text</button>
-            <button className="flex items-center justify-center gap-1.5 rounded-xl bg-ok py-2.5 text-sm font-semibold text-white"><Check className="size-4" /> Sent</button>
+            <CopyButton text={text} className="flex items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-sm font-medium" />
+            <Soon className="flex items-center justify-center gap-1.5 rounded-xl bg-ok py-2.5 text-sm font-semibold text-white"><Check className="size-4" /> Sent</Soon>
           </div>
         </div>
       </Card>

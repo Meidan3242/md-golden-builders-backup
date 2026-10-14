@@ -62,7 +62,7 @@ export function WeekPicker({ days, busy }: { days: { key: string; label: string;
       </div>
       <div className={clsx("mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm", sel ? "bg-ok-soft text-ok" : "bg-surface text-muted")}>
         <CalendarCheck className="size-4" />
-        {sel && selDay ? <span><b>{type}</b> · {selDay.label} {selDay.sub} at {h12(sel.hour)} — goes on the calendar, customer gets a reminder the day before</span> : "Tap a free hour to book it (optional)"}
+        {sel && selDay ? <span><b>{type}</b> · {selDay.label} {selDay.sub} at {h12(sel.hour)} — goes on the calendar when you save</span> : "Tap a free hour to book it (optional)"}
       </div>
     </div>
   );

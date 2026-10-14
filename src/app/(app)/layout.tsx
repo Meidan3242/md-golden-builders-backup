@@ -4,6 +4,7 @@ import { LogoutButton, ThemeToggle, UserSwitcher } from "@/components/header-con
 import { BackButton, MobileNav, SidebarNav } from "@/components/nav";
 import { Avatar } from "@/components/ui";
 import { allUsers, currentUser, getFollowUps, loggedInUser } from "@/lib/data";
+import { dbReady } from "@/lib/db";
 import { now } from "@/lib/clock";
 import { dayKey } from "@/lib/format";
 
@@ -13,6 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const followUps = await getFollowUps();
   const dueToday = followUps.filter((f) => !f.done && dayKey(f.due) <= dayKey(now())).length;
   const home = user.role === "pm" ? "/projects" : "/";
+  const live = await dbReady();
 
   return (
     <div className="min-h-screen md:pl-60">
@@ -53,6 +55,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
+      {!live && (
+        <div className="border-b border-warn/30 bg-warn-soft px-4 py-1.5 text-center text-xs font-semibold text-warn md:px-6">
+          DEMO MODE — sample data (dated Oct 10, 2026). Changes are not saved and nothing is sent.
+        </div>
+      )}
       <main className="mx-auto max-w-[1400px] px-4 pt-5 pb-24 md:px-6 md:pb-10">{children}</main>
       <MobileNav role={user.role} />
     </div>

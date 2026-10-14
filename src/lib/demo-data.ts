@@ -46,7 +46,7 @@ export const SUBCONTRACTORS: Subcontractor[] = [
 const first = ["Olivia", "Noah", "Emma", "Liam", "Sophia", "Mason", "Ava", "Ethan", "Mia", "Lucas", "Isabella", "Logan", "Harper", "Jacob", "Amelia", "Daniel", "Evelyn", "Henry", "Abigail", "Owen", "Ella", "Wyatt", "Grace", "Caleb", "Chloe", "Ryan", "Nora", "Aaron", "Lily", "Isaac", "Zoe", "Nathan"];
 const last = ["Carter", "Bennett", "Hayes", "Morales", "Brooks", "Reed", "Patel", "Kim", "Nguyen", "Foster", "Rivera", "Coleman", "Price", "Sanders", "Ward", "Ortiz", "Hughes", "Myers", "Long", "Ross", "Powell", "Jenkins", "Perry", "Russell", "Griffin", "Diaz", "Hayes", "Wood", "Barnes", "Fisher", "Henderson", "Simmons"];
 const cities = ["San Diego", "La Jolla", "Chula Vista", "Escondido", "Carlsbad", "El Cajon", "Oceanside", "Poway", "Santee", "Encinitas", "National City", "La Mesa"];
-const streets = ["Neptune Pl", "Garnet Ave", "Mission Blvd", "Balboa Ave", "Clairemont Dr", "Genesee Ave", "Rosecrans St", "University Ave", "El Camino Real", "Via de la Valle", "Palm Ave", "Grand Ave"];
+const streets = ["Example Pl", "Garnet Ave", "Mission Blvd", "Balboa Ave", "Clairemont Dr", "Genesee Ave", "Rosecrans St", "University Ave", "El Camino Real", "Via de la Valle", "Palm Ave", "Grand Ave"];
 const services: [string, number][] = [
   ["Kitchen Remodel", 68000],
   ["Bathroom Remodel", 32000],
@@ -251,7 +251,7 @@ export const PROJECTS: Project[] = [
     customer: "Rachel Donovan",
     phone: "(858) 555-1851",
     email: "rachel.donovan@example.com",
-    address: "7025 Neptune Pl",
+    address: "100 Example Way",
     city: "La Jolla",
     type: "Retaining Wall",
     stage: "In Progress",
@@ -345,7 +345,7 @@ export const PROJECTS: Project[] = [
         reply: { title: "Subs — open balance on this project", body: ["CM Concrete (Carlos): $12,600 left — $9,450 requested for “Wall complete” (check #1192 waiting for your OK), $3,150 final", "CM Concrete — Change Order #1: $3,100 left (50% on completion)", "SD Stucco: $7,800 — agreement still not signed ⚠️", "Total still to pay: $23,500"],
           actions: ["Add to Friday pay run", "Text SD Stucco the agreement"] } },
       { id: "ch11", at: iso(0, 8, 35), by: "u-office", text: "@assistant remind Meidan tomorrow 7am to order the wall cap" },
-      { id: "ch12", at: iso(0, 8, 35), by: "assistant", text: "", reply: { title: "Reminder set", body: ["Tomorrow 7:00 AM → Meidan: order precast wall cap (Rachel Donovan · 7025 Neptune Pl)"], done: "✓ Added to Meidan's tasks" } },
+      { id: "ch12", at: iso(0, 8, 35), by: "assistant", text: "", reply: { title: "Reminder set", body: ["Tomorrow 7:00 AM → Meidan: order precast wall cap (Rachel Donovan · 100 Example Way)"], done: "✓ Added to Meidan's tasks" } },
       { id: "ch13", at: iso(0, 9, 2), by: "u-owner", text: "customer wants 2 more outlets in the garage, 450. show me before you send" },
       { id: "ch14", at: iso(0, 9, 2), by: "assistant", text: "",
         reply: { title: "Draft — Change Order #2 (not sent)", channel: "Preview only",

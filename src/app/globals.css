@@ -97,3 +97,12 @@ body {
 .grid > * {
   min-width: 0;
 }
+
+/* iPhone Safari zooms into any field smaller than 16px — keep form fields at 16px on phones. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

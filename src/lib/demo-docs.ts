@@ -7,8 +7,9 @@ export const COMPANY = {
   phone: "(858) 933-1694",
   email: "info@mdgoldenbuilders.com",
   web: "www.mdgoldenbuilders.com",
-  zelle: "MDgoldenbuilders@gmail.com",
-  venmo: "https://venmo.com/code?user_id=3483491786294445630",
+  // Placeholders — real payment details are never put on a public page.
+  zelle: "payments@example.com",
+  venmo: "https://example.com/venmo-placeholder",
   reviews: { google: "https://tr.ee/xLG1j2NoRY", yelp: "https://tr.ee/ffZ0n6Xp5-", thumbtack: "https://tr.ee/kiBOFNYW8q" },
 };
 
@@ -16,7 +17,7 @@ export const DEMO_ESTIMATE = {
   number: 556,
   date: "Oct 10, 2026",
   validUntil: "Nov 9, 2026",
-  customer: { name: "Rachel Donovan", first: "Rachel", address: "7025 Neptune Pl, La Jolla, CA 92037", phone: "(858) 555-1851" },
+  customer: { name: "Rachel Donovan", first: "Rachel", address: "100 Example Way, La Jolla, CA 92037", phone: "(858) 555-1851" },
   title: "New retaining wall — 95 LF CMU with stucco finish",
   note: "Thanks for walking the property with me on Tuesday. Below is everything we discussed — the wall, the drainage, and the finish. Any question, just text me.",
   sections: [
@@ -55,13 +56,13 @@ export type SignField = {
 const P = (x: number, y: number) => ({ x: (x / 612) * 100, y: (y / 1008) * 100 });
 
 export const SIGN_FIELDS: SignField[] = [
-  { id: "f1", page: 1, label: "Received a completed copy of this agreement", who: "Owner", kind: "Initials", ...P(488, 751), w: 11, done: true },
-  { id: "f2", page: 1, label: "Age affirmation (65+ gets a 5-day right to cancel)", who: "Owner", kind: "Initials", ...P(302, 766), w: 11, done: true },
-  { id: "f3", page: 1, label: "Notice of Right to Cancel — received", who: "Owner", kind: "Initials", ...P(38, 798), w: 6, done: true },
+  { id: "f1", page: 1, label: "Received a completed copy of this agreement", who: "Owner", kind: "Initials", ...P(488, 751), w: 11 },
+  { id: "f2", page: 1, label: "Age affirmation (65+ gets a 5-day right to cancel)", who: "Owner", kind: "Initials", ...P(302, 766), w: 11 },
+  { id: "f3", page: 1, label: "Notice of Right to Cancel — received", who: "Owner", kind: "Initials", ...P(38, 798), w: 6 },
   { id: "f4", page: 1, label: "Arbitration of disputes", who: "Owner", kind: "Initials", ...P(452, 798), w: 6, optional: "Optional — customer decides" },
   { id: "f5", page: 1, label: "Owner signature + date", who: "Owner", kind: "Signature", ...P(46, 917), w: 30 },
   { id: "f6", page: 1, label: "Second owner signature (if any)", who: "Second owner", kind: "Signature", ...P(46, 939), w: 30, optional: "Only if there is a second owner" },
-  { id: "f7", page: 1, label: "Contractor signature + date", who: "Contractor", kind: "Signature", ...P(405, 939), w: 22, done: true },
+  { id: "f7", page: 1, label: "Contractor signature + date", who: "Contractor", kind: "Signature", ...P(405, 939), w: 22 },
   { id: "f8", page: 3, label: "Notice of Cancellation — received (2 copies)", who: "Owner", kind: "Signature", ...P(420, 416), w: 25 },
   { id: "f9", page: 5, label: "Arbitration clause #1 — initials", who: "Owner", kind: "Initials", ...P(478, 399), w: 12, optional: "Only if they agreed to arbitration" },
   { id: "f10", page: 5, label: "Arbitration clause #2 — initials", who: "Owner", kind: "Initials", ...P(478, 808), w: 12, optional: "Only if they agreed to arbitration" },

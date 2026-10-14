@@ -1,4 +1,5 @@
 import { CalendarClock, CheckCircle2, CreditCard, FileSignature, Landmark, MessageCircle, ShieldCheck, Star } from "lucide-react";
+import { Soon } from "@/components/ui";
 import { COMPANY } from "@/lib/demo-docs";
 import { money } from "@/lib/format";
 
@@ -63,8 +64,8 @@ export function CustomerDoc(d: CustomerDocProps) {
           </div>
           <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2">
             <a href={d.signHref} className="gold-gradient flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black"><FileSignature className="size-4" /> Approve & sign</a>
-            <button className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><CalendarClock className="size-4" /> Meet</button>
-            <button className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><MessageCircle className="size-4" /> Ask</button>
+            <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><CalendarClock className="size-4" /> Meet</Soon>
+            <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><MessageCircle className="size-4" /> Ask</Soon>
           </div>
         </section>
 

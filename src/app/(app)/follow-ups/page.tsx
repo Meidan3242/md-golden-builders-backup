@@ -1,6 +1,8 @@
 import { CheckCircle2, MessageSquare, Phone } from "lucide-react";
 import Link from "next/link";
-import { Badge, Card, CardHeader, PageHeader } from "@/components/ui";
+import { finishFollowUp } from "@/app/actions/leads";
+import { dbReady } from "@/lib/db";
+import { Badge, Card, CardHeader, PageHeader, Soon } from "@/components/ui";
 import { canSeeMoney, currentUser, getFollowUps, getLeads, userById } from "@/lib/data";
 import { now } from "@/lib/clock";
 import { date, dayKey, money } from "@/lib/format";
@@ -16,6 +18,7 @@ export default async function FollowUpsPage() {
   const today = open.filter((f) => dayKey(f.due) === today0);
   const later = open.filter((f) => dayKey(f.due) > today0).slice(0, 12);
   const lead = (id: string) => leads.find((l) => l.id === id)!;
+  const live = await dbReady();
 
   return (
     <>
@@ -24,15 +27,15 @@ export default async function FollowUpsPage() {
         subtitle="After every estimate: Day 1 → Day 3 → Day 7 → Day 14 → Day 30. Every message is sent by a person — Day 14 comes from Meidan himself."
       />
       <div className="space-y-4">
-        <Group title="Overdue" tone="bad" items={overdue} lead={lead} showMoney={showMoney} />
-        <Group title="Due today" tone="gold" items={today} lead={lead} showMoney={showMoney} />
-        <Group title="Coming up" tone="neutral" items={later} lead={lead} showMoney={showMoney} />
+        <Group title="Overdue" tone="bad" items={overdue} lead={lead} showMoney={showMoney} live={live} />
+        <Group title="Due today" tone="gold" items={today} lead={lead} showMoney={showMoney} live={live} />
+        <Group title="Coming up" tone="neutral" items={later} lead={lead} showMoney={showMoney} live={live} />
       </div>
     </>
   );
 }
 
-function Group({ title, tone, items, lead, showMoney }: { title: string; tone: "bad" | "gold" | "neutral"; items: FollowUp[]; lead: (id: string) => Lead; showMoney: boolean }) {
+function Group({ title, tone, items, lead, showMoney, live }: { title: string; tone: "bad" | "gold" | "neutral"; items: FollowUp[]; lead: (id: string) => Lead; showMoney: boolean; live: boolean }) {
   return (
     <Card>
       <CardHeader title={<span className="flex items-center gap-2">{title} <Badge tone={tone}>{items.length}</Badge></span>} />
@@ -53,9 +56,13 @@ function Group({ title, tone, items, lead, showMoney }: { title: string; tone: "
                 {f.step === "Day 14" ? (
                   <Link href={`/follow-ups/send/${l.id}`} className="gold-gradient inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-black"><MessageSquare className="size-4" /> Your message</Link>
                 ) : (
-                  <button className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Text"><MessageSquare className="size-4" /></button>
+                  <Soon className="rounded-lg border border-border p-1.5 hover:bg-surface" aria-label="Text"><MessageSquare className="size-4" /></Soon>
                 )}
-                <button className="rounded-lg border border-border p-1.5 text-ok hover:bg-surface" aria-label="Done"><CheckCircle2 className="size-4" /></button>
+                {live ? (
+                  <form action={finishFollowUp.bind(null, f.id)}><button type="submit" className="rounded-lg border border-border p-1.5 text-ok hover:bg-surface" aria-label="Done"><CheckCircle2 className="size-4" /></button></form>
+                ) : (
+                  <Soon className="rounded-lg border border-border p-1.5 text-ok hover:bg-surface"><CheckCircle2 className="size-4" /></Soon>
+                )}
               </div>
             </li>
           );

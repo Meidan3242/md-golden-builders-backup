@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
 import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
-import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
+import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs, Soon } from "@/components/ui";
 import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
@@ -248,7 +248,7 @@ function Permits({ p }: { p: Project }) {
 function Documents({ p }: { p: Project }) {
   return (
     <Card>
-      <CardHeader title="Documents" action={<button className="text-xs font-medium text-gold-text">+ Upload</button>} />
+      <CardHeader title="Documents" action={<Soon className="text-xs font-medium text-gold-text">+ Upload</Soon>} />
       <ul className="divide-y divide-border">
         {p.documents.map((d) => (
           <li key={d.id} className="flex items-center gap-3 px-4 py-2.5">
@@ -331,7 +331,7 @@ function SubsByContract({ contracts }: { contracts: ContractView[] }) {
         <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted">{c.subs.length} sub{c.subs.length === 1 ? "" : "s"}</span>}>
           {c.subs.map((a) => <SubAssignmentCard key={a.id} a={a} />)}
           {!c.subs.length && <div className="py-4 text-center text-xs text-muted">No subcontractors on this contract</div>}
-          <button className="text-xs font-medium text-gold-text"><Plus className="inline size-3.5" /> Add a sub to {c.label}</button>
+          <Soon className="text-xs font-medium text-gold-text"><Plus className="inline size-3.5" /> Add a sub to {c.label}</Soon>
         </Collapse>
       ))}
     </div>
@@ -358,7 +358,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
         <span>Subs paid <b>{money(subs)}</b></span>
         <span>Materials & other <b>{money(other)}</b></span>
         <span>Total out <b>{money(subs + other)}</b></span>
-        <button className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</button>
+        <Soon className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</Soon>
       </Card>
       {contracts.map((c, i) => {
         const rows = rowsOf(c);

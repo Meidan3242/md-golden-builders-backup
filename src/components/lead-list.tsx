@@ -28,7 +28,7 @@ const TONE = { bad: "bg-bad-soft text-bad", warn: "bg-warn-soft text-warn", ok: 
  * This week's leads. Tap ✓ when a lead is closed (meeting booked / done) — it leaves the open
  * list and moves to "Closed this week"; a week later it's only in the yearly list.
  */
-export function LeadList({ open: initialOpen, closed: initialClosed }: { open: LeadRow[]; closed: LeadRow[] }) {
+export function LeadList({ open: initialOpen, closed: initialClosed, demo }: { open: LeadRow[]; closed: LeadRow[]; demo?: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   const [closed, setClosed] = useState(initialClosed);
   const [tab, setTab] = useState<"open" | "closed">("open");
@@ -90,6 +90,7 @@ export function LeadList({ open: initialOpen, closed: initialClosed }: { open: L
         ))}
         {!rows.length && <div className="p-8 text-center text-sm text-muted">{tab === "open" ? "All caught up 🎉" : "Nothing closed yet this week"}</div>}
       </div>
+      {demo && <p className="mt-2 text-xs font-semibold text-warn">Demo mode — ✓ only moves the row on this screen. A refresh brings it back.</p>}
       <p className="mt-2 text-[11px] text-muted">
         ✓ = closed (meeting booked or done) → moves to “Closed this week”. After a week it&apos;s only in All leads. No answer for 7 days → drops off by itself.
       </p>

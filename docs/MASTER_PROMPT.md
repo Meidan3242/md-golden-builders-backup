@@ -709,8 +709,9 @@ Next: import from monday (board → leads), then projects.
 
 - React ≥ 19.1.2 (CVE-2025-55182 "React2Shell"); `npm audit` must stay at 0 (postcss pinned
   via `overrides`).
-- **No real data in demo or code:** no real payment details (Zelle/Venmo → placeholders), no
-  real customer addresses. Demo data is fictional only. (Old commits still contain them — git
+- **No real customer data in demo or code:** no real customer addresses or names. Exception
+  (owner's decision): the company's own Zelle/Venmo payment details stay on the customer
+  payment page — they're meant for customers. Demo data is fictional only. (Old commits still contain them — git
   history cleanup is a separate decision.)
 - **Never claim what doesn't happen:** no "IP/device recorded", no "copy sent to your email",
   no pre-signed contracts (contractor never pre-signs; the PDF tool leaves the box empty).

@@ -608,7 +608,11 @@ contract PDF, scope of work (Additional Description), photo of our CSLB license,
 schedule by steps, "Welcome to MD Golden Builders", "we do everything in-house, A to Z", and
 a short text from the business line.
 - **TODO (owner reminder): prepare a short video (≈1 min) or photo collage about what we do**
-  for the welcome email. Placeholder is in the email now. Also needed: a photo of the license.
+  for the welcome email. Placeholder is in the email now. License photo: done (owner sent it).
+- **Later (owner, 2026-10-14): talk about a brand video and build a marketing agent.**
+- Welcome email final order: project info first (attachments, payment schedule, contact),
+  then "A little about us" + trades line (ADU | Garage Conversion | Kitchen Remodel | …)
+  + video link. No "What's next" paragraph. Written as a personal note from Laline.
 
 ## 28. Working rules for me
 

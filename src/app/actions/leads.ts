@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { currentUser, loggedInUser } from "@/lib/data";
 import { dbReady, migrate, sql } from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
+import { sanDiegoToUtc } from "@/lib/time";
 
 const DEMO = "Demo mode — this saves for real once the database is connected.";
 
@@ -12,13 +13,6 @@ async function staff() {
   const u = await currentUser();
   if (u.role === "pm") throw new Error("Not allowed");
   return u;
-}
-
-/** "2026-10-14T09:00" typed in San Diego → the real moment in UTC. */
-function sanDiegoToUtc(local: string) {
-  const guess = new Date(`${local}:00Z`);
-  const shown = new Date(guess.toLocaleString("sv-SE", { timeZone: "America/Los_Angeles" }).replace(" ", "T") + "Z");
-  return new Date(guess.getTime() + (guess.getTime() - shown.getTime()));
 }
 
 const FOLLOW_UP_PLAN = [
@@ -118,6 +112,22 @@ export async function setupDatabase(): Promise<string> {
     const applied = await migrate();
     revalidatePath("/", "layout");
     return applied.length ? `Done ✓ ${applied.join(" · ")}` : "Already up to date ✓";
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+}
+
+/** Settings → "Import from monday" (owner only). Reads monday on the server with MONDAY_API_TOKEN. */
+export async function importFromMonday(boardId: string): Promise<string> {
+  const me = await loggedInUser();
+  if (me?.role !== "admin") return "Only the owner can do this.";
+  if (!(await dbReady())) return "Set up the database first.";
+  try {
+    await migrate(); // makes sure the import columns exist
+    const { importBoard } = await import("@/lib/monday-import");
+    const msg = await importBoard(boardId);
+    revalidatePath("/", "layout");
+    return `Done ✓ ${msg}`;
   } catch (e) {
     return `Failed: ${(e as Error).message}`;
   }

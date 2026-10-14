@@ -104,4 +104,13 @@ exception when others then
 end $$;
 `,
   },
+  {
+    version: 3,
+    name: "monday import keys",
+    sql: /* sql */ `
+alter table appointments add column if not exists monday_id text unique;
+alter table follow_ups add column if not exists monday_id text unique;
+alter table leads add column if not exists monday_board text;
+`,
+  },
 ];

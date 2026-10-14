@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { Avatar, Badge, Card, CardHeader, KeyValue, PageHeader } from "@/components/ui";
 import { Database } from "lucide-react";
 import { DbSetupButton } from "@/components/db-setup";
+import { MondayImportButton } from "@/components/monday-import";
+import { mondayReady } from "@/lib/monday";
 import { dbConfigured } from "@/lib/clock";
 import { allUsers, currentUser, getLeads } from "@/lib/data";
 import { schemaVersion } from "@/lib/db";
@@ -15,6 +17,8 @@ const ROLE_INFO = {
   pm: "Sees only active projects (with all their money) and their calendar — no leads",
 };
 
+export const maxDuration = 60; // monday import can take a little while
+
 export default async function SettingsPage() {
   const user = await currentUser();
   if (user.role !== "admin") redirect("/");
@@ -23,6 +27,7 @@ export default async function SettingsPage() {
       <PageHeader title="Settings" />
       <div className="grid gap-4 lg:grid-cols-2">
         <DatabaseCard />
+        <MondayCard />
         <Card>
           <CardHeader title="Users & roles" />
           <ul className="divide-y divide-border">
@@ -106,6 +111,33 @@ async function DatabaseCard() {
         </ul>
         {configured && version !== null && <DbSetupButton label={!ready ? "Set up database" : (version ?? 0) < latest ? "Update database" : "Check database"} />}
         {!configured && <p className="text-xs text-muted">Vercel → md-golden-builders → Storage → Create database → Supabase → connect to this project, then redeploy.</p>}
+      </div>
+    </Card>
+  );
+}
+
+const MONDAY_BOARDS = [
+  { id: "18393480229", label: "Import LEADS 2026" },
+  { id: "9085250401", label: "Import LEADS 2025" },
+];
+
+/** Bring the leads over from monday. Can be pressed again any time — it updates instead of duplicating. */
+async function MondayCard() {
+  const ready = (await schemaVersion() ?? 0) >= 1;
+  const token = mondayReady();
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader title="Import from monday" subtitle="Leads boards → the app. Run again any time to bring in new rows (updates, never duplicates)." />
+      <div className="space-y-3 p-4 text-sm">
+        <ul className="space-y-1">
+          <li>{token ? "✅" : "⬜"} monday connected (MONDAY_API_TOKEN in Vercel)</li>
+          <li>{ready ? "✅" : "⬜"} Database ready</li>
+        </ul>
+        {token && ready ? (
+          <div className="grid gap-2 sm:grid-cols-2">{MONDAY_BOARDS.map((b) => <MondayImportButton key={b.id} boardId={b.id} label={b.label} />)}</div>
+        ) : (
+          <p className="text-xs text-muted">monday → your picture (top right) → Developers → My access tokens → Copy. Then Vercel → Environment Variables → MONDAY_API_TOKEN → Save → Redeploy.</p>
+        )}
       </div>
     </Card>
   );

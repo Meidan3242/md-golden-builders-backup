@@ -725,7 +725,19 @@ Next: import from monday (board → leads), then projects.
 - Future integrations: monday only server-side (API route + token in env, never client code);
   Joist has no public API → forward Joist emails into the app; RingCentral/Square later.
 
-## 34. Working rules for me
+## 34. monday import (round 20, 2026-10-14)
+
+Settings → "Import from monday" (owner only): server reads the LEADS 2026 / LEADS 2025
+boards with MONDAY_API_TOKEN (Vercel env, never in client code) and upserts into the app.
+Mapping: name "(google)/(yelp)/(thumbtack)…" → source; Status: Estimate/Follow Up → Estimate
+Sent, Sold → Won, Need to send estimate, Cancel → Lost, DO NOT CALL/JOB DONE → Not a Fit,
+Not yet ready/paused → Paused, Reschedule → Trying to Reach, Blank → Appointment Set if it
+has a date else New. Date + Hour (San Diego time) → a site visit on the calendar. "Follow
+Up? = Yes" on recent estimates → one follow-up. Long "Requested Service" text → notes.
+Lead ids `M-<monday id>`; re-running updates the same rows (monday stays the source of
+truth until the switch). Estimate PDFs stay in monday for now (noted on the lead).
+
+## 35. Working rules for me
 
 - Work on branch `claude/project-management-system-g36bde`; small, clear commits.
 - Never hard-code secrets; use env vars.

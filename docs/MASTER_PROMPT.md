@@ -672,8 +672,10 @@ needs the database (store each phone's push subscription) + a daily 8:00 job (Ve
 - **New lead:** "Came in" date & time + **week view of the next 7 days** (booked hours grey,
   tap a free hour) to book the visit; Calendar has "+ New lead".
 - **New role: Project Manager** — sees only active projects + their calendar (project
-  appointments only). No leads, no money (no payments tab, no next payment, no change orders /
-  payment requests). Enforced in middleware + data layer.
+  appointments only). No leads, no company-wide pages (payments, reports, settings…).
+  **Inside a project he sees all the money** (owner, 2026-10-14): contract/stages, customer
+  payments to collect, subs and their payments, expenses, change orders, request payment.
+  Enforced in middleware + data layer.
 - WhatsApp: personal WhatsApp groups cannot be read by any app. Option: WhatsApp Business API
   on a business number (customers/subs message it, everything lands in the project chat);
   until then, forward/share photos and messages into the project chat (or export a group).

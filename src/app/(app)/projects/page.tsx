@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectStageBadge } from "@/components/status";
 import { BackLink, Card, Progress, Tile } from "@/components/ui";
-import { canSeeMoney, currentUser, getProjects, projectFinancials } from "@/lib/data";
+import { canSeeProjectMoney, currentUser, getProjects, projectFinancials } from "@/lib/data";
 import { compactMoney, date } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
@@ -17,7 +17,7 @@ const LISTS: Record<string, { title: string; hint: string; match: (p: Project) =
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ box?: string; page?: string }> }) {
   const sp = await searchParams;
   const user = await currentUser();
-  const showMoney = canSeeMoney(user);
+  const showMoney = canSeeProjectMoney(user);
   const projects = await getProjects();
 
   // Project manager: just the active projects, nothing else.

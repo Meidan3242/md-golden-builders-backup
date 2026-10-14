@@ -20,6 +20,8 @@ export async function currentUser(): Promise<User> {
 
 export const canSeeAll = (u: User) => u.role === "admin" || u.role === "office";
 export const canSeeMoney = (u: User) => u.role === "admin" || u.role === "office";
+/** Money inside a project (customer payments, subs, expenses, stages). Project managers see it too. */
+export const canSeeProjectMoney = (u: User) => canSeeMoney(u) || u.role === "pm";
 
 export const userById = (id: string) => USERS.find((u) => u.id === id);
 export const allUsers = () => USERS;

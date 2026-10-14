@@ -6,7 +6,7 @@ import { ProjectChat } from "@/components/project-chat";
 import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs } from "@/components/ui";
-import { canSeeMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
+import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const p = await getProject(id);
   if (!p) notFound();
   const user = await currentUser();
-  const showMoney = canSeeMoney(user);
+  const showMoney = canSeeProjectMoney(user);
   const f = projectFinancials(p);
   const stageIdx = PROJECT_STAGES.indexOf(p.stage);
   const contracts = contractsOf(p);
@@ -47,8 +47,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         <div className="flex flex-wrap gap-2">
           <Button><MessageSquare className="size-4" /><span className="hidden sm:inline"> Text</span></Button>
           <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
-          {user.role === "pm" ? null : <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>}
-          {user.role === "pm" ? null : p.stage === "Punch List" || p.stage === "Completed" ? (
+          <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
+          {p.stage === "Punch List" || p.stage === "Completed" ? (
             <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
           ) : (
             <Button variant="primary"><HandCoins className="size-4" /> Request payment</Button>

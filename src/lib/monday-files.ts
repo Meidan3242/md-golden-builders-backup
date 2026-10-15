@@ -15,7 +15,7 @@ type Todo = { projectId: string; asset: MondayAsset; label: string; expenses: bo
  * Copies files from monday (client rows + each client's own board) into R2, a batch at a time.
  * Every file is copied once (remembered by its monday id), so pressing again continues where it stopped.
  */
-export async function importMondayFiles(budgetMs = 40_000): Promise<string> {
+export async function importMondayFiles(budgetMs = 30_000): Promise<{ msg: string; more: boolean }> {
   const start = Date.now();
   const db = sql();
   const projects = await db`select id, monday_id, monday_board_id from projects where monday_id is not null or monday_board_id is not null`;
@@ -55,9 +55,10 @@ export async function importMondayFiles(budgetMs = 40_000): Promise<string> {
     }
   }
   const remaining = queue.length - copied - failed.length;
-  return [
-    remaining > 0 ? `Done ✓ ${copied} files copied · ${remaining} left — press again to continue` : `Done ✓ ${copied} files copied · all files from monday are in`,
+  const msg = [
+    remaining > 0 ? `Copying… ${copied} copied this round · ${remaining} left` : `Done ✓ ${copied} copied this round · all files from monday are in`,
     failed.length ? `${failed.length} failed (press again to retry): ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "…" : ""}` : "",
     tooBig.length ? `${tooBig.length} video${tooBig.length === 1 ? "" : "s"} over 150 MB stay${tooBig.length === 1 ? "s" : ""} in monday for now` : "",
   ].filter(Boolean).join(" · ");
+  return { msg, more: remaining > 0 && copied > 0 };
 }

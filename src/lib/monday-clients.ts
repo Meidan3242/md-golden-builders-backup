@@ -87,8 +87,13 @@ function build(id: string, item: MondayItem | null, board: { id: string; name: s
   };
 }
 
-/** Bring every client (2026 + 2025) and their own boards (contracts, payments, expenses) into the app. Safe to run again. */
-export async function importClients() {
+/**
+ * Bring every client (2026 + 2025) and their own boards (contracts, payments, expenses) into the app. Safe to run again.
+ * Works in short rounds (Vercel stops a request after 60s): each round imports clients from `start` until ~30s are used,
+ * saves them, and says where the next round continues (`next`), or null when everyone is in.
+ */
+export async function importClients(start = 0, budgetMs = 30_000): Promise<{ msg: string; next: number | null; total: number }> {
+  const t0 = Date.now();
   const boards = await allBoards();
   const clientBoardList = boards.filter((b) => b.groups.includes("payment") && b.groups.includes("expenses"));
   const used = new Set<string>();
@@ -110,30 +115,44 @@ export async function importClients() {
   // Client boards with no row on a Clients board still become projects.
   for (const b of clientBoardList.filter((x) => !used.has(x.id))) pairs.push({ id: `PJ-B${b.id}`, item: null as unknown as MondayItem, board: b, origin: "monday · client board" });
 
-  const boardIds = pairs.flatMap((p) => (p.board ? [p.board.id] : []));
-  const data: Record<string, ClientRow[]> = {};
-  for (let i = 0; i < boardIds.length; i += 10) Object.assign(data, await clientBoards(boardIds.slice(i, i + 10)));
-
-  const built = pairs.map((p) => build(p.id, p.item, p.board, p.board ? data[p.board.id] ?? [] : [], p.origin));
   const db = sql();
-  await db.begin(async (tx) => {
-    await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
-    const projects = built.map((b) => b.project);
-    for (let i = 0; i < projects.length; i += 100) {
-      await tx`insert into projects ${tx(projects.slice(i, i + 100))}
+  let i = Math.max(0, start);
+  const first = i;
+  while (i < pairs.length && (i === first || Date.now() - t0 < budgetMs)) { // always at least one chunk per round
+    const chunk = pairs.slice(i, i + 8);
+    const boardIds = chunk.flatMap((p) => (p.board ? [p.board.id] : []));
+    const data = boardIds.length ? await clientBoards(boardIds) : {};
+    const built = chunk.map((p) => build(p.id, p.item, p.board, p.board ? data[p.board.id] ?? [] : [], p.origin));
+    await db.begin(async (tx) => {
+      await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '20s'`; await tx`set local idle_in_transaction_session_timeout = '30s'`; // never leave the database locked
+      const projects = built.map((b) => b.project);
+      await tx`insert into projects ${tx(projects)}
                on conflict (id) do update set customer = excluded.customer, address = excluded.address, city = excluded.city, type = excluded.type,
                  stage = excluded.stage, stuck = excluded.stuck, sale = excluded.sale, cost = excluded.cost, signed_at = excluded.signed_at,
                  monday_board_id = excluded.monday_board_id, origin = excluded.origin, updated_at = now()`;
-    }
-    const ids = projects.map((p) => p.id as string);
-    if (!ids.length) return;
-    await tx`delete from project_contracts where project_id in ${tx(ids)}`;
-    await tx`delete from project_payments where project_id in ${tx(ids)}`;
-    await tx`delete from project_expenses where project_id in ${tx(ids)} and source = 'monday'`; // keep expenses added in the app
-    for (const [table, rows] of [["project_contracts", built.flatMap((b) => b.contracts)], ["project_payments", built.flatMap((b) => b.payments)], ["project_expenses", built.flatMap((b) => b.expenses)]] as const) {
-      for (let i = 0; i < rows.length; i += 300) await tx`insert into ${tx(table)} ${tx(rows.slice(i, i + 300))}`;
-    }
-  });
-  const by = (s: string) => built.filter((b) => b.project.stage === s).length;
-  return `${built.length} projects (${by("In Progress")} ongoing, ${by("Completed")} completed, ${by("Cancelled")} cancelled) · ${pairs.filter((p) => p.board).length} with their own board · ${built.reduce((a, b) => a + b.payments.length, 0)} payments · ${built.reduce((a, b) => a + b.expenses.length, 0)} expenses`;
+      const ids = projects.map((p) => p.id as string);
+      await tx`delete from project_contracts where project_id in ${tx(ids)}`;
+      await tx`delete from project_payments where project_id in ${tx(ids)}`;
+      await tx`delete from project_expenses where project_id in ${tx(ids)} and source = 'monday'`; // keep expenses added in the app
+      for (const [table, rows] of [["project_contracts", built.flatMap((b) => b.contracts)], ["project_payments", built.flatMap((b) => b.payments)], ["project_expenses", built.flatMap((b) => b.expenses)]] as const) {
+        if (rows.length) await tx`insert into ${tx(table)} ${tx(rows)}`;
+      }
+    });
+    i += chunk.length;
+  }
+  if (i < pairs.length) return { msg: `${i} of ${pairs.length} clients`, next: i, total: pairs.length };
+
+  const [c] = await db`select count(*)::int as all,
+      count(*) filter (where stage not in ('Completed', 'Cancelled'))::int as ongoing,
+      count(*) filter (where stage = 'Completed')::int as completed,
+      count(*) filter (where stage = 'Cancelled')::int as cancelled,
+      count(monday_board_id)::int as boards,
+      (select count(*)::int from project_payments) as payments,
+      (select count(*)::int from project_expenses) as expenses
+    from projects`;
+  return {
+    msg: `${c.all} projects (${c.ongoing} ongoing, ${c.completed} completed, ${c.cancelled} cancelled) · ${c.boards} with their own board · ${c.payments} payments · ${c.expenses} expenses`,
+    next: null,
+    total: pairs.length,
+  };
 }

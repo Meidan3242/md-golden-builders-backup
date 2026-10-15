@@ -136,34 +136,38 @@ export async function importFromMonday(boardId: string): Promise<string> {
 }
 
 /** Settings → "Import clients" (owner only): Clients 2026 + 2025 and every client's own board. */
-export async function importClientsFromMonday(): Promise<string> {
+export type ImportStep = { msg: string; next?: number | null };
+
+/** One round of the clients import; the button calls again with `next` until it is null. */
+export async function importClientsFromMonday(start = 0): Promise<ImportStep> {
   const me = await loggedInUser();
-  if (me?.role !== "admin") return "Only the owner can do this.";
-  if (!(await dbReady())) return "Set up the database first.";
+  if (me?.role !== "admin") return { msg: "Only the owner can do this." };
+  if (!(await dbReady())) return { msg: "Set up the database first." };
   try {
-    await migrate(); // creates the projects tables the first time
+    if (start === 0) await migrate(); // creates the projects tables the first time
     const { importClients } = await import("@/lib/monday-clients");
-    const msg = await importClients();
-    revalidatePath("/", "layout");
-    return `Done ✓ ${msg}`;
+    const r = await importClients(start, Number(process.env.IMPORT_BUDGET_MS) || 30_000);
+    if (r.next === null) revalidatePath("/", "layout");
+    return r.next === null ? { msg: `Done ✓ ${r.msg}`, next: null } : { msg: `Importing… ${r.msg}`, next: r.next };
   } catch (e) {
-    return `Failed: ${(e as Error).message}`;
+    return { msg: `Failed: ${(e as Error).message}` };
   }
 }
 
-export async function importFilesFromMonday(): Promise<string> {
+/** One round of copying files (~40s); the button calls again while `next` is set. */
+export async function importFilesFromMonday(): Promise<ImportStep> {
   const me = await loggedInUser();
-  if (me?.role !== "admin") return "Only the owner can do this.";
-  if (!(await dbReady())) return "Set up the database first.";
+  if (me?.role !== "admin") return { msg: "Only the owner can do this." };
+  if (!(await dbReady())) return { msg: "Set up the database first." };
   const { r2Ready } = await import("@/lib/storage");
-  if (!r2Ready()) return "Failed: connect Cloudflare storage first.";
+  if (!r2Ready()) return { msg: "Failed: connect Cloudflare storage first." };
   try {
     await migrate(); // creates the files table the first time
     const { importMondayFiles } = await import("@/lib/monday-files");
-    const msg = await importMondayFiles();
-    revalidatePath("/", "layout");
-    return msg;
+    const r = await importMondayFiles(30_000);
+    if (!r.more) revalidatePath("/", "layout");
+    return { msg: r.msg, next: r.more ? 1 : null };
   } catch (e) {
-    return `Failed: ${(e as Error).message}`;
+    return { msg: `Failed: ${(e as Error).message}` };
   }
 }

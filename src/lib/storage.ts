@@ -13,21 +13,26 @@ const r2 = () => {
   const rawAccount = process.env.R2_ACCOUNT_ID?.trim();
   const account = rawAccount?.match(/[0-9a-f]{32}/i)?.[0] ?? rawAccount, id = process.env.R2_ACCESS_KEY_ID?.trim(), secret = process.env.R2_SECRET_ACCESS_KEY?.trim(), bucket = process.env.R2_BUCKET?.trim();
   if (!account || !id || !secret || !bucket) return null;
-  return { url: `https://${account}.r2.cloudflarestorage.com/${bucket}`, client: new AwsClient({ accessKeyId: id, secretAccessKey: secret, service: "s3", region: "auto" }) };
+  // R2_ENDPOINT: only for local testing against a stand-in.
+  return { url: `${process.env.R2_ENDPOINT ?? `https://${account}.r2.cloudflarestorage.com`}/${bucket}`, client: new AwsClient({ accessKeyId: id, secretAccessKey: secret, service: "s3", region: "auto" }) };
 };
 export const r2Ready = () => !!r2();
 export const storageReady = () => r2Ready() || supabaseReady();
 const R2 = "r2:"; // saved paths with this prefix live in R2
 const objectUrl = (c: NonNullable<ReturnType<typeof r2>>, folder: string, path: string) => `${c.url}/${folder}/${path.split("/").map(encodeURIComponent).join("/")}`;
 
-export async function uploadFile(bucket: string, path: string, file: File) {
+/** Saves bytes to R2. Returns the saved path ("r2:…") or null. */
+export async function putR2(bucket: string, path: string, body: ArrayBuffer | Uint8Array, mime: string) {
   const c = r2();
-  if (c) {
-    const res = await c.client.fetch(objectUrl(c, bucket, path), { method: "PUT", headers: { "Content-Type": file.type || "application/pdf" }, body: Buffer.from(await file.arrayBuffer()), signal: AbortSignal.timeout(60000) });
-    if (res.ok) return R2 + path;
-    console.error("R2 upload failed", res.status, await res.text());
-    return null;
-  }
+  if (!c) return null;
+  const res = await c.client.fetch(objectUrl(c, bucket, path), { method: "PUT", headers: { "Content-Type": mime || "application/octet-stream" }, body: body as BodyInit, signal: AbortSignal.timeout(120000) });
+  if (res.ok) return R2 + path;
+  console.error("R2 upload failed", res.status, await res.text());
+  return null;
+}
+
+export async function uploadFile(bucket: string, path: string, file: File) {
+  if (r2Ready()) return putR2(bucket, path, new Uint8Array(await file.arrayBuffer()), file.type || "application/pdf");
   if (!supabaseReady()) return null;
   const res = await fetch(`${base()}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",

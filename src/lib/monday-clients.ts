@@ -128,7 +128,7 @@ export async function importClients() {
     if (!ids.length) return;
     await tx`delete from project_contracts where project_id in ${tx(ids)}`;
     await tx`delete from project_payments where project_id in ${tx(ids)}`;
-    await tx`delete from project_expenses where project_id in ${tx(ids)}`;
+    await tx`delete from project_expenses where project_id in ${tx(ids)} and source = 'monday'`; // keep expenses added in the app
     for (const [table, rows] of [["project_contracts", built.flatMap((b) => b.contracts)], ["project_payments", built.flatMap((b) => b.payments)], ["project_expenses", built.flatMap((b) => b.expenses)]] as const) {
       for (let i = 0; i < rows.length; i += 300) await tx`insert into ${tx(table)} ${tx(rows.slice(i, i + 300))}`;
     }

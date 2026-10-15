@@ -4,7 +4,7 @@ import { authSecret, SESSION_COOKIE, verifySession, VIEW_AS_COOKIE } from "@/lib
 // Customer pages (estimates, contracts, payment, emails) stay open — customers open them from a link.
 const PUBLIC = [/^\/login/, /^\/p\//];
 // Project managers only ever reach active projects and the calendar.
-const PM_ALLOWED = [/^\/projects(\/(?!new)[^/]+)?\/?$/, /^\/calendar/, /^\/more/, /^\/p\//];
+const PM_ALLOWED = [/^\/projects(\/(?!new)[^/]+)?\/?$/, /^\/files\//, /^\/calendar/, /^\/more/, /^\/p\//];
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;

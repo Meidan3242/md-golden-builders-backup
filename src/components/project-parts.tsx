@@ -163,7 +163,7 @@ export function ExpensesTable({ expenses }: { expenses: Expense[] }) {
 }
 
 export function MediaGrid({ media }: { media: MediaItem[] }) {
-  const phases: MediaItem["phase"][] = ["Before", "During", "After"];
+  const phases: MediaItem["phase"][] = ["Before", "During", "After", ...(media.some((m) => m.phase === "From monday") ? (["From monday"] as const) : [])];
   return (
     <div className="space-y-5">
       {phases.map((ph) => {
@@ -178,11 +178,21 @@ export function MediaGrid({ media }: { media: MediaItem[] }) {
                 {items.map((m) => (
                   <div
                     key={m.id}
-                    className="relative aspect-square overflow-hidden rounded-lg"
-                    style={{ background: `linear-gradient(135deg, hsl(${m.hue} 25% 62%), hsl(${(m.hue + 40) % 360} 30% 38%))` }}
+                    className="relative aspect-square overflow-hidden rounded-lg bg-surface"
+                    style={m.src ? undefined : { background: `linear-gradient(135deg, hsl(${m.hue} 25% 62%), hsl(${(m.hue + 40) % 360} 30% 38%))` }}
                   >
-                    {m.kind === "video" && <Play className="absolute inset-0 m-auto size-8 fill-white text-white drop-shadow" />}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 text-[10px] text-white">
+                    {m.src && (
+                      <a href={m.src} target="_blank" rel="noreferrer" className="absolute inset-0">
+                        {m.kind === "video" ? (
+                          <video src={`${m.src}#t=0.1`} preload="metadata" muted playsInline className="size-full object-cover" />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element -- private signed links, not for next/image
+                          <img src={m.src} alt={m.caption} loading="lazy" className="size-full object-cover" />
+                        )}
+                      </a>
+                    )}
+                    {m.kind === "video" && <Play className="pointer-events-none absolute inset-0 m-auto size-8 fill-white text-white drop-shadow" />}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent p-1.5 text-[10px] text-white">
                       {m.caption}
                       <div className="opacity-70">{date(m.at)}</div>
                     </div>

@@ -148,3 +148,20 @@ export async function importClientsFromMonday(): Promise<string> {
     return `Failed: ${(e as Error).message}`;
   }
 }
+
+export async function importFilesFromMonday(): Promise<string> {
+  const me = await loggedInUser();
+  if (me?.role !== "admin") return "Only the owner can do this.";
+  if (!(await dbReady())) return "Set up the database first.";
+  const { r2Ready } = await import("@/lib/storage");
+  if (!r2Ready()) return "Failed: connect Cloudflare storage first.";
+  try {
+    await migrate(); // creates the files table the first time
+    const { importMondayFiles } = await import("@/lib/monday-files");
+    const msg = await importMondayFiles();
+    revalidatePath("/", "layout");
+    return msg;
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+}

@@ -175,4 +175,28 @@ alter table project_payments enable row level security;
 alter table project_expenses enable row level security;
 `,
   },
+  {
+    version: 5,
+    name: "Project files (photos, documents, receipts) + expenses added in the app",
+    sql: /* sql */ `
+create table if not exists project_files (
+  id text primary key,
+  project_id text not null references projects(id) on delete cascade,
+  kind text not null,
+  phase text,
+  name text not null,
+  path text not null,
+  mime text,
+  size bigint,
+  expense_id text,
+  monday_asset_id text unique,
+  added_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists project_files_p on project_files (project_id);
+alter table project_files enable row level security;
+alter table project_expenses add column if not exists source text not null default 'monday';
+alter table project_expenses add column if not exists by_user text;
+`,
+  },
 ];

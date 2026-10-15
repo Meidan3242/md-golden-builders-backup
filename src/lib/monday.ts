@@ -78,3 +78,29 @@ export async function clientBoards(ids: string[]): Promise<Record<string, Client
     ]),
   );
 }
+
+export type MondayAsset = { id: string; name: string; public_url: string; file_extension: string; file_size: number; created_at: string };
+const ASSETS = "assets { id name public_url file_extension file_size created_at }";
+
+/** Files attached to items (file columns + files posted in updates). public_url works for one hour. */
+export async function itemAssets(ids: string[]): Promise<{ id: string; name: string; assets: MondayAsset[] }[]> {
+  const out: { id: string; name: string; assets: MondayAsset[] }[] = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    const d = await gql<{ items: { id: string; name: string; assets: MondayAsset[] }[] }>(`query ($ids: [ID!]) { items(ids: $ids, limit: 50) { id name ${ASSETS} } }`, { ids: ids.slice(i, i + 50) });
+    out.push(...d.items);
+  }
+  return out;
+}
+
+/** Files on every item of the given boards. */
+export async function boardAssets(ids: string[]): Promise<Record<string, { name: string; group: string; assets: MondayAsset[] }[]>> {
+  const out: Record<string, { name: string; group: string; assets: MondayAsset[] }[]> = {};
+  for (let i = 0; i < ids.length; i += 10) {
+    const d = await gql<{ boards: { id: string; items_page: { items: { name: string; group: { title: string }; assets: MondayAsset[] }[] } }[] }>(
+      `query ($ids: [ID!]) { boards(ids: $ids) { id items_page(limit: 500) { items { name group { title } ${ASSETS} } } } }`,
+      { ids: ids.slice(i, i + 10) },
+    );
+    for (const b of d.boards) out[b.id] = b.items_page.items.map((x) => ({ name: x.name, group: x.group.title.trim().toLowerCase(), assets: x.assets ?? [] }));
+  }
+  return out;
+}

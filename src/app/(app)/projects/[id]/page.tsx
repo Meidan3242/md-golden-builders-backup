@@ -3,10 +3,12 @@ import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSign
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
+import { ProjectUpload, SnapReceipt } from "@/components/project-upload";
 import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/components/project-parts";
 import { ProjectStageBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs, Soon } from "@/components/ui";
-import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, subById, userById, type ContractView } from "@/lib/data";
+import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, projectsReal, subById, userById, type ContractView } from "@/lib/data";
+import { r2Ready } from "@/lib/storage";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
 
@@ -17,6 +19,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   if (!p) notFound();
   const user = await currentUser();
   const showMoney = canSeeProjectMoney(user);
+  // Uploads work on real projects once Cloudflare storage is connected; demo projects keep the "Soon" buttons.
+  const live = (await projectsReal()) && r2Ready();
   const f = projectFinancials(p);
   const stageIdx = (PROJECT_STAGES as readonly string[]).indexOf(p.stage);
   const contracts = contractsOf(p);
@@ -46,7 +50,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         </div>
         <div className="flex flex-wrap gap-2">
           <Button><MessageSquare className="size-4" /><span className="hidden sm:inline"> Text</span></Button>
-          <Button><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
+          <Button href={live ? `/projects/${p.id}?tab=media` : undefined}><Camera className="size-4" /><span className="hidden sm:inline"> Upload media</span></Button>
           <Button><FilePlus2 className="size-4" /><span className="hidden sm:inline"> Change order</span></Button>
           {p.stage === "Punch List" || p.stage === "Completed" ? (
             <Button variant="primary"><FileSignature className="size-4" /> <span className="hidden sm:inline">Send </span>completion form</Button>
@@ -89,18 +93,18 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       {tab === "contracts" && <Contracts contracts={contracts} showMoney={showMoney} />}
       {tab === "payments" && showMoney && <PaymentsByContract contracts={contracts} />}
       {tab === "subs" && showMoney && <SubsByContract contracts={contracts} />}
-      {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} />}
+      {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} snap={live ? <SnapReceipt projectId={p.id} contracts={contracts.map((c) => ({ n: c.n, label: c.label }))} /> : undefined} />}
       {tab === "permits" && <Permits p={p} />}
       {tab === "media" && (
         <Card className="p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted">Internal gallery. Upload straight from your phone — no more WhatsApp groups.</p>
-            <div className="flex gap-2"><Button>Share gallery with customer</Button><Button variant="primary"><Camera className="size-4" /> Upload</Button></div>
+            {live ? <ProjectUpload projectId={p.id} /> : <div className="flex gap-2"><Button>Share gallery with customer</Button><Button variant="primary"><Camera className="size-4" /> Upload</Button></div>}
           </div>
           <MediaGrid media={p.media} />
         </Card>
       )}
-      {tab === "documents" && <Documents p={p} />}
+      {tab === "documents" && <Documents p={p} upload={live ? <ProjectUpload projectId={p.id} documents /> : undefined} />}
     </>
   );
 }
@@ -245,13 +249,16 @@ function Permits({ p }: { p: Project }) {
   );
 }
 
-function Documents({ p }: { p: Project }) {
+function Documents({ p, upload }: { p: Project; upload?: React.ReactNode }) {
   return (
     <Card>
-      <CardHeader title="Documents" action={<Soon className="text-xs font-medium text-gold-text">+ Upload</Soon>} />
+      <CardHeader title="Documents" action={upload ? undefined : <Soon className="text-xs font-medium text-gold-text">+ Upload</Soon>} />
+      {upload && <div className="border-b border-border px-4 py-3">{upload}</div>}
+      {!p.documents.length && <Empty>No documents yet</Empty>}
       <ul className="divide-y divide-border">
         {p.documents.map((d) => (
-          <li key={d.id} className="flex items-center gap-3 px-4 py-2.5">
+          <li key={d.id} className="relative flex items-center gap-3 px-4 py-2.5 hover:bg-surface">
+            {d.href && <a href={d.href} target="_blank" rel="noreferrer" className="absolute inset-0" aria-label={`Open ${d.name}`} />}
             <DocIcon />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{d.name}</div>
@@ -339,15 +346,15 @@ function SubsByContract({ contracts }: { contracts: ContractView[] }) {
 }
 
 /** Everything that went out on the project: sub payments + materials and other expenses, per contract. */
-function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
+function ExpensesByContract({ contracts, snap }: { contracts: ContractView[]; snap?: React.ReactNode }) {
   const rowsOf = (c: ContractView) =>
     [
       ...c.subs.flatMap((a) =>
         a.payments.filter((x) => x.status !== "Upcoming").map((x) => ({
-          id: x.id, at: x.paidAt, to: subById(a.subId)?.company ?? "Sub", what: `Sub · ${x.name}`, amount: x.amount, proof: x.proof, requested: x.status === "Requested",
+          id: x.id, at: x.paidAt, to: subById(a.subId)?.company ?? "Sub", what: `Sub · ${x.name}`, amount: x.amount, proof: x.proof, href: undefined as string | undefined, requested: x.status === "Requested",
         })),
       ),
-      ...c.expenses.map((e) => ({ id: e.id, at: e.date, to: e.vendor, what: e.category === "Other" ? "Sub / other" : e.category, amount: e.amount, proof: e.receipt, requested: !!e.pending })),
+      ...c.expenses.map((e) => ({ id: e.id, at: e.date, to: e.vendor, what: e.category === "Other" ? "Sub / other" : e.category, amount: e.amount, proof: e.receipt, href: e.receiptHref, requested: !!e.pending })),
     ].sort((a, z) => (z.at ?? "9").localeCompare(a.at ?? "9"));
   const all = contracts.flatMap(rowsOf).filter((r) => !r.requested);
   const subs = all.filter((r) => r.what.startsWith("Sub")).reduce((a, r) => a + r.amount, 0);
@@ -358,7 +365,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
         <span>Subs paid <b>{money(subs)}</b></span>
         <span>Materials & other <b>{money(other)}</b></span>
         <span>Total out <b>{money(subs + other)}</b></span>
-        <Soon className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</Soon>
+        {snap ? <div className="w-full sm:ml-auto sm:w-auto">{snap}</div> : <Soon className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-gold-text"><Camera className="size-3.5" /> Snap receipt</Soon>}
       </Card>
       {contracts.map((c, i) => {
         const rows = rowsOf(c);
@@ -377,7 +384,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                       {r.at ? date(r.at) : ""}
                       <Badge tone={r.what.startsWith("Sub") ? "info" : "neutral"}>{r.what}</Badge>
-                      {r.requested ? <Badge tone="warn">Requested — not paid</Badge> : r.proof ? <span className="text-ok">receipt ✓</span> : <Badge tone="bad">No receipt</Badge>}
+                      {r.requested ? <Badge tone="warn">Requested — not paid</Badge> : r.proof ? <Proof href={r.href} label="receipt ✓" /> : <Badge tone="bad">No receipt</Badge>}
                     </div>
                   </li>
                 ))}
@@ -393,7 +400,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
                         <td className="px-3 py-2 text-muted">{r.at ? date(r.at) : "—"}</td>
                         <td className="px-3 py-2 font-medium">{r.to}</td>
                         <td className="px-3 py-2"><Badge tone={r.what.startsWith("Sub") ? "info" : "neutral"}>{r.what}</Badge>{r.requested && <Badge tone="warn">Requested — not paid</Badge>}</td>
-                        <td className="px-3 py-2">{r.requested ? <span className="text-xs text-muted">—</span> : r.proof ? <span className="text-xs text-ok">✓ Attached</span> : <Badge tone="bad">Missing</Badge>}</td>
+                        <td className="px-3 py-2">{r.requested ? <span className="text-xs text-muted">—</span> : r.proof ? <Proof href={r.href} label="✓ Attached" /> : <Badge tone="bad">Missing</Badge>}</td>
                         <td className="px-3 py-2 text-right font-semibold">{money(r.amount)}</td>
                       </tr>
                     ))}
@@ -409,4 +416,9 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
       })}
     </div>
   );
+}
+
+/** "receipt ✓" — opens the photo when there is one. */
+function Proof({ href, label }: { href?: string; label: string }) {
+  return href ? <a href={href} target="_blank" rel="noreferrer" className="text-xs text-ok underline">{label}</a> : <span className="text-xs text-ok">{label}</span>;
 }

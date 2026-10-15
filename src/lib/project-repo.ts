@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
-import { sql } from "./db";
-import type { ChangeOrder, Expense, PaymentMilestone, Project, ProjectStage } from "./types";
+import { schemaVersion, sql } from "./db";
+import type { ChangeOrder, Expense, MediaItem, PaymentMilestone, Project, ProjectDoc, ProjectStage } from "./types";
 
 const iso = (d: unknown) => (d ? new Date(d as string).toISOString() : undefined);
 const num = (x: unknown) => (x == null ? 0 : Number(x));
@@ -9,16 +9,20 @@ const num = (x: unknown) => (x == null ? 0 : Number(x));
 /** Real projects (imported from monday or created in the app), shaped like the rest of the app expects. */
 export const dbProjects = cache(async (): Promise<Project[]> => {
   const db = sql();
-  const [ps, cs, pays, exps] = await Promise.all([
+  const hasFiles = ((await schemaVersion()) ?? 0) >= 5;
+  const [ps, cs, pays, exps, files] = await Promise.all([
     db`select * from projects order by signed_at`,
     db`select * from project_contracts order by n`,
     db`select * from project_payments order by paid_at nulls last, id`,
     db`select * from project_expenses order by spent_at nulls last, id`,
+    hasFiles ? db`select id, project_id, kind, phase, name, mime, expense_id, created_at from project_files order by created_at` : Promise.resolve([]),
   ]);
   const group = <T extends { project_id: string }>(xs: readonly T[]) => xs.reduce<Record<string, T[]>>((a, x) => ((a[x.project_id] ??= []).push(x), a), {});
   const C = group(cs as unknown as { project_id: string; n: number; title: string; amount: string; signed_at: string; status: string; id: string }[]);
   const P = group(pays as unknown as { project_id: string; id: string; contract_n: number | null; name: string; amount: string; paid_at: string; method: string | null; status: string }[]);
-  const E = group(exps as unknown as { project_id: string; id: string; contract_n: number | null; vendor: string; amount: string; spent_at: string; pending: boolean; category: string }[]);
+  const E = group(exps as unknown as { project_id: string; id: string; contract_n: number | null; vendor: string; amount: string; spent_at: string; pending: boolean; category: string; source?: string; by_user?: string | null }[]);
+  const F = group(files as unknown as { project_id: string; id: string; kind: string; phase: string | null; name: string; mime: string | null; expense_id: string | null; created_at: string }[]);
+  const receiptOf = Object.fromEntries((files as unknown as { id: string; expense_id: string | null }[]).filter((f) => f.expense_id).map((f) => [f.expense_id!, `/files/${f.id}`]));
   const perYear: Record<string, number> = {};
 
   return ps.map((p) => {
@@ -31,7 +35,9 @@ export const dbProjects = cache(async (): Promise<Project[]> => {
       }));
     const exp = (n: number | null): Expense[] =>
       (E[p.id] ?? []).filter((x) => (x.contract_n ?? 1) === (n ?? 1)).map((x) => ({
-        id: x.id, date: iso(x.spent_at) ?? iso(p.signed_at)!, vendor: x.vendor, category: x.category as Expense["category"], amount: num(x.amount), receipt: true, by: "u-owner", pending: x.pending,
+        id: x.id, date: iso(x.spent_at) ?? iso(p.signed_at)!, vendor: x.vendor, category: x.category as Expense["category"], amount: num(x.amount),
+        // monday rows: the receipt lives in monday. App rows: only when a photo was snapped.
+        receipt: x.source === "app" ? !!receiptOf[x.id] : true, receiptHref: receiptOf[x.id], by: x.by_user ?? "u-owner", pending: x.pending,
       }));
     const contracts = C[p.id] ?? [];
     const changeOrders: ChangeOrder[] = contracts.filter((c) => c.n > 1).map((c) => ({
@@ -56,8 +62,13 @@ export const dbProjects = cache(async (): Promise<Project[]> => {
       subs: [],
       expenses: exp(1),
       permits: [],
-      media: [],
-      documents: [],
+      media: (F[p.id] ?? []).filter((f) => f.kind === "photo" || f.kind === "video").map((f): MediaItem => ({
+        id: f.id, phase: (f.phase ?? "From monday") as MediaItem["phase"], kind: f.kind as MediaItem["kind"], caption: f.name, at: iso(f.created_at)!, hue: 30, src: `/files/${f.id}`,
+      })),
+      documents: (F[p.id] ?? []).filter((f) => f.kind === "document" || (f.kind === "receipt" && !f.expense_id)).map((f): ProjectDoc => ({
+        id: f.id, name: f.name, at: iso(f.created_at)!, href: `/files/${f.id}`,
+        kind: /change\s*order/i.test(f.name) ? "Change Order" : /contract/i.test(f.name) ? "Contract" : /permit/i.test(f.name) ? "Permit" : /plan/i.test(f.name) ? "Plans" : /estimate/i.test(f.name) ? "Estimate" : /lien/i.test(f.name) ? "Lien Waiver" : "Other",
+      })),
       activity: [],
       chat: [],
       stuck: p.stuck,

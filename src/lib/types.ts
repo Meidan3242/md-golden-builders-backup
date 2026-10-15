@@ -188,6 +188,8 @@ export interface Expense {
   by: string;
   /** From monday: still owed to the sub / vendor. */
   pending?: boolean;
+  /** Photo of the receipt (real file). */
+  receiptHref?: string;
 }
 
 export interface ChangeOrder {
@@ -216,8 +218,10 @@ export interface Permit {
 
 export interface MediaItem {
   id: string;
-  phase: "Before" | "During" | "After";
+  phase: "Before" | "During" | "After" | "From monday";
   kind: "photo" | "video";
+  /** Real file: opens through /files/<id> (private, login required). */
+  src?: string;
   caption: string;
   at: string;
   hue: number; // placeholder thumbnail colour in the demo
@@ -229,6 +233,8 @@ export interface ProjectDoc {
   kind: "Contract" | "Additional Description" | "Change Order" | "Estimate" | "Plans" | "Permit" | "Completion Form" | "Lien Waiver" | "Other";
   at: string;
   signed?: boolean;
+  /** Real file: opens through /files/<id>. */
+  href?: string;
 }
 
 export interface Project {

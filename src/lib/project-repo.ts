@@ -10,13 +10,12 @@ const num = (x: unknown) => (x == null ? 0 : Number(x));
 export const dbProjects = cache(async (): Promise<Project[]> => {
   const db = sql();
   const hasFiles = ((await schemaVersion()) ?? 0) >= 5;
-  const [ps, cs, pays, exps, files] = await Promise.all([
-    db`select * from projects order by signed_at`,
-    db`select * from project_contracts order by n`,
-    db`select * from project_payments order by paid_at nulls last, id`,
-    db`select * from project_expenses order by spent_at nulls last, id`,
-    hasFiles ? db`select id, project_id, kind, phase, name, mime, expense_id, created_at from project_files order by created_at` : Promise.resolve([]),
-  ]);
+  // One after another (each is a few ms): keeps the number of open database connections low.
+  const ps = await db`select * from projects order by signed_at`;
+  const cs = await db`select * from project_contracts order by n`;
+  const pays = await db`select * from project_payments order by paid_at nulls last, id`;
+  const exps = await db`select * from project_expenses order by spent_at nulls last, id`;
+  const files = hasFiles ? await db`select id, project_id, kind, phase, name, mime, expense_id, created_at from project_files order by created_at` : [];
   const group = <T extends { project_id: string }>(xs: readonly T[]) => xs.reduce<Record<string, T[]>>((a, x) => ((a[x.project_id] ??= []).push(x), a), {});
   const C = group(cs as unknown as { project_id: string; n: number; title: string; amount: string; signed_at: string; status: string; id: string }[]);
   const P = group(pays as unknown as { project_id: string; id: string; contract_n: number | null; name: string; amount: string; paid_at: string; method: string | null; status: string }[]);

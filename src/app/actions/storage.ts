@@ -31,7 +31,12 @@ export async function diagnose(): Promise<string> {
     await timed("expenses", () => db`select id from project_expenses`),
     await timed("files", () => db`select id from project_files`),
     await timed("all projects (app)", async () => (await import("@/lib/project-repo")).dbProjects()),
+    await timed("8 queries at once", () => Promise.all(Array.from({ length: 8 }, () => db`select pg_sleep(0.2)`))),
   ];
+  const data = await import("@/lib/data");
+  for (const [label, run] of [["leads", data.getLeads], ["projects (page)", data.getProjects], ["appointments", data.getAppointments], ["follow-ups", data.getFollowUps]] as const)
+    lines.push(await timed(label, run));
+  lines.push(await timed("home all at once", () => Promise.all([data.getLeads(), data.getProjects(), data.getAppointments(), data.getFollowUps()])));
   const stuck = await db`select state, wait_event_type, left(query, 70) as q, extract(epoch from now() - query_start)::int as secs
                          from pg_stat_activity where datname = current_database() and pid <> pg_backend_pid() and state <> 'idle'
                          order by query_start limit 5`.then((r) => r as unknown as Record<string, unknown>[]).catch((e): Record<string, unknown>[] => [{ state: "check failed", q: (e as Error).message }]);

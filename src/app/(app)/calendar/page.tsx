@@ -35,7 +35,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const selected = sp.day ?? (todayKey.startsWith(monthKey) ? todayKey : `${monthKey}-01`);
 
   const [appts, user] = await Promise.all([getAppointments(), currentUser()]);
-  const on = (k: string) => appts.filter((a) => dayKey(a.start) === k);
+  // Group once by day (not once per calendar square).
+  const byDay = new Map<string, Appointment[]>();
+  for (const a of appts) {
+    const k = dayKey(a.start);
+    if (k.startsWith(monthKey) || k === selected) byDay.set(k, [...(byDay.get(k) ?? []), a]);
+  }
+  const on = (k: string) => byDay.get(k) ?? [];
   const dayItems = on(selected);
 
   return (

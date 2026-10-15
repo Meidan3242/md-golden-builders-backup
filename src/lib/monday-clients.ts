@@ -44,7 +44,8 @@ function build(id: string, item: MondayItem | null, board: { id: string; name: s
   let nextN = 2;
   for (const r of rows.filter((x) => x.group === "contract")) {
     const co = r.name.match(/change\s*order\s*#?\s*(\d+)/i);
-    const n = /^contract/i.test(r.name) && !contracts.some((x) => x.n === 1) ? 1 : co ? Number(co[1]) + 1 : nextN;
+    let n = /^contract/i.test(r.name) && !contracts.some((x) => x.n === 1) ? 1 : co ? Number(co[1]) + 1 : nextN;
+    while (contracts.some((x) => x.n === n)) n = nextN++; // two rows wanting the same number (e.g. "Additional Form" then "Change Order #1")
     nextN = Math.max(nextN, n + 1);
     contracts.push({ id: `${id}-c${n}`, project_id: id, n, title: r.name, amount: money(r.cols["total price"]), signed_at: day(r.cols["date"]), status: "Signed" });
   }

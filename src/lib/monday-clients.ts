@@ -117,6 +117,7 @@ export async function importClients() {
   const built = pairs.map((p) => build(p.id, p.item, p.board, p.board ? data[p.board.id] ?? [] : [], p.origin));
   const db = sql();
   await db.begin(async (tx) => {
+    await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
     const projects = built.map((b) => b.project);
     for (let i = 0; i < projects.length; i += 100) {
       await tx`insert into projects ${tx(projects.slice(i, i + 100))}

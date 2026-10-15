@@ -36,6 +36,7 @@ export async function createLead(_: string | null, form: FormData): Promise<stri
   const visitType = f("visitType") || "Site visit";
   const db = sql();
   const id = await db.begin(async (tx) => {
+    await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
     const [lead] = await tx`
       insert into leads (name, phone, email, address, city, service, source, assigned_to, notes, created_at, stage)
       values (${f("name")}, ${f("phone")}, ${f("email") || null}, ${address}, ${city}, ${f("service") || "Other"}, ${f("source") || "Other"},
@@ -85,6 +86,7 @@ export async function markEstimateSent(_: string | null, form: FormData): Promis
   }
   const sentAt = new Date();
   await sql().begin(async (tx) => {
+    await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
     await tx`update leads set stage = 'Estimate Sent', estimate_amount = ${amount}, estimate_sent_at = ${sentAt},
              estimate_pdf = coalesce(${pdf}, estimate_pdf), closed_at = null, updated_at = now() where id = ${id}`;
     await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${id}, ${u.id}, 'estimate', ${`Estimate sent — $${amount.toLocaleString()}`})`;

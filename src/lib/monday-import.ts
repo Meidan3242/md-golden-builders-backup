@@ -108,6 +108,7 @@ export async function importBoard(boardId: string) {
   const visits = rows.flatMap((r) => (r.visit ? [r.visit] : []));
   const follows = rows.flatMap((r) => (r.followUp ? [r.followUp] : []));
   await db.begin(async (tx) => {
+    await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
     for (let i = 0; i < leads.length; i += 200) {
       await tx`
         insert into leads ${tx(leads.slice(i, i + 200))}

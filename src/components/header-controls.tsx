@@ -1,7 +1,7 @@
 "use client";
 
 import { LogOut, Monitor, Moon, Sun } from "lucide-react";
-import { logout, viewAs } from "@/app/actions/auth";
+import { logout } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@/lib/types";
@@ -42,30 +42,6 @@ export function ThemeToggle() {
       <Icon className="size-4" />
       <span className="hidden sm:inline">{label}</span>
     </button>
-  );
-}
-
-/** Owner only: preview the app the way Laline, a sales rep or the project manager sees it. */
-export function UserSwitcher({ users, current }: { users: User[]; current: string }) {
-  const router = useRouter();
-  return (
-    <label className="flex items-center gap-2 text-xs text-muted">
-      <span className="hidden lg:inline" title="Preview only — shows what each role sees. Not a security feature.">View as (preview)</span>
-      <select
-        value={current}
-        onChange={async (e) => {
-          await viewAs(e.target.value);
-          router.refresh();
-        }}
-        className="w-32 truncate rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-medium text-text sm:w-auto"
-      >
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.role === "admin" ? `Me (${u.name})` : `${u.name.replace("Demo ", "")} — ${u.title}`}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 

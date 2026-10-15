@@ -143,12 +143,10 @@ async function MondayCard() {
               <div className="mb-1 text-xs font-semibold text-muted">Clients → projects (Clients 2026 + 2025, and each client&apos;s own board: contract, change orders, payments, expenses)</div>
               <MondayImportButton clients label="Import clients" />
             </div>
-            {r2Ready() && (
-              <div>
-                <div className="mb-1 text-xs font-semibold text-muted">Files → Cloudflare (contracts, PDFs, photos, videos from each client — about 40 seconds a press; press again until it says all are in)</div>
-                <MondayImportButton files label="Copy files from monday" />
-              </div>
-            )}
+            <div>
+              <div className="mb-1 text-xs font-semibold text-muted">Files → Cloudflare</div>
+              <p className="rounded-xl border border-border px-3 py-2.5 text-xs text-muted">Copying customer files from monday is turned off until per-person login is in place.</p>
+            </div>
           </div>
         ) : (
           <p className="text-xs text-muted">monday → your picture (top right) → Developers → My access tokens → Copy. Then Vercel → Environment Variables → MONDAY_API_TOKEN → Save → Redeploy.</p>

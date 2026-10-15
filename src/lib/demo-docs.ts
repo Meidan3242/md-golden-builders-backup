@@ -7,9 +7,9 @@ export const COMPANY = {
   phone: "(858) 933-1694",
   email: "info@mdgoldenbuilders.com",
   web: "www.mdgoldenbuilders.com",
-  // Real payment details for customers (owner's decision, 2026-10-14 — these are meant to be shared with customers).
-  zelle: "MDgoldenbuilders@gmail.com",
-  venmo: "https://venmo.com/code?user_id=3483491786294445630",
+  // Payment details are NOT shown on the public demo pages (owner's decision, 2026-10-15) — they go out with
+  // each customer's own signed link once that exists.
+  zelle: "sent with your payment request",
   reviews: { google: "https://tr.ee/xLG1j2NoRY", yelp: "https://tr.ee/ffZ0n6Xp5-", thumbtack: "https://tr.ee/kiBOFNYW8q" },
 };
 

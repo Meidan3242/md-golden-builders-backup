@@ -7,6 +7,7 @@ import { dbReady, migrate, sql } from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
 import { sanDiegoToUtc } from "@/lib/time";
 
+const FILES_COPY_OFF = true;
 const DEMO = "Demo mode — this saves for real once the database is connected.";
 
 async function staff() {
@@ -156,6 +157,8 @@ export async function importClientsFromMonday(start = 0): Promise<ImportStep> {
 
 /** One round of copying files (~40s); the button calls again while `next` is set. */
 export async function importFilesFromMonday(): Promise<ImportStep> {
+  // Turned off (owner's decision, 2026-10-15): no customer files leave monday until per-person login exists.
+  if (FILES_COPY_OFF) return { msg: "Failed: copying files from monday is turned off for now." };
   const me = await loggedInUser();
   if (me?.role !== "admin") return { msg: "Only the owner can do this." };
   if (!(await dbReady())) return { msg: "Set up the database first." };

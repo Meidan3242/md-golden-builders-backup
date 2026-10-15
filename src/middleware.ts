@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { authSecret, SESSION_COOKIE, verifySession, VIEW_AS_COOKIE } from "@/lib/session";
+import { authSecret, SESSION_COOKIE, verifySession } from "@/lib/session";
 
 // Customer pages (estimates, contracts, payment, emails) stay open — customers open them from a link.
 const PUBLIC = [/^\/login/, /^\/p\//];
@@ -17,11 +17,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // The owner may preview the app as another role; everyone else is always themselves.
-  const viewAs = req.cookies.get(VIEW_AS_COOKIE)?.value;
-  const effective = userId === "u-owner" && viewAs ? viewAs : userId;
-  if (effective === "u-pm" && !PM_ALLOWED.some((r) => r.test(path))) return NextResponse.redirect(new URL("/projects", req.url));
+  if (userId === "u-pm" && !PM_ALLOWED.some((r) => r.test(path))) return NextResponse.redirect(new URL("/projects", req.url));
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/((?!_next|api|.*\\..*).*)"] };
+// Every path goes through the login check except Next's own build files and the named public files
+// (logo, icons, app manifest, robots, the blank contract form images used on the demo customer pages).
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|manifest\\.webmanifest|sw\\.js|logo-dark\\.png|logo-light\\.png|icon-192\\.png|icon-512\\.png|apple-touch-icon\\.png|license-cslb\\.jpg|forms/).*)"],
+};

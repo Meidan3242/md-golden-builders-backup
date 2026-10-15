@@ -40,12 +40,3 @@ export async function logout() {
   jar.delete(VIEW_AS_COOKIE);
   redirect("/login");
 }
-
-/** Owner only: preview the app as another role (empty = back to himself). */
-export async function viewAs(userId: string) {
-  const jar = await cookies();
-  const me = await verifySession(jar.get(SESSION_COOKIE)?.value, authSecret());
-  if (me !== "u-owner") return;
-  if (!userId || userId === me) jar.delete(VIEW_AS_COOKIE);
-  else if (USERS.some((u) => u.id === userId)) jar.set(VIEW_AS_COOKIE, userId, { httpOnly: true, sameSite: "lax", path: "/" });
-}

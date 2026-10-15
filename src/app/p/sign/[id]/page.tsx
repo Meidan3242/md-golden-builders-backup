@@ -114,7 +114,7 @@ export default async function SignPage({ searchParams }: { searchParams: Promise
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted">
-            <div className="mb-1 flex items-center gap-1 font-semibold text-text"><Lock className="size-3.5" /> Secure & recorded</div>
+            <div className="mb-1 flex items-center gap-1 font-semibold text-text"><Lock className="size-3.5" /> Demo — nothing is recorded</div>
             Demo only — signatures here are not recorded and nothing is sent. You have 3 business days to cancel (5 if 65 or older).
           </div>
 

@@ -106,7 +106,7 @@ export function CustomerDoc(d: CustomerDocProps) {
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-3 text-lg font-bold">Easy ways to pay</h2>
           <div className="grid gap-2 text-sm sm:grid-cols-2">
-            <div className="rounded-xl border border-border p-3"><div className="font-semibold">Zelle</div><div className="break-all text-xs text-muted">{COMPANY.zelle}</div></div>
+            <div className="rounded-xl border border-border p-3"><div className="font-semibold">Zelle</div><div className="text-xs text-muted">Details sent with your payment request</div></div>
             <div className="rounded-xl border border-border p-3"><div className="font-semibold">Venmo</div><div className="text-xs text-muted">MD Golden Builders — link in every payment request</div></div>
             <div className="rounded-xl border border-border p-3"><div className="flex items-center gap-1 font-semibold"><Landmark className="size-4" /> Check</div><div className="text-xs text-muted">Payable to MD Golden Builders</div></div>
             <div className="rounded-xl border border-border p-3"><div className="flex items-center gap-1 font-semibold"><CreditCard className="size-4" /> Card</div><div className="text-xs text-muted">Secure link (processing fee applies)</div></div>

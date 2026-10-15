@@ -1,12 +1,12 @@
 import { Banknote, CheckCircle2, CreditCard, Landmark, Smartphone } from "lucide-react";
-import { COMPANY, DEMO_CONTRACT as K } from "@/lib/demo-docs";
+import { DEMO_CONTRACT as K } from "@/lib/demo-docs";
 import { money } from "@/lib/format";
 
 export const metadata = { title: "Contract signed — choose how to pay" };
 
 const OPTIONS = [
-  { key: "zelle", icon: Smartphone, title: "Zelle", detail: COMPANY.zelle, note: "No fee · fastest", best: true },
-  { key: "venmo", icon: Smartphone, title: "Venmo", detail: "MD Golden Builders", note: "No fee" },
+  { key: "zelle", icon: Smartphone, title: "Zelle", detail: "Details sent with your payment request", note: "No fee · fastest", best: true },
+  { key: "venmo", icon: Smartphone, title: "Venmo", detail: "Link sent with your payment request", note: "No fee" },
   { key: "card", icon: CreditCard, title: "Credit / debit card", detail: "Secure Square checkout", note: "Processing fee applies" },
   { key: "check", icon: Landmark, title: "Check", detail: "Payable to MD Golden Builders", note: "We pick it up at the site" },
   { key: "cash", icon: Banknote, title: "Cash", detail: "Paid to Meidan, receipt provided", note: "" },
@@ -61,7 +61,7 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
         <div className="mt-4 rounded-2xl border border-gold bg-gold-soft p-5 text-center">
           <div className="text-sm font-semibold">You chose {chosen.title}</div>
           <div className="mt-1 text-2xl font-bold">{money(1000)}</div>
-          {chosen.key === "zelle" && <p className="mt-2 text-sm">Send to <b className="break-all">{COMPANY.zelle}</b> and add “{K.customer.name.split(" ").pop()} — deposit” in the memo.</p>}
+          {chosen.key === "zelle" && <p className="mt-2 text-sm">Demo: the Zelle details come with your real payment request.</p>}
           {chosen.key === "card" && <p className="mt-2 text-sm">Opening secure Square checkout…</p>}
           {chosen.key === "check" && <p className="mt-2 text-sm">Meidan will collect the check at the site.</p>}
           <p className="mt-3 text-xs text-muted">That&apos;s it — we&apos;ll text you as soon as the payment is received. Welcome to the MD Golden Builders family!</p>

@@ -3,40 +3,105 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { USERS } from "@/lib/demo-data";
-import { authSecret, envAnyCase, PASSWORD_ENV, SESSION_COOKIE, SESSION_DAYS, signSession, verifySession, VIEW_AS_COOKIE } from "@/lib/session";
+import { ACCOUNTS, authReady, checkPassword, emailOf, findAccount, MIN_PASSWORD, setAccountPassword, userOfEmail } from "@/lib/accounts";
+import { loggedInUser } from "@/lib/data";
+import { migrate } from "@/lib/db";
+import { cutSessions } from "@/lib/logins";
+import { authSecret, envAnyCase, PASSWORD_ENV, SESSION_COOKIE, SESSION_DAYS, signSession } from "@/lib/session";
 
 const sha = (s: string) => createHash("sha256").update(s).digest();
 const sameSecret = (a: string, b: string) => timingSafeEqual(sha(a), sha(b));
+const slow = () => new Promise((r) => setTimeout(r, 800)); // slows down guessing
 
-export async function login(_: string | null, form: FormData): Promise<string | null> {
-  const userId = String(form.get("user") ?? "");
-  const password = String(form.get("password") ?? "");
-  const next = String(form.get("next") ?? "/");
-  const secret = authSecret();
-  const expected = PASSWORD_ENV[userId] ? envAnyCase(PASSWORD_ENV[userId]) : undefined;
-  if (!secret || !expected) return "Login isn't set up yet for this person.";
-  if (!password || !sameSecret(password, expected)) {
-    await new Promise((r) => setTimeout(r, 800)); // slow down guessing
-    return "Wrong password. Try again.";
-  }
+async function startSession(userId: string, account: boolean) {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, await signSession(userId, secret), {
+  jar.set(SESSION_COOKIE, await signSession(userId, authSecret()!, account), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_DAYS * 86_400,
   });
-  jar.delete(VIEW_AS_COOKIE);
-  const role = USERS.find((u) => u.id === userId)?.role;
-  const home = role === "pm" ? "/projects" : "/";
-  redirect(next.startsWith("/") && !next.startsWith("//") && next !== "/" ? next : home);
+  jar.delete("view_as"); // leftover from the removed preview switcher
+}
+
+/** Email + password. Only Meidan's and Laline's emails can log in. */
+export async function login(_: string | null, form: FormData): Promise<string | null> {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  const next = String(form.get("next") ?? "/");
+  const userId = userOfEmail(email);
+  if (!authSecret()) return "Login isn't set up yet (AUTH_SECRET is missing in Vercel).";
+  if (!userId || !password) {
+    await slow();
+    return "Wrong email or password.";
+  }
+  const old = PASSWORD_ENV[userId] ? envAnyCase(PASSWORD_ENV[userId]) : undefined;
+  const oldMatches = !!old && sameSecret(password, old);
+  let ok = false;
+  let account = true;
+  try {
+    ok = await checkPassword(email, password);
+    // Before an account password is set, the old shared password still opens the door (setting the account
+    // password cuts every old session and turns this off).
+    if (!ok && oldMatches && !(await findAccount(email))) (ok = true), (account = false);
+  } catch {
+    // Login service unreachable: the old password (while it still exists in Vercel) keeps the owner from being locked out.
+    if (!oldMatches) return "Can't reach the login service right now — try again in a minute.";
+    (ok = true), (account = false);
+  }
+  if (!ok) {
+    await slow();
+    return "Wrong email or password.";
+  }
+  await startSession(userId, account);
+  redirect(next.startsWith("/") && !next.startsWith("//") && next !== "/" ? next : "/");
 }
 
 export async function logout() {
-  const jar = await cookies();
-  jar.delete(SESSION_COOKIE);
-  jar.delete(VIEW_AS_COOKIE);
+  (await cookies()).delete(SESSION_COOKIE);
   redirect("/login");
+}
+
+/**
+ * Set a password. The owner can set either person's; anyone can set their own (with the current password).
+ * Every older session of that person is logged out.
+ */
+export async function setPassword(_: string | null, form: FormData): Promise<string | null> {
+  const me = await loggedInUser();
+  if (!me) return "Please log in again.";
+  const target = String(form.get("user") ?? me.id);
+  const email = emailOf(target);
+  if (!email) return "This person has no login.";
+  if (target !== me.id && me.role !== "admin") return "Only the owner can do this.";
+  const pw = String(form.get("password") ?? "");
+  if (pw.length < MIN_PASSWORD) return `At least ${MIN_PASSWORD} characters.`;
+  if (pw !== String(form.get("confirm") ?? "")) return "The two passwords don't match.";
+  if (!authReady()) return "Supabase isn't connected.";
+  try {
+    if (target === me.id && (await findAccount(email))) {
+      const current = String(form.get("current") ?? "");
+      if (!(await checkPassword(email, current))) {
+        await slow();
+        return "Your current password is wrong.";
+      }
+    }
+    await migrate(); // creates the log-out table the first time
+    await setAccountPassword(email, pw);
+    await cutSessions(target);
+    if (target === me.id) await startSession(me.id, true); // keep this phone logged in
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+  return target === me.id ? "Done ✓ Your new password is set." : "Done ✓ Password set — they were logged out everywhere.";
+}
+
+/** Owner: log someone out of every phone and computer right now. */
+export async function logOutEverywhere(userId: string): Promise<string> {
+  const me = await loggedInUser();
+  if (me?.role !== "admin") return "Only the owner can do this.";
+  if (!Object.values(ACCOUNTS).includes(userId) || userId === me.id) return "Not possible.";
+  await migrate();
+  await cutSessions(userId);
+  return "Done ✓ Logged out everywhere.";
 }

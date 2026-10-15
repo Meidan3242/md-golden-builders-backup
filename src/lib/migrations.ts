@@ -199,4 +199,15 @@ alter table project_expenses add column if not exists source text not null defau
 alter table project_expenses add column if not exists by_user text;
 `,
   },
+  {
+    version: 6,
+    name: "Log-out-everywhere: sessions older than this time are rejected",
+    sql: /* sql */ `
+create table if not exists app_logins (
+  user_id text primary key,
+  valid_after timestamptz not null default now()
+);
+alter table app_logins enable row level security;
+`,
+  },
 ];

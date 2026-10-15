@@ -10,6 +10,8 @@ import { schemaVersion } from "@/lib/db";
 import { MIGRATIONS } from "@/lib/migrations";
 import { r2Ready, storageReady } from "@/lib/storage";
 import { DiagnoseButton, StorageTestButton } from "@/components/storage-test";
+import { LogOutEverywhereButton, PasswordForm } from "@/components/password-form";
+import { ACCOUNTS, findAccount } from "@/lib/accounts";
 
 const ROLE_INFO = {
   admin: "Sees everything — all leads, projects, money and settings",
@@ -23,6 +25,9 @@ export const maxDuration = 60; // monday import can take a little while
 export default async function SettingsPage() {
   const user = await currentUser();
   if (user.role !== "admin") redirect("/");
+  const logins = await Promise.all(
+    Object.entries(ACCOUNTS).map(async ([email, id]) => ({ email, user: allUsers().find((u) => u.id === id)!, hasAccount: !!(await findAccount(email).catch(() => null)) })),
+  );
   return (
     <>
       <PageHeader title="Settings" />
@@ -30,18 +35,23 @@ export default async function SettingsPage() {
         <DatabaseCard />
         <MondayCard />
         <Card>
-          <CardHeader title="Users & roles" />
+          <CardHeader title="Logins" subtitle="Only these two emails can log in" />
           <ul className="divide-y divide-border">
-            {allUsers().map((u) => (
-              <li key={u.id} className="flex items-center gap-3 px-4 py-3">
-                <Avatar initials={u.initials} className="size-8 text-xs" />
-                <div className="flex-1">
-                  <div className="text-sm font-medium">{u.name}</div>
-                  <div className="text-xs text-muted">{ROLE_INFO[u.role]}</div>
+            {logins.map((l) => (
+              <li key={l.user.id} className="space-y-3 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <Avatar initials={l.user.initials} className="size-8 text-xs" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{l.user.name}</div>
+                    <div className="truncate text-xs text-muted">{l.email} · {ROLE_INFO[l.user.role]}</div>
+                  </div>
+                  <Badge tone={l.hasAccount ? "ok" : "warn"}>{l.hasAccount ? "Own password" : "Old password"}</Badge>
                 </div>
-                <Badge tone={u.role === "admin" ? "gold" : "neutral"}>{u.title}</Badge>
+                <PasswordForm user={l.user.id} askCurrent={l.user.id === user.id && l.hasAccount} label={l.user.id === user.id ? "Set my password" : `Set ${l.user.name}'s password`} />
+                {l.user.id !== user.id && <LogOutEverywhereButton user={l.user.id} name={l.user.name} />}
               </li>
             ))}
+            <li className="px-4 py-3 text-xs text-muted">Sales rep and project manager: no login.</li>
           </ul>
         </Card>
         <Card>

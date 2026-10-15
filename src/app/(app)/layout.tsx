@@ -3,12 +3,14 @@ import Link from "next/link";
 import { LogoutButton, ThemeToggle } from "@/components/header-controls";
 import { BackButton, MobileNav, SidebarNav } from "@/components/nav";
 import { Avatar } from "@/components/ui";
-import { currentUser, getFollowUps } from "@/lib/data";
+import { redirect } from "next/navigation";
+import { currentUser, getFollowUps, loggedInUser } from "@/lib/data";
 import { dbReady } from "@/lib/db";
 import { now } from "@/lib/clock";
 import { dayKey } from "@/lib/format";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  if (!(await loggedInUser())) redirect("/login"); // e.g. logged out everywhere, or the password was changed
   const user = await currentUser();
   const followUps = await getFollowUps();
   const dueToday = followUps.filter((f) => !f.done && dayKey(f.due) <= dayKey(now())).length;

@@ -2,7 +2,9 @@
 // only ever receives their own leads and projects. When the database is
 // connected, the same rule is enforced again with Row-Level Security.
 import { cookies } from "next/headers";
-import { authSecret, SESSION_COOKIE, verifySession } from "./session";
+import { redirect } from "next/navigation";
+import { validAfter } from "./logins";
+import { authSecret, readSession, SESSION_COOKIE } from "./session";
 import {
   APPOINTMENTS,
   FOLLOW_UPS,
@@ -32,16 +34,18 @@ async function allLeads() {
   return (await dbReady()) ? dbLeads() : LEADS;
 }
 
-/** Who is really logged in (from the signed session cookie). */
+/** Who is really logged in (signed session cookie, not cut by "log out everywhere" or a password change). */
 export async function loggedInUser(): Promise<User | null> {
-  const id = await verifySession((await cookies()).get(SESSION_COOKIE)?.value, authSecret());
-  return USERS.find((u) => u.id === id) ?? null;
+  const s = await readSession((await cookies()).get(SESSION_COOKIE)?.value, authSecret());
+  if (!s) return null;
+  if (s.iat < (await validAfter(s.u))) return null;
+  return USERS.find((u) => u.id === s.u) ?? null;
 }
 
 /** The logged-in user. Every data function below starts here, so nothing is returned without a valid session. */
 export async function currentUser(): Promise<User> {
   const me = await loggedInUser();
-  if (!me) throw new Error("Not logged in"); // middleware already redirects to /login; this stops any data even if it didn't
+  if (!me) redirect("/login"); // no data without a valid, uncut session — even if the middleware let the request through
   return me;
 }
 

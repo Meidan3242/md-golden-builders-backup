@@ -4,6 +4,7 @@ import {
   CreditCard,
   FileText,
   FolderKanban,
+  KeyRound,
   HardHat,
   LayoutDashboard,
   Map,
@@ -29,6 +30,7 @@ export const NAV: Item[] = [
   { href: "/subcontractors", label: "Subcontractors", icon: HardHat, roles: STAFF },
   { href: "/reports", label: "Reports", icon: BarChart3, roles: MONEY },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
+  { href: "/account", label: "My account", icon: KeyRound },
 ];
 
 export const BOTTOM = ["/", "/leads", "/calendar", "/projects"];

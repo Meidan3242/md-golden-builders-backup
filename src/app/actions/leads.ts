@@ -132,3 +132,19 @@ export async function importFromMonday(boardId: string): Promise<string> {
     return `Failed: ${(e as Error).message}`;
   }
 }
+
+/** Settings → "Import clients" (owner only): Clients 2026 + 2025 and every client's own board. */
+export async function importClientsFromMonday(): Promise<string> {
+  const me = await loggedInUser();
+  if (me?.role !== "admin") return "Only the owner can do this.";
+  if (!(await dbReady())) return "Set up the database first.";
+  try {
+    await migrate(); // creates the projects tables the first time
+    const { importClients } = await import("@/lib/monday-clients");
+    const msg = await importClients();
+    revalidatePath("/", "layout");
+    return `Done ✓ ${msg}`;
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+}

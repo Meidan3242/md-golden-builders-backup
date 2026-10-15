@@ -1,6 +1,6 @@
 import { ProjectsMap, type MapPoint } from "@/components/projects-map";
 import { PageHeader } from "@/components/ui";
-import { canSeeMoney, currentUser, getLeads, getProjects } from "@/lib/data";
+import { canSeeMoney, currentUser, getLeads, getProjects, projectsReal } from "@/lib/data";
 import { PAST_JOBS, PROJECT_COORDS } from "@/lib/demo-data";
 import { compactMoney } from "@/lib/format";
 
@@ -10,8 +10,9 @@ export default async function MapPage() {
   const [projects, leads] = await Promise.all([getProjects(), getLeads()]);
   const val = (n: number) => (showMoney ? compactMoney(n) : undefined);
 
+  const real = await projectsReal();
   const points: MapPoint[] = [
-    ...projects.map((p) => ({
+    ...projects.filter((p) => !real || PROJECT_COORDS[p.id]).map((p) => ({
       id: p.id,
       kind: (p.stage === "Completed" ? "completed" : "active") as MapPoint["kind"],
       title: p.customer,
@@ -23,7 +24,7 @@ export default async function MapPage() {
       href: `/projects/${p.id}`,
       photos: p.media.slice(0, 6).map((m) => m.hue),
     })),
-    ...PAST_JOBS.map((j, i) => ({
+    ...(real ? [] : PAST_JOBS).map((j, i) => ({
       id: j.id,
       kind: "completed" as const,
       title: j.customer,
@@ -52,6 +53,7 @@ export default async function MapPage() {
   return (
     <>
       <PageHeader title="Map" subtitle="Every project, estimate and lead — Chula Vista to Fallbrook, the coast to Julian" />
+      {real && <p className="mb-3 rounded-xl bg-warn-soft px-4 py-2 text-sm text-warn">Coming soon: pins for your real projects and leads (the app needs to turn each address into a map point first).</p>}
       <ProjectsMap points={points} />
     </>
   );

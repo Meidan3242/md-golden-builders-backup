@@ -14,6 +14,17 @@ import {
 } from "./demo-data";
 import { dbReady } from "./db";
 import { dbAppointments, dbFollowUps, dbLeads } from "./lead-repo";
+import { dbProjects } from "./project-repo";
+import { schemaVersion } from "./db";
+
+/** Real projects once the projects tables exist (schema v4); until then, the demo projects. */
+export async function projectsReal() {
+  return ((await schemaVersion()) ?? 0) >= 4;
+}
+async function allProjects() {
+  return (await projectsReal()) ? dbProjects() : PROJECTS;
+}
+export const isActive = (p: Project) => p.stage !== "Completed" && p.stage !== "Cancelled";
 import type { Lead, Project, User } from "./types";
 
 /** Leads come from the real database once it's set up; until then, the demo leads. */
@@ -57,8 +68,9 @@ export async function getLead(id: string) {
 
 export async function getProjects(): Promise<Project[]> {
   const u = await currentUser();
-  if (u.role === "pm") return PROJECTS.filter((p) => p.stage !== "Completed"); // active projects only
-  return canSeeAll(u) ? PROJECTS : PROJECTS.filter((p) => p.assignedTo === u.id);
+  const projects = await allProjects();
+  if (u.role === "pm") return projects.filter(isActive); // active projects only
+  return canSeeAll(u) ? projects : projects.filter((p) => p.assignedTo === u.id);
 }
 
 export async function getProject(id: string) {
@@ -67,9 +79,9 @@ export async function getProject(id: string) {
 
 export async function getAppointments() {
   const u = await currentUser();
-  const active = new Set(PROJECTS.filter((p) => p.stage !== "Completed").map((p) => p.id));
-  // Real lead meetings from the database + (still demo) project appointments.
-  const all = (await dbReady()) ? [...(await dbAppointments()), ...APPOINTMENTS.filter((a) => a.projectId)] : APPOINTMENTS;
+  const active = new Set((await allProjects()).filter(isActive).map((p) => p.id));
+  // Real lead meetings from the database (+ demo project appointments only while projects are still demo).
+  const all = (await dbReady()) ? [...(await dbAppointments()), ...((await projectsReal()) ? [] : APPOINTMENTS.filter((a) => a.projectId))] : APPOINTMENTS;
   const list =
     u.role === "pm" ? all.filter((a) => a.projectId && active.has(a.projectId))
     : canSeeAll(u) ? all

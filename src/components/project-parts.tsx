@@ -6,8 +6,9 @@ import { subById } from "@/lib/data";
 import { date, money } from "@/lib/format";
 import type { Expense, MediaItem, PaymentMilestone, SubAssignment } from "@/lib/types";
 
-export function MilestoneTable({ milestones, title = "Customer payment schedule" }: { milestones: PaymentMilestone[]; title?: string }) {
-  const total = milestones.reduce((a, m) => a + m.amount, 0);
+export function MilestoneTable({ milestones, title = "Customer payment schedule", contractAmount }: { milestones: PaymentMilestone[]; title?: string; contractAmount?: number }) {
+  const rowsTotal = milestones.reduce((a, m) => a + m.amount, 0);
+  const total = contractAmount ?? rowsTotal;
   const paid = milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
   return (
     <Card className="overflow-x-auto">
@@ -21,13 +22,13 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                 <PayStatusBadge status={m.status} />
                 {m.paidAt ? date(m.paidAt) : m.dueDate ? `Due ${date(m.dueDate)}` : ""}{m.method ? ` · ${m.method}` : ""}
-                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-ok">· receipt sent ✓</Link>}
+                {m.status === "Paid" && m.receiptSent !== false && <Link href="/p/receipt/demo" className="text-ok">· receipt sent ✓</Link>}
               </div>
             </div>
             <span className="font-semibold">{money(m.amount)}</span>
           </li>
         ))}
-        <li className="flex justify-between bg-surface/60 px-4 py-2 text-sm font-semibold"><span>Total</span><span>{money(total)}</span></li>
+        <li className="flex justify-between bg-surface/60 px-4 py-2 text-sm font-semibold"><span>Total</span><span>{money(rowsTotal)}</span></li>
       </ul>
       <table className="hidden w-full min-w-[640px] text-sm sm:table">
         <thead className="text-left text-xs text-muted">
@@ -53,7 +54,7 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
               <td className="px-4 py-2.5 text-right">
                 {m.status === "Upcoming" && <Soon className="text-xs font-medium text-gold-text">Request payment</Soon>}
                 {m.status === "Invoiced" && <Soon className="text-xs font-medium text-gold-text">Payment received</Soon>}
-                {m.status === "Paid" && <Link href="/p/receipt/demo" className="text-xs text-ok hover:underline">Receipt sent ✓</Link>}
+                {m.status === "Paid" && m.receiptSent !== false && <Link href="/p/receipt/demo" className="text-xs text-ok hover:underline">Receipt sent ✓</Link>}
               </td>
             </tr>
           ))}
@@ -62,7 +63,7 @@ export function MilestoneTable({ milestones, title = "Customer payment schedule"
           <tr className="border-t border-border bg-surface/60 text-sm">
             <td />
             <td className="px-4 py-2 font-semibold">Total</td>
-            <td className="px-4 py-2 text-right font-bold">{money(total)}</td>
+            <td className="px-4 py-2 text-right font-bold">{money(rowsTotal)}</td>
             <td colSpan={4} />
           </tr>
         </tfoot>

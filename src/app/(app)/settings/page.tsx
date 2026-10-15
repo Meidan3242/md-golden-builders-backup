@@ -134,7 +134,13 @@ async function MondayCard() {
           <li>{ready ? "✅" : "⬜"} Database ready</li>
         </ul>
         {token && ready ? (
-          <div className="grid gap-2 sm:grid-cols-2">{MONDAY_BOARDS.map((b) => <MondayImportButton key={b.id} boardId={b.id} label={b.label} />)}</div>
+          <div className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">{MONDAY_BOARDS.map((b) => <MondayImportButton key={b.id} boardId={b.id} label={b.label} />)}</div>
+            <div>
+              <div className="mb-1 text-xs font-semibold text-muted">Clients → projects (Clients 2026 + 2025, and each client&apos;s own board: contract, change orders, payments, expenses)</div>
+              <MondayImportButton clients label="Import clients" />
+            </div>
+          </div>
         ) : (
           <p className="text-xs text-muted">monday → your picture (top right) → Developers → My access tokens → Copy. Then Vercel → Environment Variables → MONDAY_API_TOKEN → Save → Redeploy.</p>
         )}

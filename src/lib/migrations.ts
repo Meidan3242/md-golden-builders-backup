@@ -113,4 +113,66 @@ alter table follow_ups add column if not exists monday_id text unique;
 alter table leads add column if not exists monday_board text;
 `,
   },
+  {
+    version: 4,
+    name: "Projects, contracts, payments, expenses",
+    sql: /* sql */ `
+create table if not exists projects (
+  id text primary key,
+  monday_id text unique,
+  monday_board_id text unique,
+  lead_id text,
+  customer text not null,
+  phone text not null default '',
+  email text,
+  address text not null default '',
+  city text not null default '',
+  type text not null default 'Project',
+  stage text not null default 'In Progress',
+  stuck boolean not null default false,
+  sale numeric,
+  cost numeric,
+  signed_at timestamptz not null default now(),
+  origin text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists project_contracts (
+  id text primary key,
+  project_id text not null references projects(id) on delete cascade,
+  n int not null,
+  title text not null,
+  amount numeric not null default 0,
+  signed_at timestamptz,
+  status text not null default 'Signed'
+);
+create table if not exists project_payments (
+  id text primary key,
+  project_id text not null references projects(id) on delete cascade,
+  contract_n int,
+  name text not null,
+  amount numeric not null default 0,
+  paid_at timestamptz,
+  method text,
+  status text not null default 'Paid'
+);
+create table if not exists project_expenses (
+  id text primary key,
+  project_id text not null references projects(id) on delete cascade,
+  contract_n int,
+  vendor text not null,
+  amount numeric not null default 0,
+  spent_at timestamptz,
+  pending boolean not null default false,
+  category text not null default 'Other'
+);
+create index if not exists project_contracts_p on project_contracts (project_id);
+create index if not exists project_payments_p on project_payments (project_id);
+create index if not exists project_expenses_p on project_expenses (project_id);
+alter table projects enable row level security;
+alter table project_contracts enable row level security;
+alter table project_payments enable row level security;
+alter table project_expenses enable row level security;
+`,
+  },
 ];

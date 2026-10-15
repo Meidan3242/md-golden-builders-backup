@@ -18,7 +18,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const user = await currentUser();
   const showMoney = canSeeProjectMoney(user);
   const f = projectFinancials(p);
-  const stageIdx = PROJECT_STAGES.indexOf(p.stage);
+  const stageIdx = (PROJECT_STAGES as readonly string[]).indexOf(p.stage);
   const contracts = contractsOf(p);
 
   const tabs = [
@@ -40,8 +40,8 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{p.customer} <span className="font-normal text-muted">· {p.type}</span></h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <ProjectStageBadge stage={p.stage} />
-            <span>{p.address}, {p.city}</span>
-            {user.role !== "pm" && <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>}
+            <span>{p.city && !p.address.includes(p.city) ? `${p.address}, ${p.city}` : p.address}</span>
+            {user.role !== "pm" && p.leadId && <span>· <Link href={`/leads/${p.leadId}`} className="text-gold-text hover:underline">Original lead</Link></span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -130,8 +130,8 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
               <div><div className="text-xs text-muted">Est. profit</div><div className="text-xl font-bold text-gold-text">{money(f.profit)}</div><div className="text-[11px] text-muted">{pct(f.margin)} margin</div></div>
             </div>
             <div className="px-4 pb-4">
-              <div className="mb-1 flex justify-between text-[11px] text-muted"><span>Customer paid</span><span>{pct(f.collected / f.revenue)}</span></div>
-              <Progress value={f.collected / f.revenue} />
+              <div className="mb-1 flex justify-between text-[11px] text-muted"><span>Customer paid</span><span>{pct(f.revenue ? f.collected / f.revenue : 0)}</span></div>
+              <Progress value={f.revenue ? f.collected / f.revenue : 0} />
             </div>
           </Card>
         )}
@@ -270,7 +270,7 @@ function ContractTitle({ c, extra }: { c: ContractView; extra?: React.ReactNode 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
       <span className="font-bold">{c.label}</span>
-      <span className="text-xs text-muted">{c.kind} · {c.title}</span>
+      <span className="text-xs text-muted">{c.kind}{c.title && !/^(contract|change\s*order\s*#?\s*\d+)$/i.test(c.title.trim()) ? ` · ${c.title}` : ""}</span>
       {c.status !== "Signed" && <Badge tone="warn">Not signed yet</Badge>}
       {extra}
     </div>
@@ -304,7 +304,7 @@ function Contracts({ contracts, showMoney }: { contracts: ContractView[]; showMo
 function PaymentsByContract({ contracts }: { contracts: ContractView[] }) {
   const all = contracts.flatMap((c) => c.milestones);
   const paid = all.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
-  const total = all.reduce((a, m) => a + m.amount, 0);
+  const total = contracts.reduce((a, c) => a + c.amount, 0); // what the customer owes in total = all contracts
   return (
     <div className="space-y-3">
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
@@ -316,7 +316,7 @@ function PaymentsByContract({ contracts }: { contracts: ContractView[] }) {
         const cp = c.milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
         return (
           <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted"><b className="text-text">{money(cp)}</b> / {money(c.amount)}</span>}>
-            <MilestoneTable milestones={c.milestones} title={`Payments — ${c.label}`} />
+            <MilestoneTable milestones={c.milestones} title={`Payments — ${c.label}`} contractAmount={c.amount} />
           </Collapse>
         );
       })}
@@ -347,7 +347,7 @@ function ExpensesByContract({ contracts }: { contracts: ContractView[] }) {
           id: x.id, at: x.paidAt, to: subById(a.subId)?.company ?? "Sub", what: `Sub · ${x.name}`, amount: x.amount, proof: x.proof, requested: x.status === "Requested",
         })),
       ),
-      ...c.expenses.map((e) => ({ id: e.id, at: e.date, to: e.vendor, what: e.category, amount: e.amount, proof: e.receipt, requested: false })),
+      ...c.expenses.map((e) => ({ id: e.id, at: e.date, to: e.vendor, what: e.category === "Other" ? "Sub / other" : e.category, amount: e.amount, proof: e.receipt, requested: !!e.pending })),
     ].sort((a, z) => (z.at ?? "9").localeCompare(a.at ?? "9"));
   const all = contracts.flatMap(rowsOf).filter((r) => !r.requested);
   const subs = all.filter((r) => r.what.startsWith("Sub")).reduce((a, r) => a + r.amount, 0);

@@ -46,3 +46,35 @@ export async function boardItems(boardId: string): Promise<{ board: string; item
     })),
   };
 }
+
+/** Every board in the account with its group titles (to find the per-client boards). */
+export async function allBoards(): Promise<{ id: string; name: string; groups: string[] }[]> {
+  const out: { id: string; name: string; groups: string[] }[] = [];
+  for (let page = 1; page < 50; page++) {
+    const d = await gql<{ boards: { id: string; name: string; groups: { title: string }[] }[] }>(
+      `query ($p: Int!) { boards(limit: 100, page: $p, state: active) { id name groups { title } } }`,
+      { p: page },
+    );
+    out.push(...d.boards.map((b) => ({ id: b.id, name: b.name, groups: b.groups.map((g) => g.title.trim().toLowerCase()) })));
+    if (d.boards.length < 100) break;
+  }
+  return out;
+}
+
+export type ClientRow = { id: string; name: string; group: string; cols: Record<string, string>; subs: { name: string; cols: Record<string, string> }[] };
+
+/** Items (and their subitems) of several client boards at once. */
+export async function clientBoards(ids: string[]): Promise<Record<string, ClientRow[]>> {
+  const cv = "column_values { text column { title } }";
+  const d = await gql<{ boards: { id: string; items_page: { items: { id: string; name: string; group: { title: string }; column_values: { text: string | null; column: { title: string } }[]; subitems: { name: string; column_values: { text: string | null; column: { title: string } }[] }[] }[] } }[] }>(
+    `query ($ids: [ID!]) { boards(ids: $ids) { id items_page(limit: 500) { items { id name group { title } ${cv} subitems { name ${cv} } } } } }`,
+    { ids },
+  );
+  const cols = (xs: { text: string | null; column: { title: string } }[]) => Object.fromEntries(xs.map((c) => [c.column.title.trim().toLowerCase(), (c.text ?? "").trim()]));
+  return Object.fromEntries(
+    d.boards.map((b) => [
+      b.id,
+      b.items_page.items.map((i) => ({ id: i.id, name: i.name, group: i.group.title.trim().toLowerCase(), cols: cols(i.column_values), subs: (i.subitems ?? []).map((s) => ({ name: s.name, cols: cols(s.column_values) })) })),
+    ]),
+  );
+}

@@ -10,7 +10,8 @@ import type { Project } from "@/lib/types";
 const PAGE_SIZE = 10;
 
 const LISTS: Record<string, { title: string; hint: string; match: (p: Project) => boolean }> = {
-  ongoing: { title: "Ongoing projects", hint: "Everything signed and not finished — including jobs waiting on a permit", match: (p) => p.stage !== "Completed" },
+  ongoing: { title: "Ongoing projects", hint: "Everything signed and not finished — including jobs waiting on a permit", match: (p) => p.stage !== "Completed" && p.stage !== "Cancelled" },
+  cancelled: { title: "Cancelled", hint: "Signed, then cancelled", match: (p) => p.stage === "Cancelled" },
   all: { title: "All projects", hint: "Ongoing and completed, newest first", match: () => true },
 };
 
@@ -68,8 +69,11 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
             {ongoing.length > 4 && <li className="text-muted">+{ongoing.length - 4} more</li>}
           </ul>
         </Tile>
-        <Tile href="/projects?box=all" icon={<FolderOpen />} title="All projects" count={projects.length} hint={`${projects.length - ongoing.length} completed · 10 per page`} />
+        <Tile href="/projects?box=all" icon={<FolderOpen />} title="All projects" count={projects.length} hint={`${projects.filter((p) => p.stage === "Completed").length} completed · ${projects.filter((p) => p.stage === "Cancelled").length} cancelled`} />
       </div>
+      {projects.some((p) => p.stage === "Cancelled") && (
+        <Link href="/projects?box=cancelled" className="mt-3 inline-block text-sm text-muted hover:underline">Cancelled projects ({projects.filter((p) => p.stage === "Cancelled").length}) →</Link>
+      )}
     </>
   );
 }
@@ -84,12 +88,15 @@ function ProjectCard({ p, showMoney }: { p: Project; showMoney: boolean }) {
             <div className="font-semibold">{p.customer}</div>
             <div className="text-xs text-muted">{p.type} · {p.city} · #{p.number}</div>
           </div>
-          <ProjectStageBadge stage={p.stage} />
+          <div className="flex flex-col items-end gap-1">
+            <ProjectStageBadge stage={p.stage} />
+            {p.stuck && <span className="rounded-full bg-bad-soft px-2 py-0.5 text-[10px] font-semibold text-bad">Stuck</span>}
+          </div>
         </div>
         {showMoney && (
           <>
             <div className="mt-3 flex justify-between text-xs"><span className="text-muted">Paid</span><span><b>{compactMoney(f.collected)}</b> of {compactMoney(f.revenue)}</span></div>
-            <Progress value={f.collected / f.revenue} className="mt-1" />
+            <Progress value={f.revenue ? f.collected / f.revenue : 0} className="mt-1" />
           </>
         )}
         <div className="mt-2 text-[11px] text-muted">Signed {date(p.signedAt)} · {p.changeOrders.length + 1} contract{p.changeOrders.length ? "s" : ""}</div>

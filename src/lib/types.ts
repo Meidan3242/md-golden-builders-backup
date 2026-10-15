@@ -138,7 +138,7 @@ export const PROJECT_STAGES = [
   "Punch List",
   "Completed",
 ] as const;
-export type ProjectStage = (typeof PROJECT_STAGES)[number];
+export type ProjectStage = (typeof PROJECT_STAGES)[number] | "Cancelled";
 
 export type PayMethod = "Square (card)" | "ACH" | "Zelle" | "Check" | "Cash" | "Venmo";
 
@@ -151,6 +151,8 @@ export interface PaymentMilestone {
   paidAt?: string;
   method?: PayMethod;
   reference?: string;
+  /** false = no receipt was sent (e.g. imported from monday). */
+  receiptSent?: boolean;
 }
 
 export type LienWaiver = "Unconditional received" | "Conditional received" | "Missing" | "N/A";
@@ -184,6 +186,8 @@ export interface Expense {
   amount: number;
   receipt: boolean;
   by: string;
+  /** From monday: still owed to the sub / vendor. */
+  pending?: boolean;
 }
 
 export interface ChangeOrder {
@@ -253,6 +257,12 @@ export interface Project {
   documents: ProjectDoc[];
   activity: Activity[];
   chat?: ChatMessage[];
+  /** monday status was "Stuck". */
+  stuck?: boolean;
+  /** Where the record came from (e.g. "monday · Clients 2026"). */
+  origin?: string;
+  sale?: number;
+  cost?: number;
 }
 
 /** What the smart-capture assistant understood from a chat message. */

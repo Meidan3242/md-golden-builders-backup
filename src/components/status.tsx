@@ -43,6 +43,7 @@ const projectTone: Record<ProjectStage, Parameters<typeof Badge>[0]["tone"]> = {
   "Final Inspection": "gold",
   "Punch List": "warn",
   Completed: "ok",
+  Cancelled: "neutral",
 };
 export const ProjectStageBadge = ({ stage }: { stage: ProjectStage }) => <Badge tone={projectTone[stage]}>{stage}</Badge>;
 

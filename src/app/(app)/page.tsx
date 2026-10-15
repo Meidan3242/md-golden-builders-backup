@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MorningNotifications } from "@/components/notifications";
 import { SalesGoal } from "@/components/sales-goal";
 import { Tile } from "@/components/ui";
-import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, getProjects } from "@/lib/data";
+import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, getProjects, isActive } from "@/lib/data";
 import { CHANNELS, MONTHLY_HISTORY, SALES_GOAL_DEFAULT } from "@/lib/demo-data";
 import { dbReady } from "@/lib/db";
 import { lastMonths, monthlyStats } from "@/lib/lead-stats";
@@ -18,7 +18,7 @@ export default async function Home() {
   const today = dayKey(now());
 
   const notCalled = leads.filter((l) => l.stage === "New");
-  const active = projects.filter((p) => p.stage !== "Completed");
+  const active = projects.filter(isActive);
   const todaysAppts = appts.filter((a) => dayKey(a.start) === today);
   const needEstimate = leads.filter((l) => l.stage === "Need to Send Estimate");
   const oldest = needEstimate.reduce((a, l) => Math.max(a, -daysFrom(l.createdAt, now())), 0);

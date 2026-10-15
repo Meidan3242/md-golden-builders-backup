@@ -9,7 +9,9 @@ const key = () => envSuffix("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
 const supabaseReady = () => !!(base() && key());
 
 const r2 = () => {
-  const account = process.env.R2_ACCOUNT_ID?.trim(), id = process.env.R2_ACCESS_KEY_ID?.trim(), secret = process.env.R2_SECRET_ACCESS_KEY?.trim(), bucket = process.env.R2_BUCKET?.trim();
+  // Accept the Account ID alone or pasted inside the full "https://<id>.r2.cloudflarestorage.com" link.
+  const rawAccount = process.env.R2_ACCOUNT_ID?.trim();
+  const account = rawAccount?.match(/[0-9a-f]{32}/i)?.[0] ?? rawAccount, id = process.env.R2_ACCESS_KEY_ID?.trim(), secret = process.env.R2_SECRET_ACCESS_KEY?.trim(), bucket = process.env.R2_BUCKET?.trim();
   if (!account || !id || !secret || !bucket) return null;
   return { url: `https://${account}.r2.cloudflarestorage.com/${bucket}`, client: new AwsClient({ accessKeyId: id, secretAccessKey: secret, service: "s3", region: "auto" }) };
 };
@@ -67,6 +69,13 @@ export async function testR2(): Promise<string> {
   }
   const looksLikeName = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"].filter((k) => /^R2_/i.test(process.env[k]!.trim()));
   if (looksLikeName.length) return `Failed: ${looksLikeName.join(", ")} has the name as its value — paste the code from Cloudflare instead.`;
+  const shape = [
+    ["R2_ACCOUNT_ID", /[0-9a-f]{32}/i, "32 letters/numbers — Cloudflare → R2 → Overview → Account ID (right side)"],
+    ["R2_ACCESS_KEY_ID", /^[0-9a-f]{32}$/i, "32 letters/numbers — shown once when you create the R2 API token"],
+    ["R2_SECRET_ACCESS_KEY", /^[0-9a-f]{64}$/i, "64 letters/numbers — shown once when you create the R2 API token"],
+  ] as const;
+  const bad = shape.filter(([k, re]) => !re.test(process.env[k]!.trim()));
+  if (bad.length) return `Failed: ${bad.map(([k, , hint]) => `${k} doesn't look right (should be ${hint})`).join(" · ")}`;
   const url = objectUrl(c, "_check", "hello.txt");
   try {
     const put = await c.client.fetch(url, { method: "PUT", body: "ok", signal: AbortSignal.timeout(15000) });
@@ -86,6 +95,6 @@ export async function testR2(): Promise<string> {
     await c.client.fetch(url, { method: "DELETE", signal: AbortSignal.timeout(15000) });
     return get.ok && (await get.text()) === "ok" ? "Done ✓ Cloudflare R2 works — new files are saved there" : "Failed: could write but not read back";
   } catch {
-    return "Failed: can't reach Cloudflare — R2_ACCOUNT_ID is probably wrong";
+    return "Failed: can't reach Cloudflare — check R2_ACCOUNT_ID (Cloudflare → R2 → Overview → Account ID)";
   }
 }

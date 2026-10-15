@@ -9,7 +9,7 @@ import { allUsers, currentUser, getLeads } from "@/lib/data";
 import { schemaVersion } from "@/lib/db";
 import { MIGRATIONS } from "@/lib/migrations";
 import { r2Ready, storageReady } from "@/lib/storage";
-import { StorageTestButton } from "@/components/storage-test";
+import { DiagnoseButton, StorageTestButton } from "@/components/storage-test";
 
 const ROLE_INFO = {
   admin: "Sees everything — all leads, projects, money and settings",
@@ -111,6 +111,7 @@ async function DatabaseCard() {
           <li>{ready ? `✅ Leads are real now — ${leads} in the database` : "⬜ Leads still show demo data"}</li>
         </ul>
         {r2Ready() && <StorageTestButton />}
+        {configured && version !== null && <DiagnoseButton />}
         {configured && version !== null && <DbSetupButton label={!ready ? "Set up database" : (version ?? 0) < latest ? "Update database" : "Check database"} />}
         {!configured && <p className="text-xs text-muted">Vercel → md-golden-builders → Storage → Create database → Supabase → connect to this project, then redeploy.</p>}
       </div>

@@ -7,7 +7,7 @@ import { dbReady, migrate, sql } from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
 import { sanDiegoToUtc } from "@/lib/time";
 
-const FILES_COPY_OFF = true;
+const FILES_COPY_OFF = false; // was off until per-person login existed (now in place)
 const DEMO = "Demo mode — this saves for real once the database is connected.";
 
 async function staff() {

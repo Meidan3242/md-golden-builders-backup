@@ -91,7 +91,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       )}
       {tab === "chat" && <ProjectChat messages={p.chat ?? []} me={user.id} />}
       {tab === "contracts" && <Contracts contracts={contracts} showMoney={showMoney} />}
-      {tab === "payments" && showMoney && <PaymentsByContract contracts={contracts} />}
+      {tab === "payments" && showMoney && <PaymentsByContract contracts={contracts} pooled={!!p.origin?.startsWith("monday")} />}
       {tab === "subs" && showMoney && <SubsByContract contracts={contracts} />}
       {tab === "expenses" && showMoney && <ExpensesByContract contracts={contracts} snap={live ? <SnapReceipt projectId={p.id} contracts={contracts.map((c) => ({ n: c.n, label: c.label }))} /> : undefined} />}
       {tab === "permits" && <Permits p={p} />}
@@ -308,10 +308,12 @@ function Contracts({ contracts, showMoney }: { contracts: ContractView[]; showMo
   );
 }
 
-function PaymentsByContract({ contracts }: { contracts: ContractView[] }) {
+function PaymentsByContract({ contracts, pooled }: { contracts: ContractView[]; pooled?: boolean }) {
   const all = contracts.flatMap((c) => c.milestones);
   const paid = all.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
   const total = contracts.reduce((a, c) => a + c.amount, 0); // what the customer owes in total = all contracts
+  // From monday: payments aren't tied to a contract, so they're shown together against all contracts.
+  const together = pooled && contracts.length > 1 && contracts.slice(1).every((c) => !c.milestones.length);
   return (
     <div className="space-y-3">
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-1 p-4 text-sm">
@@ -319,7 +321,16 @@ function PaymentsByContract({ contracts }: { contracts: ContractView[] }) {
         <span className="text-ok">Paid <b>{money(paid)}</b></span>
         <span>Left <b>{money(total - paid)}</b></span>
       </Card>
-      {contracts.map((c, i) => {
+      {together && (
+        <>
+          <Card className="p-4 text-sm">
+            <div className="mb-1 text-xs text-muted">{contracts.length} contracts (from monday — payments there aren&apos;t tied to one contract)</div>
+            <ul className="space-y-0.5">{contracts.map((c) => <li key={c.n} className="flex justify-between"><span>{c.label}{c.title && !/^(contract|change\s*order\s*#?\s*\d+)$/i.test(c.title.trim()) ? ` · ${c.title}` : ""}</span><b>{money(c.amount)}</b></li>)}</ul>
+          </Card>
+          <MilestoneTable milestones={all} title="All payments" contractAmount={total} />
+        </>
+      )}
+      {!together && contracts.map((c, i) => {
         const cp = c.milestones.filter((m) => m.status === "Paid").reduce((a, m) => a + m.amount, 0);
         return (
           <Collapse key={c.n} open={i === 0} title={<ContractTitle c={c} />} right={<span className="text-xs text-muted"><b className="text-text">{money(cp)}</b> / {money(c.amount)}</span>}>

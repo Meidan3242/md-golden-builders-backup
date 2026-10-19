@@ -210,4 +210,13 @@ create table if not exists app_logins (
 alter table app_logins enable row level security;
 `,
   },
+  {
+    version: 7,
+    name: "Map pins: coordinates for each project address",
+    sql: /* sql */ `
+alter table projects add column if not exists lat double precision;
+alter table projects add column if not exists lng double precision;
+alter table projects add column if not exists geo_status text;
+`,
+  },
 ];

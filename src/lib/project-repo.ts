@@ -72,6 +72,8 @@ export const dbProjects = cache(async (): Promise<Project[]> => {
       chat: [],
       stuck: p.stuck,
       origin: p.origin ?? undefined,
+      lat: p.lat ?? undefined,
+      lng: p.lng ?? undefined,
       sale: p.sale != null ? num(p.sale) : undefined,
       cost: p.cost != null ? num(p.cost) : undefined,
     } satisfies Project;

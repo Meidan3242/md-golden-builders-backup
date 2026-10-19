@@ -130,7 +130,8 @@ export async function importClients(start = 0, budgetMs = 30_000): Promise<{ msg
       await tx`insert into projects ${tx(projects)}
                on conflict (id) do update set customer = excluded.customer, address = excluded.address, city = excluded.city, type = excluded.type,
                  stage = excluded.stage, stuck = excluded.stuck, sale = excluded.sale, cost = excluded.cost, signed_at = excluded.signed_at,
-                 monday_board_id = excluded.monday_board_id, origin = excluded.origin, updated_at = now()`;
+                 monday_board_id = excluded.monday_board_id, origin = excluded.origin, updated_at = now(),
+                 geo_status = case when projects.address is distinct from excluded.address then null else projects.geo_status end`;
       const ids = projects.map((p) => p.id as string);
       await tx`delete from project_contracts where project_id in ${tx(ids)}`;
       await tx`delete from project_payments where project_id in ${tx(ids)}`;

@@ -239,6 +239,9 @@ export interface ProjectDoc {
 
 export interface Project {
   id: string;
+  /** Map pin (from the address). */
+  lat?: number;
+  lng?: number;
   leadId: string;
   number: string;
   customer: string;

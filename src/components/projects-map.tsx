@@ -44,10 +44,10 @@ export function ProjectsMap({ points }: { points: MapPoint[] }) {
       if (cancelled || !el.current || map.current) return;
       L.current = mod;
       const m = mod.map(el.current, { zoomControl: true }).setView([32.86, -117.12], 10);
-      mod.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        subdomains: "abcd",
-        maxZoom: 20,
-        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+      // Standard OpenStreetMap streets (free, no key). CARTO's tiles now need a paid key.
+      mod.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(m);
       layer.current = mod.layerGroup().addTo(m);
       map.current = m;

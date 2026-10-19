@@ -14,7 +14,7 @@ export default async function MapPage() {
 
   const real = await projectsReal();
   // Projects whose address hasn't been looked up yet (geo_status empty) vs. looked up but not found.
-  const geo = real && ((await schemaVersion()) ?? 0) >= 7 ? (await sql()`select count(*) filter (where geo_status is null)::int as missing, count(*) filter (where geo_status = 'none')::int as nopin from projects`)[0] : null;
+  const geo = real && ((await schemaVersion()) ?? 0) >= 7 ? (await sql()`select count(*) filter (where geo_status is null or geo_status like 'retry%')::int as missing, count(*) filter (where geo_status = 'none')::int as nopin from projects`)[0] : null;
   const missing = real ? (geo ? geo.missing : projects.length) : 0;
   const noPin = geo?.nopin ?? 0;
   const points: MapPoint[] = [

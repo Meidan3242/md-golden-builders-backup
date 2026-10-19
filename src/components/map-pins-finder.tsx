@@ -15,6 +15,11 @@ export function MapPinsFinder({ missing }: { missing: number }) {
         try {
           const r = await findMapPins();
           if (r.error) return setMsg(`Couldn't find pins right now (${r.error}). Open the map again later.`);
+          // A round where nothing new was found and only slow addresses failed: stop for now, they're retried next visit.
+          if (!r.done && r.left > 0) {
+            setMsg(`${r.left} address${r.left === 1 ? "" : "es"} didn't answer — they're tried again next time you open the map.`);
+            return router.refresh();
+          }
           if (r.left <= 0) {
             setMsg("");
             return router.refresh();

@@ -1,0 +1,160 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+import type { TransactionSql } from "postgres";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { currentUser, getLead } from "@/lib/data";
+import { migrate, sql } from "@/lib/db";
+import { emailReady, sendEmail } from "@/lib/email";
+import { totalOf } from "@/lib/estimate-math";
+import type { EstimateSection, EstimateStage } from "@/lib/estimate-templates";
+import { estimateById, estimateByToken, estimatesReady, newToken } from "@/lib/estimates";
+import { recordEstimateSent } from "@/lib/lead-estimate";
+import { money } from "@/lib/format";
+
+const LOCKS = async (tx: TransactionSql) => {
+  await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '20s'`; await tx`set local idle_in_transaction_session_timeout = '30s'`; // never leave the database locked
+};
+
+/** Who may work on estimates: staff who can see this lead (never the project manager). */
+async function canEdit(leadId: string | null) {
+  const u = await currentUser();
+  if (u.role === "pm") throw new Error("Not allowed");
+  if (leadId && !(await getLead(leadId))) throw new Error("Not allowed");
+  return u;
+}
+
+type Draft = {
+  id?: string;
+  leadId: string;
+  customer: { name: string; email: string; phone: string; address: string };
+  title: string;
+  note: string;
+  sections: EstimateSection[];
+  exclusions: string[];
+  schedule: EstimateStage[];
+  validDays: number;
+};
+const clean = (s: unknown, max = 2000) => String(s ?? "").trim().slice(0, max);
+
+/** Save the estimate (new or edit). Approved estimates can't be changed. */
+export async function saveEstimate(_: string | null, form: FormData): Promise<string | null> {
+  let d: Draft;
+  try {
+    d = JSON.parse(String(form.get("data")));
+  } catch {
+    return "Something went wrong — try again.";
+  }
+  const u = await canEdit(d.leadId);
+  if (!(await estimatesReady())) await migrate();
+  const sections = (d.sections ?? [])
+    .map((x) => ({ title: clean(x.title, 120), items: (x.items ?? []).map((i) => clean(i, 300)).filter(Boolean).slice(0, 40), price: Math.max(0, Math.round(Number(x.price) || 0)) }))
+    .filter((x) => x.title || x.items.length || x.price)
+    .slice(0, 30);
+  const schedule = (d.schedule ?? []).map((x) => ({ name: clean(x.name, 120), pct: Math.max(0, Number(x.pct) || 0) })).filter((x) => x.name || x.pct);
+  if (!clean(d.customer?.name)) return "Add the customer's name.";
+  if (!clean(d.title)) return "Add a title (what the job is).";
+  if (!sections.length) return "Add at least one section.";
+  if (sections.some((x) => !x.title)) return "Every section needs a name.";
+  const total = totalOf(sections);
+  if (total <= 0) return "Add the prices.";
+  const pct = schedule.reduce((a, x) => a + x.pct, 0);
+  if (Math.round(pct) !== 100) return `The payment stages add up to ${pct}% — they need to be 100%.`;
+  const values = {
+    lead_id: d.leadId || null,
+    customer: sql().json({ name: clean(d.customer.name, 120), email: clean(d.customer.email, 200), phone: clean(d.customer.phone, 40), address: clean(d.customer.address, 300) }),
+    title: clean(d.title, 200),
+    note: clean(d.note, 1500),
+    sections: sql().json(sections),
+    exclusions: sql().json((d.exclusions ?? []).map((x) => clean(x, 300)).filter(Boolean).slice(0, 20)),
+    schedule: sql().json(schedule),
+    total,
+    valid_days: Math.min(90, Math.max(7, Number(d.validDays) || 30)),
+  };
+  let id = d.id;
+  if (id) {
+    const cur = await estimateById(id);
+    if (!cur || cur.leadId !== (d.leadId || null)) return "Estimate not found.";
+    if (cur.status === "Approved") return "This estimate was already approved — make a new one instead.";
+    await sql()`update estimates set ${sql()(values)}, updated_at = now() where id = ${id}`;
+  } else {
+    id = `E-${randomUUID().slice(0, 8)}`;
+    await sql()`insert into estimates ${sql()({ id, token: newToken(), created_by: u.id, ...values })}`;
+  }
+  revalidatePath(`/estimates/${id}`);
+  redirect(`/estimates/${id}`);
+}
+
+/** The estimate goes out (link texted, copied or emailed): lead → Estimate Sent, follow-ups start. */
+async function markSent(id: string) {
+  const e = await estimateById(id);
+  if (!e) throw new Error("Estimate not found.");
+  const u = await canEdit(e.leadId);
+  await sql().begin(async (tx) => {
+    await LOCKS(tx);
+    await tx`update estimates set status = case when status = 'Draft' then 'Sent' else status end, sent_at = coalesce(sent_at, now()) where id = ${id}`;
+    if (e.leadId) await recordEstimateSent(tx, e.leadId, e.total, u.id, `Estimate #${e.number} sent — ${money(e.total)}`);
+  });
+  revalidatePath("/", "layout");
+  return e;
+}
+
+export async function estimateSent(id: string): Promise<string> {
+  try {
+    await markSent(id);
+    return "Done ✓";
+  } catch (e) {
+    return `Failed: ${(e as Error).message}`;
+  }
+}
+
+const linkFor = async (token: string) => {
+  const h = await headers();
+  return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/e/${token}`;
+};
+
+export async function emailEstimate(id: string): Promise<string> {
+  try {
+    const e = await estimateById(id);
+    if (!e) return "Failed: estimate not found.";
+    await canEdit(e.leadId);
+    if (!emailReady()) return "Failed: email isn't connected yet — use Text for now.";
+    if (!/^\S+@\S+\.\S+$/.test(e.customer.email)) return "Failed: add the customer's email to the estimate first.";
+    const first = e.customer.name.split(" ")[0];
+    const link = await linkFor(e.token);
+    await sendEmail(
+      e.customer.email,
+      `Your estimate from MD Golden Builders — ${e.title}`,
+      `<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1c1c1e;max-width:520px">
+        <p>Hi ${first.replace(/[<>&]/g, "")},</p>
+        <p>Thank you for having me over. Here is your estimate for <b>${e.title.replace(/[<>&]/g, "")}</b> — everything we talked about, with the price and the payment schedule.</p>
+        <p style="margin:24px 0"><a href="${link}" style="background:#d4a73a;color:#000;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:10px">View your estimate</a></p>
+        <p>Any question at all, just reply here or text me.</p>
+        <p>Meidan<br>MD Golden Builders · CSLB #1128874<br>(858) 933-1694</p>
+      </div>`,
+    );
+    await markSent(id);
+    return "Done ✓ Emailed";
+  } catch (err) {
+    return `Failed: ${(err as Error).message}`;
+  }
+}
+
+/** Customer side (public, by private link): approve the estimate with their name. */
+export async function approveEstimate(token: string, name: string): Promise<string> {
+  const e = await estimateByToken(token);
+  if (!e) return "This link isn't valid anymore.";
+  if (e.status === "Approved") return "Already approved — thank you!";
+  const who = clean(name, 120);
+  if (who.length < 3) return "Please type your full name.";
+  await sql().begin(async (tx) => {
+    await LOCKS(tx);
+    await tx`update estimates set status = 'Approved', approved_at = now(), approved_name = ${who} where id = ${e.id} and status <> 'Approved'`;
+    if (e.leadId) await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${e.leadId}, 'u-owner', 'estimate', ${`✅ ${who} approved estimate #${e.number} — ${money(e.total)}`})`;
+  });
+  revalidatePath(`/e/${token}`);
+  revalidatePath("/", "layout");
+  return "Done";
+}

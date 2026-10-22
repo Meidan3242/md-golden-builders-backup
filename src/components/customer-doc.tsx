@@ -13,7 +13,7 @@ export interface CustomerDocProps {
   customer: { name: string; first: string; address: string };
   title: string;
   note: string;
-  sections: { title: string; items: string[] }[];
+  sections: { title: string; items: string[]; price?: number }[];
   exclusions: string[];
   total: number;
   schedule: Milestone[];
@@ -21,7 +21,11 @@ export interface CustomerDocProps {
   withDeposit: boolean;
   warranty?: string;
   extra?: React.ReactNode;
-  signHref: string;
+  signHref?: string;
+  /** Replaces the Approve & sign / Meet / Ask buttons (real estimates: the approve box). */
+  action?: React.ReactNode;
+  /** Ready-made payment rows (real estimates); otherwise built from `schedule`. */
+  rows?: { name: string; amount: number }[];
 }
 
 /** Customer-facing estimate / change-order page. Same look for both, mobile first. */
@@ -62,11 +66,13 @@ export function CustomerDoc(d: CustomerDocProps) {
             </div>
             <div className="text-right text-xs text-muted">{d.title}</div>
           </div>
-          <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2">
-            <a href={d.signHref} className="gold-gradient flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black"><FileSignature className="size-4" /> Approve & sign</a>
-            <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><CalendarClock className="size-4" /> Meet</Soon>
-            <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><MessageCircle className="size-4" /> Ask</Soon>
-          </div>
+          {d.action ?? (
+            <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2">
+              <a href={d.signHref} className="gold-gradient flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black"><FileSignature className="size-4" /> Approve & sign</a>
+              <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><CalendarClock className="size-4" /> Meet</Soon>
+              <Soon className="flex items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-medium"><MessageCircle className="size-4" /> Ask</Soon>
+            </div>
+          )}
         </section>
 
         {d.extra}
@@ -75,27 +81,27 @@ export function CustomerDoc(d: CustomerDocProps) {
           <h1 className="text-lg font-bold">{d.title}</h1>
           <div className="mt-3 space-y-4">
             {d.sections.map((s, i) => (
-              <div key={s.title}>
-                <h3 className="text-sm font-semibold">{i + 1}. {s.title}</h3>
+              <div key={`${i}-${s.title}`}>
+                <h3 className="flex items-baseline justify-between gap-3 text-sm font-semibold"><span>{i + 1}. {s.title}</span>{s.price ? <span>{money(s.price)}</span> : null}</h3>
                 <ul className="mt-1 space-y-1">
-                  {s.items.map((it) => (
-                    <li key={it} className="flex gap-2 text-sm text-muted"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />{it}</li>
+                  {s.items.map((it, j) => (
+                    <li key={j} className="flex gap-2 text-sm text-muted"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" />{it}</li>
                   ))}
                 </ul>
               </div>
             ))}
-            <div className="rounded-xl bg-surface p-3 text-xs text-muted"><b className="text-text">Not included:</b> {d.exclusions.join(" · ")}</div>
+            {d.exclusions.length > 0 && <div className="rounded-xl bg-surface p-3 text-xs text-muted"><b className="text-text">Not included:</b> {d.exclusions.join(" · ")}</div>}
           </div>
         </section>
 
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-3 text-lg font-bold">Payment schedule</h2>
           <ol className="space-y-1.5 text-sm">
-            {d.schedule.map((m, i) => (
-              <li key={m.name} className="flex items-center gap-3 rounded-lg bg-surface px-3 py-2">
+            {(d.rows ?? d.schedule.map((m) => ({ name: m.name, amount: amount(m) }))).map((m, i) => (
+              <li key={i} className="flex items-center gap-3 rounded-lg bg-surface px-3 py-2">
                 <span className="gold-gradient flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-black">{i + 1}</span>
                 <span className="min-w-0 flex-1">{m.name}</span>
-                <span className="font-semibold">{money(amount(m))}</span>
+                <span className="font-semibold">{money(m.amount)}</span>
               </li>
             ))}
             <li className="flex justify-between px-3 pt-2 text-base font-bold"><span>Total</span><span>{money(d.total)}</span></li>

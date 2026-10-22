@@ -219,4 +219,35 @@ alter table projects add column if not exists lng double precision;
 alter table projects add column if not exists geo_status text;
 `,
   },
+  {
+    version: 8,
+    name: "Estimates made in the app",
+    sql: /* sql */ `
+create sequence if not exists estimate_number start 600;
+create table if not exists estimates (
+  id text primary key,
+  number int not null unique default nextval('estimate_number'),
+  lead_id text references leads(id) on delete set null,
+  token text not null unique,
+  customer jsonb not null,
+  title text not null,
+  note text not null default '',
+  sections jsonb not null,
+  exclusions jsonb not null default '[]',
+  schedule jsonb not null,
+  total numeric not null default 0,
+  valid_days int not null default 30,
+  status text not null default 'Draft',
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  sent_at timestamptz,
+  viewed_at timestamptz,
+  approved_at timestamptz,
+  approved_name text
+);
+create index if not exists estimates_lead on estimates (lead_id);
+alter table estimates enable row level security;
+`,
+  },
 ];

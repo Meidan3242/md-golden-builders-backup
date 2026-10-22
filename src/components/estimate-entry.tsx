@@ -1,6 +1,6 @@
 "use client";
 
-import { FileUp, Send } from "lucide-react";
+import { FileText, FileUp, Send } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { markEstimateSent } from "@/app/actions/leads";
@@ -20,7 +20,7 @@ export function EstimateEntry({ rows }: { rows: Row[] }) {
       ))}
       {visible.map((r) => <EstimateRow key={r.id} r={r} onDone={() => setDone((d) => [...d, r.id])} />)}
       {!visible.length && <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted">All estimates are out 🎉</div>}
-      <p className="text-[11px] text-muted">The PDF is uploaded to private storage once the database is connected (in demo mode nothing is uploaded). Later: connect Joist (forward Joist&apos;s emails to the app) and the PDF + price come in by themselves — the lead leaves this list automatically.</p>
+      <p className="text-[11px] text-muted">Make the estimate right here in the app (Make estimate), or — if it was made in Joist — type the amount, attach the PDF and tap Estimate sent.</p>
     </div>
   );
 }
@@ -41,6 +41,9 @@ function EstimateRow({ r, onDone }: { r: Row; onDone: () => void }) {
           <div className="flex items-center gap-2"><span className="font-semibold">{r.name}</span><SourceBadge source={r.source} /></div>
           <div className="text-xs text-muted">{r.service} · {r.city} · visited {r.visited}</div>
         </Link>
+        <Link href={`/leads/${r.id}/estimates/new`} className="gold-gradient inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold text-black">
+          <FileText className="size-3.5" /> Make estimate
+        </Link>
         <span className={r.days >= 3 ? "rounded-full bg-bad-soft px-2 py-0.5 text-xs font-semibold text-bad" : "rounded-full bg-surface px-2 py-0.5 text-xs text-muted"}>waiting {r.days} days</span>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
@@ -50,7 +53,7 @@ function EstimateRow({ r, onDone }: { r: Row; onDone: () => void }) {
         </label>
         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted hover:border-gold">
           <FileUp className="size-4 shrink-0" />
-          <span className="truncate">{file ?? "Attach Joist PDF"}</span>
+          <span className="truncate">{file ?? "Made in Joist? Attach the PDF"}</span>
           <input name="pdf" type="file" accept="application/pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0]?.name)} />
         </label>
         <button disabled={!amount || pending} className="gold-gradient inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-bold text-black disabled:opacity-40">

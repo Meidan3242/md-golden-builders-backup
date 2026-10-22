@@ -20,6 +20,7 @@ import { LeadConversation, LeadOutcome } from "@/components/lead-parts";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, KeyValue, Soon } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLead, userById } from "@/lib/data";
+import { estimatesOfLead } from "@/lib/estimates";
 import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, duration, money } from "@/lib/format";
 
@@ -32,6 +33,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const followUps = (await getFollowUps()).filter((f) => f.leadId === id);
   const appts = (await getAppointments()).filter((a) => a.leadId === id);
   const owner = userById(lead.assignedTo);
+  const estimates = await estimatesOfLead(id);
 
   return (
     <>
@@ -47,6 +49,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="primary" href={`/leads/${lead.id}/estimates/new`}><FileText className="size-4" /> New estimate</Button>
           <Button href={`tel:${lead.phone}`}><Phone className="size-4" /> Call</Button>
           <Button><MessageSquare className="size-4" /> Text</Button>
           <Button><Mail className="size-4" /> Email</Button>
@@ -54,7 +57,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           {lead.projectId ? (
             <Button variant="primary" href={`/projects/${lead.projectId}`}><Trophy className="size-4" /> Open project</Button>
           ) : (
-            <Button variant="primary"><Trophy className="size-4" /> Mark won → contract</Button>
+            <Button><Trophy className="size-4" /> Mark won → contract</Button>
           )}
         </div>
       </div>
@@ -62,6 +65,26 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
           <LeadOutcome lead={lead} />
+          {estimates.length > 0 && (
+            <Card>
+              <CardHeader title="Estimates" subtitle="Made in the app" />
+              <ul className="divide-y divide-border">
+                {estimates.map((e) => (
+                  <li key={e.id}>
+                    <Link href={`/estimates/${e.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-surface">
+                      <FileText className="size-4 text-gold-text" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">#{e.number} · {e.title}</div>
+                        <div className="text-xs text-muted">{e.approvedAt ? `Approved by ${e.approvedName} · ${date(e.approvedAt)}` : e.viewedAt ? `Opened ${date(e.viewedAt)}` : e.sentAt ? `Sent ${date(e.sentAt)}` : "Draft — not sent yet"}</div>
+                      </div>
+                      {showMoney && <span className="text-sm font-semibold">{money(e.total)}</span>}
+                      <Badge tone={e.status === "Approved" ? "ok" : e.status === "Draft" ? "neutral" : e.status === "Viewed" ? "info" : "gold"}>{e.status}</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
           <LeadConversation lead={lead} />
           <Card>
             <CardHeader title="Call recordings" subtitle="Pulled automatically from RingCentral and matched by phone number" action={<Badge tone="info"><Mic className="size-3" /> {lead.calls.length}</Badge>} />

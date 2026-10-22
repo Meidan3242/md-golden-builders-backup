@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { currentUser, loggedInUser } from "@/lib/data";
 import { dbReady, migrate, sql } from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
+import { recordEstimateSent } from "@/lib/lead-estimate";
 import { sanDiegoToUtc } from "@/lib/time";
 
 const FILES_COPY_OFF = false; // was off until per-person login existed (now in place)
@@ -16,13 +17,6 @@ async function staff() {
   return u;
 }
 
-const FOLLOW_UP_PLAN = [
-  { step: "Day 1", days: 1, action: "Call + text: did you get the estimate? Offer a second meeting", who: "u-office" },
-  { step: "Day 3", days: 3, action: "Call + text: answer questions, book second meeting", who: "u-office" },
-  { step: "Day 7", days: 7, action: "Text check-in (Laline)", who: "u-office" },
-  { step: "Day 14", days: 14, action: "Your message: crew available — Meidan sends from his phone", who: "u-owner" },
-  { step: "Day 30", days: 30, action: "Last friendly check-in (Laline)", who: "u-office" },
-];
 
 export async function createLead(_: string | null, form: FormData): Promise<string | null> {
   const u = await staff();
@@ -85,16 +79,9 @@ export async function markEstimateSent(_: string | null, form: FormData): Promis
     if (file.size > 20 * 1024 * 1024) return "PDF is too big (max 20 MB).";
     pdf = await uploadFile("estimates", `${id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`, file);
   }
-  const sentAt = new Date();
   await sql().begin(async (tx) => {
     await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
-    await tx`update leads set stage = 'Estimate Sent', estimate_amount = ${amount}, estimate_sent_at = ${sentAt},
-             estimate_pdf = coalesce(${pdf}, estimate_pdf), closed_at = null, updated_at = now() where id = ${id}`;
-    await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${id}, ${u.id}, 'estimate', ${`Estimate sent — $${amount.toLocaleString()}`})`;
-    for (const s of FOLLOW_UP_PLAN) {
-      await tx`insert into follow_ups (lead_id, step, due, action, assigned_to)
-               values (${id}, ${s.step}, ${new Date(sentAt.getTime() + s.days * 86_400_000)}, ${s.action}, ${s.who})`;
-    }
+    await recordEstimateSent(tx, id, amount, u.id, `Estimate sent — $${amount.toLocaleString()}`, pdf);
   });
   revalidatePath("/", "layout");
   return null;

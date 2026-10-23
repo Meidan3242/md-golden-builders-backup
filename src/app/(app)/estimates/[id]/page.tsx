@@ -1,7 +1,7 @@
 import { CheckCircle2, Circle, ExternalLink, Pencil } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { CustomerDoc } from "@/components/customer-doc";
+import { FormalEstimate } from "@/components/formal-estimate";
 import { SendEstimate } from "@/components/send-estimate";
 import { BackLink, Button, Card, CardHeader } from "@/components/ui";
 import { canSeeAll, currentUser, getLead } from "@/lib/data";
@@ -63,24 +63,20 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
         </Card>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface text-text" data-theme="light">
+      <div className="overflow-hidden rounded-2xl border border-border bg-[#f4f1ea] text-text" data-theme="light">
         <div className="border-b border-border bg-card px-4 py-2 text-xs font-semibold text-muted">What the customer sees</div>
-        <CustomerDoc
-          kind="Estimate"
+        <FormalEstimate
           number={e.number}
           date={dateLong(e.sentAt ?? e.createdAt)}
-          subline={`Valid for ${e.validDays} days`}
-          customer={{ name: e.customer.name, first, address: e.customer.address }}
+          validUntil={dateLong(new Date(new Date(e.sentAt ?? e.createdAt).getTime() + e.validDays * 86_400_000).toISOString())}
+          customer={e.customer}
           title={e.title}
           note={e.note}
           sections={e.sections}
           exclusions={e.exclusions}
           total={e.total}
-          schedule={[]}
           rows={paymentRows(e.total, e.schedule)}
-          withDeposit
-          warranty="Workmanship warranty in writing"
-          action={<div className="mt-4 rounded-xl border border-dashed border-gold/60 p-3 text-center text-xs text-muted">The customer sees an “Approve estimate” box here.</div>}
+          acceptance={<div className="mt-4 border-t border-dashed border-[#b8902f] pt-3 text-center text-xs text-[#777]">The customer types their name and approves here.</div>}
         />
       </div>
     </div>

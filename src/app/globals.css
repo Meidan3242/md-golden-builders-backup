@@ -106,3 +106,15 @@ body {
     font-size: 16px !important;
   }
 }
+
+/* Formal documents (customer estimate): classic serif headings. */
+.font-letter {
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+/* Printing / saving a customer estimate as PDF: white paper, nothing cut in half. */
+@media print {
+  :root, [data-theme] { color-scheme: light !important; }
+  html, body { background: #fff !important; }
+  @page { size: letter; margin: 0.45in; }
+}

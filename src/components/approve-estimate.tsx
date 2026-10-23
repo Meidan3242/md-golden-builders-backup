@@ -1,6 +1,5 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { approveEstimate } from "@/app/actions/estimates";
 
@@ -15,7 +14,7 @@ export function ApproveEstimate({ token, first }: { token: string; first: string
   };
   return (
     <form
-      className="mt-4 rounded-xl border border-gold/60 bg-gold-soft/40 p-3"
+      className="mt-4"
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
@@ -24,13 +23,12 @@ export function ApproveEstimate({ token, first }: { token: string; first: string
         });
       }}
     >
-      <div className="text-sm font-semibold">Ready to go ahead, {first}?</div>
-      <p className="mb-2 text-xs text-muted">Type your full name and tap Approve. Nothing is charged now — I&apos;ll send you the contract to sign next.</p>
-      <input value={name} onChange={(e) => setName(e.target.value)} required minLength={3} autoComplete="name" placeholder="Your full name" className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-base" />
-      <button disabled={pending} className="gold-gradient mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-black disabled:opacity-60">
-        <CheckCircle2 className="size-4" /> {pending ? "Saving…" : "Approve estimate"}
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-[#777]">Full name of the property owner</label>
+      <input value={name} onChange={(e) => setName(e.target.value)} required minLength={3} autoComplete="name" placeholder={`e.g. ${first} …`} className="font-letter mt-1 w-full border-0 border-b border-[#1c1c1c] bg-transparent px-1 py-2 text-xl outline-none focus:border-[#b8902f]" />
+      <button disabled={pending} className="mt-4 w-full bg-[#1c1c1c] py-3 text-sm font-semibold uppercase tracking-[0.15em] text-white disabled:opacity-60 sm:w-auto sm:px-10">
+        {pending ? "Saving…" : "Approve estimate"}
       </button>
-      {msg && <p className="mt-2 text-sm text-bad">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-[#b91c1c]">{msg}</p>}
     </form>
   );
 }

@@ -1,7 +1,6 @@
-import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ApproveEstimate } from "@/components/approve-estimate";
-import { CustomerDoc } from "@/components/customer-doc";
+import { FormalEstimate } from "@/components/formal-estimate";
 import { sql } from "@/lib/db";
 import { paymentRows } from "@/lib/estimate-math";
 import { estimateByToken } from "@/lib/estimates";
@@ -21,28 +20,25 @@ export default async function CustomerEstimatePage({ params }: { params: Promise
     if (e.leadId) await sql()`update leads set estimate_viewed_at = coalesce(estimate_viewed_at, now()) where id = ${e.leadId}`;
   }
   const first = e.customer.name.split(" ")[0];
-  const validUntil = new Date(new Date(e.sentAt ?? e.createdAt).getTime() + e.validDays * 86_400_000).toISOString();
+  const issued = e.sentAt ?? e.createdAt;
   return (
-    <CustomerDoc
-      kind="Estimate"
+    <FormalEstimate
       number={e.number}
-      date={dateLong(e.sentAt ?? e.createdAt)}
-      subline={`Valid until ${dateLong(validUntil)}`}
-      customer={{ name: e.customer.name, first, address: e.customer.address }}
+      date={dateLong(issued)}
+      validUntil={dateLong(new Date(new Date(issued).getTime() + e.validDays * 86_400_000).toISOString())}
+      customer={e.customer}
       title={e.title}
       note={e.note}
       sections={e.sections}
       exclusions={e.exclusions}
       total={e.total}
-      schedule={[]}
       rows={paymentRows(e.total, e.schedule)}
-      withDeposit
-      warranty="Workmanship warranty in writing"
-      action={
+      printable
+      acceptance={
         e.status === "Approved" ? (
-          <div className="mt-4 flex items-start gap-2 rounded-xl bg-ok-soft p-3 text-sm text-ok">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
-            <div><b>Approved by {e.approvedName}</b> on {dateLong(e.approvedAt)}. Thank you! I&apos;ll send the contract next.</div>
+          <div className="mt-4 border-t border-[#d8d2c4] pt-3 text-sm">
+            <div className="font-letter text-xl">{e.approvedName}</div>
+            <div className="text-[#555]">Approved on {dateLong(e.approvedAt)} — thank you. The contract will be sent to you next.</div>
           </div>
         ) : (
           <ApproveEstimate token={token} first={first} />

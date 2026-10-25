@@ -24,7 +24,9 @@ export function FormalEstimate(d: {
   customer: { name: string; address: string; phone?: string; email?: string };
   title: string;
   note: string;
-  sections: { title: string; items: string[]; price?: number }[];
+  sections: { title: string; items: string[]; price?: number; photos?: string[] }[];
+  /** Where an item photo is loaded from (the staff link or the customer's private link). */
+  photoSrc?: (id: string) => string;
   exclusions: string[];
   total: number;
   rows: { name: string; amount: number }[];
@@ -102,6 +104,14 @@ export function FormalEstimate(d: {
                       <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[13px] text-[#444]">
                         {s.items.map((it, j) => <li key={j}>{it}</li>)}
                       </ul>
+                    )}
+                    {d.photoSrc && !!s.photos?.length && (
+                      <div className="mt-2 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
+                        {s.photos.map((p) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={p} src={d.photoSrc!(p)} alt={s.title} loading="lazy" className="aspect-[4/3] w-full border border-[#e3ddd0] object-cover" />
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="py-3 text-right tabular-nums">{s.price ? money(s.price) : ""}</td>

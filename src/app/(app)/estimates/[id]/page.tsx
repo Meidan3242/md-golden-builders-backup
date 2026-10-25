@@ -73,6 +73,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
           title={e.title}
           note={e.note}
           sections={e.sections}
+          photoSrc={(p) => `/estimates/photo/${p}`}
           exclusions={e.exclusions}
           total={e.total}
           rows={paymentRows(e.total, e.schedule)}

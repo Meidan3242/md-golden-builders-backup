@@ -68,3 +68,6 @@ export async function estimateByToken(token: string) {
   const [r] = await sql()`select * from estimates where token = ${token} and status <> 'Draft'`;
   return r ? row(r) : null;
 }
+
+/** A photo attached to an estimate item: "P-" + 16 hex + ".jpg", saved in R2 under estimates/. */
+export const PHOTO_ID = /^P-[0-9a-f]{16}\.jpg$/;

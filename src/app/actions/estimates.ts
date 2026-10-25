@@ -10,9 +10,10 @@ import { migrate, sql } from "@/lib/db";
 import { emailReady, sendEmail } from "@/lib/email";
 import { totalOf } from "@/lib/estimate-math";
 import type { EstimateSection, EstimateStage } from "@/lib/estimate-templates";
-import { estimateById, estimateByToken, estimatesReady, newToken } from "@/lib/estimates";
+import { estimateById, estimateByToken, estimatesReady, newToken, PHOTO_ID } from "@/lib/estimates";
 import { recordEstimateSent } from "@/lib/lead-estimate";
 import { money } from "@/lib/format";
+import { putR2, r2Ready } from "@/lib/storage";
 
 const LOCKS = async (tx: TransactionSql) => {
   await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '20s'`; await tx`set local idle_in_transaction_session_timeout = '30s'`; // never leave the database locked
@@ -50,8 +51,13 @@ export async function saveEstimate(_: string | null, form: FormData): Promise<st
   const u = await canEdit(d.leadId);
   if (!(await estimatesReady())) await migrate();
   const sections = (d.sections ?? [])
-    .map((x) => ({ title: clean(x.title, 120), items: (x.items ?? []).map((i) => clean(i, 300)).filter(Boolean).slice(0, 40), price: Math.max(0, Math.round(Number(x.price) || 0)) }))
-    .filter((x) => x.title || x.items.length || x.price)
+    .map((x) => ({
+      title: clean(x.title, 120),
+      items: (x.items ?? []).map((i) => clean(i, 300)).filter(Boolean).slice(0, 40),
+      price: Math.max(0, Math.round(Number(x.price) || 0)),
+      photos: (Array.isArray(x.photos) ? x.photos : []).filter((p) => PHOTO_ID.test(String(p))).slice(0, 8),
+    }))
+    .filter((x) => x.title || x.items.length || x.price || x.photos.length)
     .slice(0, 30);
   const schedule = (d.schedule ?? []).map((x) => ({ name: clean(x.name, 120), pct: Math.max(0, Number(x.pct) || 0) })).filter((x) => x.name || x.pct);
   if (!clean(d.customer?.name)) return "Add the customer's name.";
@@ -157,4 +163,17 @@ export async function approveEstimate(token: string, name: string): Promise<stri
   revalidatePath(`/e/${token}`);
   revalidatePath("/", "layout");
   return "Done";
+}
+
+/** A photo for one estimate item (shrunk on the phone first). The customer sees it under that item. */
+export async function uploadEstimatePhoto(form: FormData): Promise<{ id: string } | { error: string }> {
+  await canEdit(null);
+  if (!r2Ready()) return { error: "File storage isn't connected yet (Settings)." };
+  const file = form.get("file");
+  if (!(file instanceof File) || !file.size) return { error: "No photo." };
+  if (!file.type.startsWith("image/")) return { error: "Only photos." };
+  if (file.size > 4 * 1024 * 1024) return { error: "The photo is too big (max 4 MB)." };
+  const id = `P-${randomUUID().replace(/-/g, "").slice(0, 16)}.jpg`;
+  const path = await putR2("estimates", id, new Uint8Array(await file.arrayBuffer()), file.type);
+  return path ? { id } : { error: "Couldn't save the photo — try again." };
 }

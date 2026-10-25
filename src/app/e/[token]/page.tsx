@@ -30,6 +30,7 @@ export default async function CustomerEstimatePage({ params }: { params: Promise
       title={e.title}
       note={e.note}
       sections={e.sections}
+      photoSrc={(p) => `/e/${token}/photo/${p}`}
       exclusions={e.exclusions}
       total={e.total}
       rows={paymentRows(e.total, e.schedule)}

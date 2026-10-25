@@ -1,5 +1,5 @@
 // Starting points for an estimate, one per trade. Pick one, fix the prices, adjust the wording, send.
-export type EstimateSection = { title: string; items: string[]; price: number };
+export type EstimateSection = { title: string; items: string[]; price: number; photos?: string[] }; // photos: ids from uploadEstimatePhoto
 export type EstimateStage = { name: string; pct: number }; // % of the amount after the deposit
 export type EstimateTemplate = { key: string; label: string; title: string; sections: EstimateSection[]; exclusions: string[]; schedule: EstimateStage[] };
 

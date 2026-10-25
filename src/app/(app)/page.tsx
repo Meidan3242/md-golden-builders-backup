@@ -1,19 +1,19 @@
 import { CalendarDays, FileClock, FileText, FolderKanban, PhoneCall } from "lucide-react";
 import Link from "next/link";
-import { MorningNotifications } from "@/components/notifications";
+import { PhoneNotifications } from "@/components/notifications";
 import { SalesGoal } from "@/components/sales-goal";
 import { Tile } from "@/components/ui";
-import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLeads, getProjects, isActive } from "@/lib/data";
+import { canSeeMoney, currentUser, getAppointments, getLeads, getProjects, isActive } from "@/lib/data";
 import { CHANNELS, MONTHLY_HISTORY, SALES_GOAL_DEFAULT } from "@/lib/demo-data";
 import { dbReady } from "@/lib/db";
 import { lastMonths, monthlyStats } from "@/lib/lead-stats";
 import { now } from "@/lib/clock";
-import { dayKey, daysFrom, money, time } from "@/lib/format";
+import { dayKey, daysFrom, time } from "@/lib/format";
 
 /** Home: what needs doing today, two boxes, and the monthly sales goal. */
 export default async function Home() {
   const user = await currentUser();
-  const [leads, projects, appts, followUps] = await Promise.all([getLeads(), getProjects(), getAppointments(), getFollowUps()]);
+  const [leads, projects, appts] = await Promise.all([getLeads(), getProjects(), getAppointments()]);
   const showMoney = canSeeMoney(user);
   const today = dayKey(now());
 
@@ -22,24 +22,6 @@ export default async function Home() {
   const todaysAppts = appts.filter((a) => dayKey(a.start) === today);
   const needEstimate = leads.filter((l) => l.stage === "Need to Send Estimate");
   const oldest = needEstimate.reduce((a, l) => Math.max(a, -daysFrom(l.createdAt, now())), 0);
-  const dueFollowUps = followUps.filter((f) => !f.done && dayKey(f.due) <= today);
-  // The 8:00 AM notification, built from today's data.
-  const morning = {
-    title: `Good morning, ${user.name.split(" ")[0]} ☀️`,
-    body: [
-      `${dueFollowUps.length} follow-up${dueFollowUps.length === 1 ? "" : "s"} to send`,
-      ...todaysAppts.map((a) => `${time(a.start)} ${a.title.split(" — ")[1] ?? a.title}`),
-      `${needEstimate.length} estimates to send`,
-      `${notCalled.length} new leads to call`,
-    ].join(" · "),
-    url: "/",
-  };
-  const d14 = dueFollowUps.map((f) => ({ f, l: leads.find((x) => x.id === f.leadId) })).find((x) => x.f.step === "Day 14" && x.l) ?? dueFollowUps.map((f) => ({ f, l: leads.find((x) => x.id === f.leadId) })).find((x) => x.l);
-  const reminder = d14?.l && {
-    title: `Day 14 · ${d14.l.name}`,
-    body: `${d14.l.service}${d14.l.estimateAmount ? ` · ${money(d14.l.estimateAmount)}` : ""} — estimate sent 2 weeks ago, no meeting yet. Tap to send your message.`,
-    url: `/follow-ups/send/${d14.l.id}`,
-  };
   // Real data: sold leads by month. Demo: the sample history.
   const history = (await dbReady()) ? monthlyStats(leads, lastMonths(7, now())) : MONTHLY_HISTORY;
   const months = history.map((h) => ({
@@ -89,9 +71,9 @@ export default async function Home() {
         <Tile href="/documents/new" icon={<FileText />} title="New document" hint="Estimate · contract · change order" />
       </div>
 
-      {user.role !== "sales" && (
+      {(user.role === "admin" || user.role === "office") && (
         <div className="mt-3">
-          <MorningNotifications morning={morning} reminder={reminder || undefined} />
+          <PhoneNotifications />
         </div>
       )}
 

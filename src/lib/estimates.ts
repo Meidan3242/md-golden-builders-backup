@@ -23,6 +23,8 @@ export type Estimate = {
   viewedAt?: string;
   approvedAt?: string;
   approvedName?: string;
+  openCount: number; // times the customer opened it (not counting the team)
+  lastOpenedAt?: string;
 };
 
 export const estimatesReady = async () => ((await schemaVersion()) ?? 0) >= 8;
@@ -49,6 +51,8 @@ function row(r: Record<string, unknown>): Estimate {
     viewedAt: iso(r.viewed_at),
     approvedAt: iso(r.approved_at),
     approvedName: (r.approved_name as string) ?? undefined,
+    openCount: Number(r.open_count ?? 0),
+    lastOpenedAt: iso(r.last_opened_at),
   };
 }
 

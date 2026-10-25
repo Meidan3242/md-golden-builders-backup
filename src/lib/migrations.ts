@@ -250,4 +250,21 @@ create index if not exists estimates_lead on estimates (lead_id);
 alter table estimates enable row level security;
 `,
   },
+  {
+    version: 9,
+    name: "Phone notifications; how often the customer opened the estimate",
+    sql: /* sql */ `
+create table if not exists push_subscriptions (
+  endpoint text primary key,
+  user_id text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+alter table push_subscriptions enable row level security;
+alter table estimates add column if not exists open_count int not null default 0;
+alter table estimates add column if not exists last_opened_at timestamptz;
+alter table estimates add column if not exists notified_at timestamptz;
+`,
+  },
 ];

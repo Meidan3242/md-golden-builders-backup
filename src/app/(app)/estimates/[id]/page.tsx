@@ -23,7 +23,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   const steps = [
     ["Created", e.createdAt],
     ["Sent", e.sentAt],
-    ["Opened by the customer", e.viewedAt],
+    [e.openCount > 1 ? `Opened by the customer · ${e.openCount} times, last ${dateTime(e.lastOpenedAt!)}` : "Opened by the customer", e.viewedAt],
     [e.approvedName ? `Approved by ${e.approvedName}` : "Approved", e.approvedAt],
   ] as const;
 

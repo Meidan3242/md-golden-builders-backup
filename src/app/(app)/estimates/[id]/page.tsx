@@ -32,7 +32,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="mx-auto max-w-3xl">
-      <BackLink href={lead ? `/leads/${lead.id}` : "/leads"} label={lead?.name ?? "Leads"} />
+      <BackLink href={lead ? `/leads/${lead.id}` : "/estimates"} label={lead?.name ?? "Estimates"} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight">Estimate #{e.number}</h1>
         <div className="flex gap-2">

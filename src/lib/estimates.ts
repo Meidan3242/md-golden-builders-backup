@@ -78,3 +78,9 @@ export async function estimateByToken(token: string) {
 
 /** A photo attached to an estimate item: "P-" + 16 hex + ".jpg", saved in R2 under estimates/. */
 export const PHOTO_ID = /^P-[0-9a-f]{16}\.jpg$/;
+
+/** Every estimate (with or without a lead) — the Estimates table. Callers filter by who may see what. */
+export async function allEstimates() {
+  if (!(await estimatesReady())) return [];
+  return (await sql()`select * from estimates order by created_at desc`).map(estimateFromRow);
+}

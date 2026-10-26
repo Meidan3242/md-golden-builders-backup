@@ -42,11 +42,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-dark.png" alt="" className="hidden h-8 w-auto dark:block" />
         </Link>
-        <div className="hidden max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-muted md:flex">
-          <Search className="size-4" />
-          Search leads, projects, phone numbers…
-        </div>
+        <form action="/search" className="hidden max-w-md flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm md:flex">
+          <Search className="size-4 text-muted" />
+          <input name="q" placeholder="Search leads, projects, phone numbers…" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted" />
+        </form>
         <div className="ml-auto flex items-center gap-2">
+          <Link href="/search" aria-label="Search" className="inline-flex rounded-lg border border-border bg-card p-1.5 md:hidden"><Search className="size-5" /></Link>
           <ThemeToggle />
           <LogoutButton />
           {user.role !== "pm" && <Link href="/leads/new" className="gold-gradient hidden items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-black sm:inline-flex">

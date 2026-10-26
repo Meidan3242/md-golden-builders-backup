@@ -4,7 +4,6 @@ import {
   Circle,
   Eye,
   FileText,
-  Mail,
   MessageSquare,
   Mic,
   Phone,
@@ -20,6 +19,7 @@ import { LeadConversation, LeadOutcome } from "@/components/lead-parts";
 import { LeadStageBadge, SourceBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, KeyValue, Soon } from "@/components/ui";
 import { canSeeMoney, currentUser, getAppointments, getFollowUps, getLead, userById } from "@/lib/data";
+import { emailReady } from "@/lib/email";
 import { estimatesOfLead } from "@/lib/estimates";
 import { now } from "@/lib/clock";
 import { date, dateTime, dayKey, duration, money } from "@/lib/format";
@@ -51,8 +51,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" href={`/leads/${lead.id}/estimates/new`}><FileText className="size-4" /> New estimate</Button>
           <Button href={`tel:${lead.phone}`}><Phone className="size-4" /> Call</Button>
-          <Button><MessageSquare className="size-4" /> Text</Button>
-          <Button><Mail className="size-4" /> Email</Button>
+          <Button href="#conversation"><MessageSquare className="size-4" /> Text / Email</Button>
           <Button><CalendarPlus className="size-4" /> Schedule</Button>
           {lead.projectId ? (
             <Button variant="primary" href={`/projects/${lead.projectId}`}><Trophy className="size-4" /> Open project</Button>
@@ -85,7 +84,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               </ul>
             </Card>
           )}
-          <LeadConversation lead={lead} />
+          <LeadConversation lead={lead} emailOn={emailReady()} />
           <Card>
             <CardHeader title="Call recordings" subtitle="Pulled automatically from RingCentral and matched by phone number" action={<Badge tone="info"><Mic className="size-3" /> {lead.calls.length}</Badge>} />
             <ul className="divide-y divide-border">

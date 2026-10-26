@@ -1,5 +1,5 @@
 import { Dancing_Script } from "next/font/google";
-import { CONTRACTOR, jobsOf, P1, P3, P4, P5, PAGE_H, PAGE_W, type ContractData, type ContractorSign, type OwnerSign, type Spot } from "@/lib/contract-form";
+import { CONTRACTOR, jobsOf, P1, P3, P5, PAGE_H, PAGE_W, type ContractData, type ContractorSign, type OwnerSign, type Spot } from "@/lib/contract-form";
 import { money } from "@/lib/format";
 import { ContractPager } from "./contract-pager";
 
@@ -151,13 +151,7 @@ export function ContractDocument({ number, d, contractor, owner, todo }: { numbe
         {ownerTodo && <Todo at={P3.ackSign} label="Sign here" />}
       </Page>,
 
-      <Page key={4} n={4}>
-        <Check at={P4.cglCheck} />
-        <W at={P4.cglName}>{CONTRACTOR.name}</W>
-        <W at={P4.cglInsurer}>{CONTRACTOR.cglInsurer}</W>
-        <W at={P4.cglPhone}>{CONTRACTOR.cglPhone}</W>
-        <Check at={P4.wcCheck} />
-      </Page>,
+      <Page key={4} n={4} />, // insurance boxes left blank for now (owner's decision)
 
       <Page key={5} n={5}>
         {owner && arb &&

@@ -1,5 +1,5 @@
 import "server-only";
-import { envSuffix } from "./clock";
+import { supabaseKey, supabaseUrl } from "./clock";
 
 /** The only people who can log in: their email → their user in the app. */
 export const ACCOUNTS: Record<string, string> = {
@@ -11,8 +11,8 @@ export const emailOf = (userId: string) => Object.keys(ACCOUNTS).find((e) => ACC
 export const MIN_PASSWORD = 10;
 
 // Supabase Auth, called only from the server with the service key (never sent to the browser).
-const base = () => envSuffix("SUPABASE_URL");
-const key = () => envSuffix("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
+const base = supabaseUrl;
+const key = supabaseKey;
 export const authReady = () => !!(base() && key());
 
 async function call(path: string, init: { method?: string; body?: unknown; admin?: boolean } = {}) {

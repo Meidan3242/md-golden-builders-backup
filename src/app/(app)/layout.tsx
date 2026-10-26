@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { currentUser, getFollowUps, loggedInUser } from "@/lib/data";
 import { dbReady } from "@/lib/db";
-import { now } from "@/lib/clock";
+import { isPreview, now } from "@/lib/clock";
 import { dayKey } from "@/lib/format";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -55,6 +55,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
+      {isPreview() && (
+        <div className="border-b border-info/30 bg-info-soft px-4 py-1.5 text-center text-xs font-semibold text-info md:px-6">
+          PREVIEW — test database with fictional data. Files, email and monday are off. Nothing here reaches real customers.
+        </div>
+      )}
       {!live && (
         <div className="border-b border-warn/30 bg-warn-soft px-4 py-1.5 text-center text-xs font-semibold text-warn md:px-6">
           DEMO MODE — sample data (dated Oct 10, 2026). Changes are not saved and nothing is sent.

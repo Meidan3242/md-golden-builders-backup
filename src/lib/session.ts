@@ -18,7 +18,8 @@ async function key(secret: string) {
 }
 
 export function authSecret() {
-  const s = envAnyCase("AUTH_SECRET");
+  // Preview has its own secret: a login made on a Preview (with test passwords) is worthless on the real site.
+  const s = envAnyCase(process.env.VERCEL_ENV === "preview" ? "PREVIEW_AUTH_SECRET" : "AUTH_SECRET");
   return s && s.length >= 16 ? s : null;
 }
 

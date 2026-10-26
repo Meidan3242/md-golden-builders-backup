@@ -1,14 +1,15 @@
 import "server-only";
 import { AwsClient } from "aws4fetch";
-import { envSuffix } from "./clock";
+import { isPreview, supabaseKey, supabaseUrl } from "./clock";
 
 // Files live in Cloudflare R2 (cheap, no download fees) once its 4 keys are in Vercel.
 // Until then — and for files saved before — Supabase Storage (private bucket "estimates").
-const base = () => envSuffix("SUPABASE_URL");
-const key = () => envSuffix("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
+const base = supabaseUrl;
+const key = supabaseKey;
 const supabaseReady = () => !!(base() && key());
 
 const r2 = () => {
+  if (isPreview()) return null; // Preview never reads or writes the real customer files
   // Accept the Account ID alone or pasted inside the full "https://<id>.r2.cloudflarestorage.com" link.
   const rawAccount = process.env.R2_ACCOUNT_ID?.trim();
   const account = rawAccount?.match(/[0-9a-f]{32}/i)?.[0] ?? rawAccount, id = process.env.R2_ACCESS_KEY_ID?.trim(), secret = process.env.R2_SECRET_ACCESS_KEY?.trim(), bucket = process.env.R2_BUCKET?.trim();

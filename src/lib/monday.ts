@@ -1,9 +1,12 @@
 import "server-only";
+import { isPreview } from "./clock";
 
 // monday.com is read only from the server, with a token kept in Vercel (MONDAY_API_TOKEN) — never in browser code.
-export const mondayReady = () => !!process.env.MONDAY_API_TOKEN;
+// Preview never reads the real monday account.
+export const mondayReady = () => !isPreview() && !!process.env.MONDAY_API_TOKEN;
 
 async function gql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+  if (!mondayReady()) throw new Error("monday isn't connected here.");
   const res = await fetch(process.env.MONDAY_API_URL ?? "https://api.monday.com/v2", {
     method: "POST",
     headers: { Authorization: process.env.MONDAY_API_TOKEN!, "Content-Type": "application/json", "API-Version": "2024-10" },

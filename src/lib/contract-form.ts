@@ -38,6 +38,9 @@ export const CONTRACTOR = {
   phone: COMPANY.phone,
   email: COMPANY.email,
   salesman: "Meidan D.",
+  // Commercial General Liability (from the certificate of insurance): insurer, and the agent's phone to check coverage.
+  cglInsurer: "Gotham Insurance Company",
+  cglPhone: "(818) 351-5777",
 };
 
 /** "100 Example Way, La Jolla, CA 92037" → street + "La Jolla, CA 92037". */
@@ -93,7 +96,7 @@ export const P3 = {
   three: { date: s(97, 1132, 125), by: s(590, 1397, 223), seller: s(60, 1428, 393), at: s(482, 1428, 396) },
 };
 
-export const P4 = { cglCheck: s(79, 405, 14), cglName: s(137, 403, 351), wcCheck: s(79, 728, 14) };
+export const P4 = { cglCheck: s(79, 405, 14), cglName: s(137, 403, 351), cglInsurer: s(318, 445, 400), cglPhone: s(418, 469, 212), wcCheck: s(79, 728, 14) };
 
 export const P5 = {
   arb: [618, 1244].map((y) => ({ contractor: s(267, y, 195), owner: s(688, y, 190) })),

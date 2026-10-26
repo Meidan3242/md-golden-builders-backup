@@ -154,6 +154,8 @@ export function ContractDocument({ number, d, contractor, owner, todo }: { numbe
       <Page key={4} n={4}>
         <Check at={P4.cglCheck} />
         <W at={P4.cglName}>{CONTRACTOR.name}</W>
+        <W at={P4.cglInsurer}>{CONTRACTOR.cglInsurer}</W>
+        <W at={P4.cglPhone}>{CONTRACTOR.cglPhone}</W>
         <Check at={P4.wcCheck} />
       </Page>,
 

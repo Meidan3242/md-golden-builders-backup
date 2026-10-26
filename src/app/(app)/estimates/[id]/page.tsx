@@ -1,4 +1,5 @@
-import { CheckCircle2, Circle, ExternalLink, Pencil } from "lucide-react";
+import { CheckCircle2, Circle, ExternalLink, FileSignature, Pencil } from "lucide-react";
+import { generateContract } from "@/app/actions/contracts";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { FormalEstimate } from "@/components/formal-estimate";
@@ -7,6 +8,7 @@ import { BackLink, Button, Card, CardHeader } from "@/components/ui";
 import { canSeeAll, currentUser, getLead } from "@/lib/data";
 import { emailReady } from "@/lib/email";
 import { paymentRows } from "@/lib/estimate-math";
+import { contractOfEstimate } from "@/lib/contracts";
 import { estimateById } from "@/lib/estimates";
 import { dateLong, dateTime } from "@/lib/format";
 
@@ -17,6 +19,7 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
   const e = user.role === "pm" ? null : await estimateById(id);
   const lead = e?.leadId ? await getLead(e.leadId) : null;
   if (!e || (e.leadId ? !lead : !canSeeAll(user))) notFound();
+  const contract = e.status === "Approved" ? await contractOfEstimate(e.id) : null;
   const h = await headers();
   const link = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}/e/${e.token}`;
   const first = e.customer.name.split(" ")[0];
@@ -55,7 +58,17 @@ export default async function EstimatePage({ params }: { params: Promise<{ id: s
           <CardHeader title={e.status === "Approved" ? "Approved ✓" : e.sentAt ? "Send again" : "Send to the customer"} subtitle={e.status === "Approved" ? "Next: the contract" : "Their own private link"} />
           <div className="p-4">
             {e.status === "Approved" ? (
-              <p className="text-sm text-muted">{e.approvedName} approved this on {dateLong(e.approvedAt)}. The contract & e-signature come in the next step of the app.</p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted">{e.approvedName} approved this on {dateLong(e.approvedAt)}.</p>
+                {contract ? (
+                  <Button href={`/contracts/${contract.id}`} variant="primary"><FileSignature className="size-4" /> Contract #{contract.number} — {contract.status === "Signed" ? "signed ✓" : contract.contractor ? "waiting for the customer" : "fill & sign"}</Button>
+                ) : (
+                  <form action={generateContract.bind(null, e.id)}>
+                    <button className="gold-gradient inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-bold text-black"><FileSignature className="size-4" /> Generate contract</button>
+                    <p className="mt-1.5 text-xs text-muted">Form 203 + Additional Description, filled from this estimate: customer, scope, price and payments.</p>
+                  </form>
+                )}
+              </div>
             ) : (
               <SendEstimate id={e.id} link={link} phone={e.customer.phone} email={e.customer.email} first={first} title={e.title} emailOn={emailReady()} />
             )}

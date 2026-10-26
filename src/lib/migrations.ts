@@ -267,4 +267,32 @@ alter table estimates add column if not exists last_opened_at timestamptz;
 alter table estimates add column if not exists notified_at timestamptz;
 `,
   },
+  {
+    version: 10,
+    name: "Contracts signed in the app (Form 203 + Additional Description)",
+    sql: /* sql */ `
+create sequence if not exists contract_number start 100;
+create table if not exists contracts (
+  id text primary key,
+  number int not null unique default nextval('contract_number'),
+  estimate_id text references estimates(id) on delete set null,
+  lead_id text references leads(id) on delete set null,
+  token text not null unique,
+  data jsonb not null,
+  status text not null default 'Draft',
+  contractor_sign jsonb,
+  owner_sign jsonb,
+  doc_hash text,
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  sent_at timestamptz,
+  viewed_at timestamptz,
+  signed_at timestamptz
+);
+create index if not exists contracts_estimate on contracts (estimate_id);
+create index if not exists contracts_lead on contracts (lead_id);
+alter table contracts enable row level security;
+`,
+  },
 ];

@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authSecret, SESSION_COOKIE, verifySession } from "@/lib/session";
 
-// Customer pages stay open: /p = demo previews, /e/<private link> = a real estimate (only by its unguessable link).
-const PUBLIC = [/^\/login/, /^\/p\//, /^\/e\//];
+// Customer pages stay open: /p = demo previews, /e/<private link> = a real estimate, /c/<private link> = a contract to sign (only by their unguessable links).
+const PUBLIC = [/^\/login/, /^\/p\//, /^\/e\//, /^\/c\//];
 // Project managers only ever reach active projects and the calendar.
 const PM_ALLOWED = [/^\/projects(\/(?!new)[^/]+)?\/?$/, /^\/files\//, /^\/calendar/, /^\/more/, /^\/account/, /^\/p\//];
 

@@ -1,6 +1,7 @@
 // The contract: Builder's Book Form 203 (5 pages, images in /public/forms) filled in from the approved estimate,
 // plus our own "Additional Description" (scope of work + full payment schedule). Shared by the staff and customer pages.
 import { COMPANY } from "./demo-docs";
+import { toJobs, type EstimateJob } from "./estimate-templates";
 
 export type ContractData = {
   estimateId: string;
@@ -9,7 +10,8 @@ export type ContractData = {
   workAddress: string;
   lender: string;
   title: string;
-  sections: { title: string; items: string[]; price: number }[];
+  jobs?: EstimateJob[]; // the work: jobs with one price each, and their steps
+  sections?: { title: string; items: string[]; price: number }[]; // contracts made before jobs
   exclusions: string[];
   price: number;
   downPayment: number;
@@ -21,6 +23,9 @@ export type ContractData = {
   age65?: boolean; // set by us before sending: owner 65 or older → 5-day right to cancel
   arbitration?: boolean; // set by us before sending: the owner agreed to arbitration (voluntary)
 };
+
+/** The contract's jobs (older contracts saved priced sections). */
+export const jobsOf = (d: ContractData): EstimateJob[] => d.jobs ?? toJobs(d.sections ?? []);
 
 export type ContractorSign = { name: string; initials: string; at: string; ip: string };
 export type OwnerSign = { name: string; initials: string; age65: boolean; arbitration: boolean; at: string; ip: string; ua: string; cancelBy: string };

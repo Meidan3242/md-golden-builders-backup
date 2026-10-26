@@ -14,7 +14,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
     <div className="mx-auto max-w-3xl">
       <BackLink href={`/estimates/${id}`} label={`Estimate #${e.number}`} />
       <h1 className="mb-4 text-2xl font-bold tracking-tight">Edit estimate #{e.number}</h1>
-      <EstimateEditor initial={{ id: e.id, leadId: e.leadId ?? "", customer: e.customer, title: e.title, note: e.note, sections: e.sections, exclusions: e.exclusions, schedule: e.schedule, validDays: e.validDays }} />
+      <EstimateEditor initial={{ id: e.id, leadId: e.leadId ?? "", customer: e.customer, title: e.title, note: e.note, jobs: e.jobs, exclusions: e.exclusions, schedule: e.schedule, validDays: e.validDays }} />
     </div>
   );
 }

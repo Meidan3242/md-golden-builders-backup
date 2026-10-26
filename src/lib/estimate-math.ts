@@ -1,8 +1,8 @@
-import type { EstimateSection, EstimateStage } from "./estimate-templates";
+import type { EstimateJob, EstimateStage } from "./estimate-templates";
 
 /** California: the deposit can't be more than $1,000 or 10% of the price, whichever is less. */
 export const depositFor = (total: number) => Math.min(1000, Math.round(total * 0.1));
-export const totalOf = (sections: EstimateSection[]) => sections.reduce((a, x) => a + (Number(x.price) || 0), 0);
+export const totalOf = (jobs: EstimateJob[]) => jobs.reduce((a, x) => a + (Number(x.price) || 0), 0);
 
 /** Deposit first, then each stage as a % of what's left (last stage takes the rounding). */
 export function paymentRows(total: number, stages: EstimateStage[]) {

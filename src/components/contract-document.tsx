@@ -1,5 +1,5 @@
 import { Dancing_Script } from "next/font/google";
-import { CONTRACTOR, P1, P3, P4, P5, PAGE_H, PAGE_W, type ContractData, type ContractorSign, type OwnerSign, type Spot } from "@/lib/contract-form";
+import { CONTRACTOR, jobsOf, P1, P3, P4, P5, PAGE_H, PAGE_W, type ContractData, type ContractorSign, type OwnerSign, type Spot } from "@/lib/contract-form";
 import { money } from "@/lib/format";
 import { ContractPager } from "./contract-pager";
 
@@ -61,7 +61,7 @@ function lines(text: string, max: number) {
 export function ContractDocument({ number, d, contractor, owner, todo }: { number: number; d: ContractData; contractor?: ContractorSign; owner?: OwnerSign; todo?: boolean }) {
   const desc = [
     "See the attached Additional Description,",
-    ...lines(`which is part of this contract: ${d.title}. Work includes: ${d.sections.map((s) => s.title).join("; ")}. Exclusions are listed in the Additional Description.`, 112),
+    ...lines(`which is part of this contract: ${d.title}. Work includes: ${jobsOf(d).map((j) => (j.steps.some((s) => s.title) ? `${j.title} (${j.steps.map((s) => s.title).filter(Boolean).join(", ")})` : j.title)).join("; ")}. Exclusions are listed in the Additional Description.`, 112),
   ];
   const rows = d.payments.length <= 5 ? d.payments : [...d.payments.slice(0, 4), { name: "Remaining stages — see Additional Description", amount: d.payments.slice(4).reduce((a, p) => a + p.amount, 0) }];
   const five = owner ? owner.age65 : !!d.age65;
@@ -206,11 +206,19 @@ function AdditionalDescription({ number, d, contractor, owner, todo }: { number:
       <table className="mt-1 w-full">
         <thead><tr><th className={`${th} w-8`}>No.</th><th className={th}>Description</th><th className={`${th} w-24 text-right`}>Amount</th></tr></thead>
         <tbody>
-          {d.sections.map((s, i) => (
+          {jobsOf(d).map((j, i) => (
             <tr key={i} className="break-inside-avoid border-b border-[#e3ddd0] align-top">
               <td className="py-2 text-[#777]">{i + 1}</td>
-              <td className="py-2 pr-3"><div className="font-semibold">{s.title}</div>{s.items.length > 0 && <ul className="mt-0.5 list-disc pl-4 text-[12px] text-[#444]">{s.items.map((it, j) => <li key={j}>{it}</li>)}</ul>}</td>
-              <td className="py-2 text-right tabular-nums">{s.price ? money(s.price) : ""}</td>
+              <td className="py-2 pr-3">
+                <div className="font-semibold">{j.title}</div>
+                {j.steps.map((s, k) => (
+                  <div key={k} className="mt-1">
+                    {s.title && <div className="text-[12px] font-semibold text-[#333]">{s.title}</div>}
+                    {s.items.length > 0 && <ul className="list-disc pl-4 text-[12px] text-[#444]">{s.items.map((it, m) => <li key={m}>{it}</li>)}</ul>}
+                  </div>
+                ))}
+              </td>
+              <td className="py-2 text-right font-semibold tabular-nums">{j.price ? money(j.price) : ""}</td>
             </tr>
           ))}
           <tr><td /><td className="pt-2 text-right font-bold">Contract price</td><td className="pt-2 text-right font-bold tabular-nums">{money(d.price)}</td></tr>

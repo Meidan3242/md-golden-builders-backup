@@ -1,9 +1,13 @@
-// Starting points for an estimate, one per trade. Pick one, fix the prices, adjust the wording, send.
-export type EstimateSection = { title: string; items: string[]; price: number; photos?: string[] }; // photos: ids from uploadEstimatePhoto
+// Starting points for an estimate, one per trade. Pick one, put the price, adjust the wording, send.
+// An estimate is one or more jobs (Pavers, Fence…). Each job has ONE price and its steps (Demo, Base, Pavers…) without prices.
+export type EstimateStep = { title: string; items: string[]; photos?: string[] }; // photos: ids from uploadEstimatePhoto
+export type EstimateJob = { title: string; price: number; steps: EstimateStep[] };
+/** Template step (and the shape estimates were saved in before jobs: one price per section). */
+export type EstimateSection = EstimateStep & { price?: number };
 export type EstimateStage = { name: string; pct: number }; // % of the amount after the deposit
 export type EstimateTemplate = { key: string; label: string; title: string; sections: EstimateSection[]; exclusions: string[]; schedule: EstimateStage[] };
 
-const s = (title: string, items: string[]): EstimateSection => ({ title, items, price: 0 });
+const s = (title: string, items: string[]): EstimateSection => ({ title, items });
 const PERMITS = "Permit, plan-check and engineering fees (billed at cost)";
 const STANDARD: EstimateStage[] = [
   { name: "Upon start of work", pct: 30 },
@@ -144,3 +148,16 @@ export const ESTIMATE_TEMPLATES: EstimateTemplate[] = [
     sections: [s("", [])], exclusions: [], schedule: STANDARD,
   },
 ];
+
+/** Jobs from what was saved: new estimates store jobs; older ones stored priced sections — each becomes its own job. */
+export function toJobs(raw: unknown): EstimateJob[] {
+  const xs = Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+  return xs.map((x) =>
+    Array.isArray(x.steps)
+      ? { title: String(x.title ?? ""), price: Number(x.price) || 0, steps: (x.steps as EstimateStep[]).map((st) => ({ title: st.title ?? "", items: st.items ?? [], photos: st.photos ?? [] })) }
+      : { title: String(x.title ?? ""), price: Number(x.price) || 0, steps: [{ title: "", items: (x.items as string[]) ?? [], photos: (x.photos as string[]) ?? [] }] },
+  );
+}
+
+/** A template as one job: the template's sections are its steps; the price is put in once. */
+export const templateJob = (t: EstimateTemplate, title = t.title): EstimateJob => ({ title, price: 0, steps: t.sections.map((x) => ({ title: x.title, items: [...x.items], photos: [] })) });

@@ -1,5 +1,6 @@
 import { PrintButton } from "./print-button";
 import { COMPANY } from "@/lib/demo-docs";
+import type { EstimateJob } from "@/lib/estimate-templates";
 import { money } from "@/lib/format";
 
 // The customer's estimate as a formal business document: letterhead, scope table, payment schedule,
@@ -24,7 +25,7 @@ export function FormalEstimate(d: {
   customer: { name: string; address: string; phone?: string; email?: string };
   title: string;
   note: string;
-  sections: { title: string; items: string[]; price?: number; photos?: string[] }[];
+  jobs: EstimateJob[];
   /** Where an item photo is loaded from (the staff link or the customer's private link). */
   photoSrc?: (id: string) => string;
   exclusions: string[];
@@ -95,26 +96,31 @@ export function FormalEstimate(d: {
               </tr>
             </thead>
             <tbody>
-              {d.sections.map((s, i) => (
+              {d.jobs.map((j, i) => (
                 <tr key={i} className="break-inside-avoid border-b border-[#e8e3d8] align-top">
                   <td className="py-3 text-[#777]">{i + 1}</td>
                   <td className="py-3 pr-3">
-                    <div className="font-semibold">{s.title}</div>
-                    {s.items.length > 0 && (
-                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[13px] text-[#444]">
-                        {s.items.map((it, j) => <li key={j}>{it}</li>)}
-                      </ul>
-                    )}
-                    {d.photoSrc && !!s.photos?.length && (
-                      <div className="mt-2 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
-                        {s.photos.map((p) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={p} src={d.photoSrc!(p)} alt={s.title} loading="lazy" className="aspect-[4/3] w-full border border-[#e3ddd0] object-cover" />
-                        ))}
+                    <div className="font-semibold">{j.title}</div>
+                    {j.steps.map((s, k) => (
+                      <div key={k} className="mt-2 break-inside-avoid">
+                        {s.title && <div className="text-[13px] font-semibold text-[#333]">{s.title}</div>}
+                        {s.items.length > 0 && (
+                          <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[13px] text-[#444]">
+                            {s.items.map((it, m) => <li key={m}>{it}</li>)}
+                          </ul>
+                        )}
+                        {d.photoSrc && !!s.photos?.length && (
+                          <div className="mt-2 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
+                            {s.photos.map((p) => (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img key={p} src={d.photoSrc!(p)} alt={s.title || j.title} loading="lazy" className="aspect-[4/3] w-full border border-[#e3ddd0] object-cover" />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </td>
-                  <td className="py-3 text-right tabular-nums">{s.price ? money(s.price) : ""}</td>
+                  <td className="py-3 text-right font-semibold tabular-nums">{j.price ? money(j.price) : ""}</td>
                 </tr>
               ))}
               <tr className="break-inside-avoid">

@@ -45,7 +45,7 @@ export async function generateContract(estimateId: string) {
     workAddress: e.customer.address,
     lender: "None",
     title: e.title,
-    sections: e.sections.map((s) => ({ title: s.title, items: s.items, price: s.price })),
+    jobs: e.jobs.map((j) => ({ title: j.title, price: j.price, steps: j.steps.map((s) => ({ title: s.title, items: s.items })) })),
     exclusions: e.exclusions,
     price: e.total,
     downPayment: depositFor(e.total),

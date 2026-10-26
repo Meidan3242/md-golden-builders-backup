@@ -4,7 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowUp, Camera, ChevronRight, ImageIcon, Plus, T
 import { useActionState, useEffect, useRef, useState } from "react";
 import { saveEstimate, uploadEstimatePhoto } from "@/app/actions/estimates";
 import { depositFor, paymentRows, totalOf } from "@/lib/estimate-math";
-import { ESTIMATE_TEMPLATES, type EstimateSection, type EstimateStage } from "@/lib/estimate-templates";
+import { ESTIMATE_TEMPLATES, templateJob, type EstimateJob, type EstimateStage, type EstimateStep } from "@/lib/estimate-templates";
 import { money } from "@/lib/format";
 import { shrinkImage } from "@/lib/shrink";
 
@@ -14,7 +14,7 @@ export type EditorValue = {
   customer: { name: string; email: string; phone: string; address: string };
   title: string;
   note: string;
-  sections: EstimateSection[];
+  jobs: EstimateJob[];
   exclusions: string[];
   schedule: EstimateStage[];
   validDays: number;
@@ -22,41 +22,52 @@ export type EditorValue = {
 
 const field = "w-full rounded-lg border border-border bg-card px-3 py-2 text-base sm:text-sm outline-none focus:border-gold";
 const label = "mb-1 block text-xs font-medium text-muted";
-const STEPS = ["Customer", "Items", "Payments"];
+const STEPS = ["Customer", "Work & price", "Payments"];
+const blankStep = (): EstimateStep => ({ title: "", items: [], photos: [] });
 export const photoSrc = (id: string) => `/estimates/photo/${id}`;
 
-/** Build or edit an estimate in 3 steps: customer → items (each opens big, with its photos) → payments. */
+/** Build or edit an estimate in 3 steps: customer → work (jobs with one price each; their steps open big, with photos) → payments. */
 export function EstimateEditor({ initial, suggested }: { initial: EditorValue; suggested?: string }) {
   const [v, setV] = useState(initial);
   const [step, setStep] = useState(0);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<{ job: number; step: number } | null>(null);
   const [msg, action, pending] = useActionState(saveEstimate, null);
   const set = <K extends keyof EditorValue>(k: K, val: EditorValue[K]) => setV((x) => ({ ...x, [k]: val }));
-  const setSection = (i: number, patch: Partial<EstimateSection>) => setV((x) => ({ ...x, sections: x.sections.map((s, j) => (j === i ? { ...s, ...patch } : s)) }));
-  const move = (i: number, d: number) => {
-    const xs = [...v.sections];
-    const [it] = xs.splice(i, 1);
-    xs.splice(i + d, 0, it);
-    set("sections", xs);
-    setOpen(i + d);
+  const setJob = (ji: number, patch: Partial<EstimateJob>) => setV((x) => ({ ...x, jobs: x.jobs.map((j, k) => (k === ji ? { ...j, ...patch } : j)) }));
+  const setStepAt = (ji: number, si: number, patch: Partial<EstimateStep>) => setV((x) => ({ ...x, jobs: x.jobs.map((j, k) => (k === ji ? { ...j, steps: j.steps.map((st, m) => (m === si ? { ...st, ...patch } : st)) } : j)) }));
+  const moveStep = (ji: number, si: number, d: number) => {
+    const xs = [...v.jobs[ji]!.steps];
+    const [it] = xs.splice(si, 1);
+    xs.splice(si + d, 0, it!);
+    setJob(ji, { steps: xs });
+    setOpen({ job: ji, step: si + d });
   };
-  const remove = (i: number) => {
-    if (!confirm(`Remove item ${i + 1}${v.sections[i].title ? ` (${v.sections[i].title})` : ""}?`)) return;
-    set("sections", v.sections.filter((_, j) => j !== i));
+  const removeStep = (ji: number, si: number) => {
+    const st = v.jobs[ji]!.steps[si]!;
+    if (!confirm(`Remove step ${si + 1}${st.title ? ` (${st.title})` : ""}?`)) return;
+    setJob(ji, { steps: v.jobs[ji]!.steps.filter((_, m) => m !== si) });
     setOpen(null);
   };
-  const add = () => {
-    set("sections", [...v.sections, { title: "", items: [], price: 0, photos: [] }]);
-    setOpen(v.sections.length);
+  const addStep = (ji: number) => {
+    setJob(ji, { steps: [...v.jobs[ji]!.steps, blankStep()] });
+    setOpen({ job: ji, step: v.jobs[ji]!.steps.length });
   };
-  const total = totalOf(v.sections);
+  const addJob = (key: string) => {
+    const t = ESTIMATE_TEMPLATES.find((x) => x.key === key);
+    set("jobs", [...v.jobs, t && key !== "blank" ? templateJob(t, t.label) : { title: "", price: 0, steps: [blankStep()] }]);
+  };
+  const removeJob = (ji: number) => {
+    if (!confirm(`Remove ${v.jobs[ji]!.title || `job ${ji + 1}`} with all its steps?`)) return;
+    set("jobs", v.jobs.filter((_, k) => k !== ji));
+  };
+  const total = totalOf(v.jobs);
   const pct = v.schedule.reduce((a, s) => a + (Number(s.pct) || 0), 0);
   const applyTemplate = (key: string) => {
     const t = ESTIMATE_TEMPLATES.find((x) => x.key === key);
     if (!t) return;
-    const touched = v.sections.some((s) => s.price || s.items.length || s.photos?.length);
-    if (touched && !confirm("Replace the items with this template?")) return;
-    setV((x) => ({ ...x, title: t.title || x.title, sections: t.sections.map((s) => ({ ...s, items: [...s.items], photos: [] })), exclusions: [...t.exclusions], schedule: t.schedule.map((s) => ({ ...s })) }));
+    const touched = v.jobs.some((j) => j.price || j.steps.some((st) => st.items.length || st.photos?.length));
+    if (touched && !confirm("Replace the work with this template?")) return;
+    setV((x) => ({ ...x, title: t.title || x.title, jobs: [templateJob(t)], exclusions: [...t.exclusions], schedule: t.schedule.map((s) => ({ ...s })) }));
   };
   const go = (n: number) => {
     setStep(n);
@@ -103,23 +114,47 @@ export function EstimateEditor({ initial, suggested }: { initial: EditorValue; s
       )}
 
       {step === 1 && (
-        <section className="space-y-2.5">
-          <p className="px-1 text-xs text-muted">Tap an item to open it big — write and add photos.</p>
-          {v.sections.map((s, i) => (
-            <button key={i} type="button" onClick={() => setOpen(i)} className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left hover:border-gold">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gold-soft text-sm font-bold text-gold-text">{i + 1}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold">{s.title || <span className="text-muted">Item {i + 1} — tap to write</span>}</span>
-                <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                  {s.items.filter((x) => x.trim()).length} lines
-                  {!!s.photos?.length && <><ImageIcon className="size-3.5" /> {s.photos.length}</>}
+        <section className="space-y-4">
+          <p className="px-1 text-xs text-muted">Each job has one price. Its steps describe the work — tap a step to open it big and add photos.</p>
+          {v.jobs.map((j, ji) => (
+            <div key={ji} className="rounded-2xl border border-border bg-card p-3">
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted">Job {ji + 1}</span>
+                <input className={`${field} font-semibold`} value={j.title} placeholder="Job name (e.g. Pavers)" onChange={(e) => setJob(ji, { title: e.target.value })} />
+                {v.jobs.length > 1 && <button type="button" onClick={() => removeJob(ji)} className="shrink-0 p-1.5 text-bad" aria-label="Remove job"><Trash2 className="size-4" /></button>}
+              </div>
+              <div className="mt-3 space-y-2">
+                {j.steps.map((st, si) => (
+                  <button key={si} type="button" onClick={() => setOpen({ job: ji, step: si })} className="flex w-full items-center gap-3 rounded-xl border border-border bg-surface p-3 text-left hover:border-gold">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gold-soft text-xs font-bold text-gold-text">{si + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{st.title || <span className="text-muted">Step {si + 1} — tap to write</span>}</span>
+                      <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+                        {st.items.filter((x) => x.trim()).length} lines
+                        {!!st.photos?.length && <><ImageIcon className="size-3.5" /> {st.photos.length}</>}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted" />
+                  </button>
+                ))}
+                <button type="button" onClick={() => addStep(ji)} className="flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-gold-text"><Plus className="size-4" /> Add step</button>
+              </div>
+              <label className="mt-3 flex items-center gap-3 border-t border-border pt-3">
+                <span className="shrink-0 text-sm font-semibold">Price{j.title ? ` — ${j.title}` : ""}</span>
+                <span className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted">$</span>
+                  <input className={`w-full rounded-xl border bg-card py-2.5 pl-7 pr-3 text-right text-xl font-semibold tabular-nums outline-none focus:border-gold ${j.price ? "border-border" : "border-bad/60"}`} inputMode="numeric" placeholder="0" value={j.price ? j.price.toLocaleString("en-US") : ""} onChange={(e) => setJob(ji, { price: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })} />
                 </span>
-              </span>
-              <span className={`shrink-0 text-sm font-semibold ${s.price ? "" : "text-bad"}`}>{s.price ? money(s.price) : "No price"}</span>
-              <ChevronRight className="size-4 shrink-0 text-muted" />
-            </button>
+              </label>
+            </div>
           ))}
-          <button type="button" onClick={add} className="flex w-full items-center justify-center gap-1 rounded-2xl border border-dashed border-border py-4 text-sm font-medium text-gold-text"><Plus className="size-4" /> Add item</button>
+          <label className="block rounded-2xl border border-dashed border-border p-3">
+            <span className="flex items-center gap-1 text-sm font-medium text-gold-text"><Plus className="size-4" /> Add another job — with its own price</span>
+            <select className={`${field} mt-2`} value="" onChange={(e) => e.target.value && addJob(e.target.value)}>
+              <option value="">Choose… (e.g. Fence)</option>
+              {ESTIMATE_TEMPLATES.map((t) => <option key={t.key} value={t.key}>{t.key === "blank" ? "Blank job" : t.label}</option>)}
+            </select>
+          </label>
         </section>
       )}
 
@@ -169,26 +204,27 @@ export function EstimateEditor({ initial, suggested }: { initial: EditorValue; s
         </div>
       </div>
 
-      {open !== null && v.sections[open] && (
+      {open && v.jobs[open.job]?.steps[open.step] && (
         <ItemSheet
-          key={open}
-          n={open}
-          count={v.sections.length}
-          value={v.sections[open]}
-          onChange={(patch) => setSection(open, patch)}
+          key={`${open.job}-${open.step}`}
+          n={open.step}
+          count={v.jobs[open.job]!.steps.length}
+          job={v.jobs[open.job]!.title}
+          value={v.jobs[open.job]!.steps[open.step]!}
+          onChange={(patch) => setStepAt(open.job, open.step, patch)}
           onClose={() => setOpen(null)}
-          onMove={(d) => move(open, d)}
-          onRemove={() => remove(open)}
+          onMove={(d) => moveStep(open.job, open.step, d)}
+          onRemove={() => removeStep(open.job, open.step)}
         />
       )}
     </form>
   );
 }
 
-/** One item, full screen: big title, price and lines, and its photos. */
-function ItemSheet({ n, count, value: s, onChange, onClose, onMove, onRemove }: {
-  n: number; count: number; value: EstimateSection;
-  onChange: (p: Partial<EstimateSection>) => void; onClose: () => void; onMove: (d: number) => void; onRemove: () => void;
+/** One step of a job, full screen: big title and lines, and its photos (the price is on the job). */
+function ItemSheet({ n, count, job, value: s, onChange, onClose, onMove, onRemove }: {
+  n: number; count: number; job: string; value: EstimateStep;
+  onChange: (p: Partial<EstimateStep>) => void; onClose: () => void; onMove: (d: number) => void; onRemove: () => void;
 }) {
   const [text, setText] = useState(s.items.join("\n"));
   const [up, setUp] = useState<string>();
@@ -228,24 +264,16 @@ function ItemSheet({ n, count, value: s, onChange, onClose, onMove, onRemove }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-bg" role="dialog" aria-label={`Item ${n + 1}`}>
+    <div className="fixed inset-0 z-50 flex flex-col bg-bg" role="dialog" aria-label={`Step ${n + 1}`}>
       <header className="flex items-center gap-2 border-b border-border px-4 py-3">
         <span className="grid size-8 place-items-center rounded-full bg-gold-soft text-sm font-bold text-gold-text">{n + 1}</span>
-        <span className="flex-1 text-sm text-muted">Item {n + 1} of {count}</span>
+        <span className="min-w-0 flex-1 truncate text-sm text-muted">{job ? `${job} · ` : ""}Step {n + 1} of {count}</span>
         <button type="button" onClick={onClose} className="gold-gradient rounded-xl px-4 py-2 text-sm font-bold text-black">Done</button>
       </header>
 
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-4 p-4 pb-10">
-          <input className="w-full border-b border-border bg-transparent pb-2 text-2xl font-bold outline-none focus:border-gold" value={s.title} placeholder="Item name (e.g. Demolition)" onChange={(e) => onChange({ title: e.target.value })} />
-
-          <label className="flex items-center gap-3">
-            <span className="text-sm text-muted">Price</span>
-            <span className="relative flex-1">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl text-muted">$</span>
-              <input className="w-full rounded-xl border border-border bg-card py-3 pl-8 pr-3 text-2xl font-semibold tabular-nums outline-none focus:border-gold" inputMode="numeric" placeholder="0" value={s.price ? s.price.toLocaleString("en-US") : ""} onChange={(e) => onChange({ price: Number(e.target.value.replace(/[^0-9]/g, "")) || 0 })} />
-            </span>
-          </label>
+          <input className="w-full border-b border-border bg-transparent pb-2 text-2xl font-bold outline-none focus:border-gold" value={s.title} placeholder="Step name (e.g. Demolition)" onChange={(e) => onChange({ title: e.target.value })} />
 
           <label className="block">
             <span className={label}>What&apos;s included — one line each (the customer sees each line as a bullet)</span>
@@ -254,7 +282,7 @@ function ItemSheet({ n, count, value: s, onChange, onClose, onMove, onRemove }: 
 
           <section>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold">Photos <span className="font-normal text-muted">— the customer sees them under this item</span></span>
+              <span className="text-sm font-semibold">Photos <span className="font-normal text-muted">— the customer sees them under this step</span></span>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {photos.map((p) => (
@@ -279,7 +307,7 @@ function ItemSheet({ n, count, value: s, onChange, onClose, onMove, onRemove }: 
               {n > 0 && <button type="button" onClick={() => onMove(-1)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm"><ArrowUp className="size-4" /> Up</button>}
               {n < count - 1 && <button type="button" onClick={() => onMove(1)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm"><ArrowDown className="size-4" /> Down</button>}
             </div>
-            <button type="button" onClick={onRemove} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-bad"><Trash2 className="size-4" /> Remove item</button>
+            <button type="button" onClick={onRemove} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm text-bad"><Trash2 className="size-4" /> Remove step</button>
           </div>
         </div>
       </div>

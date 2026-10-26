@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { schemaVersion, sql } from "./db";
-import type { EstimateSection, EstimateStage } from "./estimate-templates";
+import { toJobs, type EstimateJob, type EstimateStage } from "./estimate-templates";
 
 export type EstimateCustomer = { name: string; email: string; phone: string; address: string };
 export type Estimate = {
@@ -12,7 +12,7 @@ export type Estimate = {
   customer: EstimateCustomer;
   title: string;
   note: string;
-  sections: EstimateSection[];
+  jobs: EstimateJob[]; // saved in the "sections" column
   exclusions: string[];
   schedule: EstimateStage[];
   total: number;
@@ -40,7 +40,7 @@ function row(r: Record<string, unknown>): Estimate {
     customer: r.customer as EstimateCustomer,
     title: r.title as string,
     note: r.note as string,
-    sections: r.sections as EstimateSection[],
+    jobs: toJobs(r.sections),
     exclusions: r.exclusions as string[],
     schedule: r.schedule as EstimateStage[],
     total: Number(r.total),

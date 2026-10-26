@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { EstimateEditor } from "@/components/estimate-editor";
 import { BackLink } from "@/components/ui";
 import { currentUser, getLead } from "@/lib/data";
-import { ESTIMATE_TEMPLATES } from "@/lib/estimate-templates";
+import { ESTIMATE_TEMPLATES, templateJob } from "@/lib/estimate-templates";
 
 /** New estimate for this lead — customer details filled in, a template suggested from the service they asked for. */
 export default async function NewEstimatePage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +24,7 @@ export default async function NewEstimatePage({ params }: { params: Promise<{ id
           customer: { name: lead.name, email: lead.email ?? "", phone: lead.phone, address: lead.city && !lead.address.includes(lead.city) ? [lead.address, lead.city].filter(Boolean).join(", ") : lead.address },
           title: t.title,
           note: "Thank you for having me over. Below is everything we talked about — the scope, the price and the payment schedule. Any question, just text me.",
-          sections: t.sections.map((s) => ({ ...s, items: [...s.items] })),
+          jobs: [templateJob(t)],
           exclusions: [...t.exclusions],
           schedule: t.schedule.map((s) => ({ ...s })),
           validDays: 30,

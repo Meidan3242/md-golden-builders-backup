@@ -10,7 +10,7 @@ import { currentUser, getLead } from "@/lib/data";
 import { migrate, sql } from "@/lib/db";
 import { emailReady, sendEmail } from "@/lib/email";
 import { totalOf } from "@/lib/estimate-math";
-import type { EstimateSection, EstimateStage } from "@/lib/estimate-templates";
+import type { EstimateJob, EstimateStage } from "@/lib/estimate-templates";
 import { estimateById, estimateByToken, estimatesReady, newToken, PHOTO_ID } from "@/lib/estimates";
 import { customerApproved } from "@/lib/estimate-notices";
 import { recordEstimateSent } from "@/lib/lead-estimate";
@@ -35,7 +35,7 @@ type Draft = {
   customer: { name: string; email: string; phone: string; address: string };
   title: string;
   note: string;
-  sections: EstimateSection[];
+  jobs: EstimateJob[];
   exclusions: string[];
   schedule: EstimateStage[];
   validDays: number;
@@ -52,22 +52,30 @@ export async function saveEstimate(_: string | null, form: FormData): Promise<st
   }
   const u = await canEdit(d.leadId);
   if (!(await estimatesReady())) await migrate();
-  const sections = (d.sections ?? [])
-    .map((x) => ({
-      title: clean(x.title, 120),
-      items: (x.items ?? []).map((i) => clean(i, 300)).filter(Boolean).slice(0, 40),
-      price: Math.max(0, Math.round(Number(x.price) || 0)),
-      photos: (Array.isArray(x.photos) ? x.photos : []).filter((p) => PHOTO_ID.test(String(p))).slice(0, 8),
+  const jobs = (d.jobs ?? [])
+    .map((j) => ({
+      title: clean(j.title, 120),
+      price: Math.max(0, Math.round(Number(j.price) || 0)),
+      steps: (j.steps ?? [])
+        .map((x) => ({
+          title: clean(x.title, 120),
+          items: (x.items ?? []).map((i) => clean(i, 300)).filter(Boolean).slice(0, 40),
+          photos: (Array.isArray(x.photos) ? x.photos : []).filter((p) => PHOTO_ID.test(String(p))).slice(0, 8),
+        }))
+        .filter((x) => x.title || x.items.length || x.photos.length)
+        .slice(0, 30),
     }))
-    .filter((x) => x.title || x.items.length || x.price || x.photos.length)
-    .slice(0, 30);
+    .filter((j) => j.title || j.price || j.steps.length)
+    .slice(0, 10);
   const schedule = (d.schedule ?? []).map((x) => ({ name: clean(x.name, 120), pct: Math.max(0, Number(x.pct) || 0) })).filter((x) => x.name || x.pct);
   if (!clean(d.customer?.name)) return "Add the customer's name.";
   if (!clean(d.title)) return "Add a title (what the job is).";
-  if (!sections.length) return "Add at least one section.";
-  if (sections.some((x) => !x.title)) return "Every section needs a name.";
-  const total = totalOf(sections);
-  if (total <= 0) return "Add the prices.";
+  if (!jobs.length) return "Add the work (at least one job).";
+  if (jobs.some((j) => !j.title)) return "Every job needs a name (e.g. Pavers).";
+  const unpriced = jobs.find((j) => !j.price);
+  if (unpriced) return `Add the price for ${unpriced.title}.`;
+  if (jobs.some((j) => !j.steps.length)) return "Every job needs at least one step.";
+  const total = totalOf(jobs);
   const pct = schedule.reduce((a, x) => a + x.pct, 0);
   if (Math.round(pct) !== 100) return `The payment stages add up to ${pct}% — they need to be 100%.`;
   const values = {
@@ -75,7 +83,7 @@ export async function saveEstimate(_: string | null, form: FormData): Promise<st
     customer: sql().json({ name: clean(d.customer.name, 120), email: clean(d.customer.email, 200), phone: clean(d.customer.phone, 40), address: clean(d.customer.address, 300) }),
     title: clean(d.title, 200),
     note: clean(d.note, 1500),
-    sections: sql().json(sections),
+    sections: sql().json(jobs), // the column keeps its old name; it holds the jobs
     exclusions: sql().json((d.exclusions ?? []).map((x) => clean(x, 300)).filter(Boolean).slice(0, 20)),
     schedule: sql().json(schedule),
     total,

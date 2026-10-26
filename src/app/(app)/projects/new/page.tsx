@@ -2,6 +2,7 @@ import { Eye, FileUp, Mail, MessageSquare, Plus } from "lucide-react";
 import Link from "next/link";
 import { BackLink, Button, Card, CardHeader, Soon } from "@/components/ui";
 import { DEMO_CONTRACT as K } from "@/lib/demo-docs";
+import { dbConfigured } from "@/lib/clock";
 import { money } from "@/lib/format";
 
 const input = "w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold";
@@ -17,6 +18,18 @@ function Field({ label, children, wide }: { label: string; children: React.React
 
 /** New project: usually filled from the signed contract. The welcome email goes out the moment it's created. */
 export default function NewProject() {
+  // With real data the sample below (a fictional customer) is never shown.
+  if (dbConfigured())
+    return (
+      <>
+        <BackLink href="/projects" label="Projects" />
+        <h1 className="mb-4 text-2xl font-bold tracking-tight">New project</h1>
+        <Card>
+          <CardHeader title="Not in the app yet" />
+          <p className="p-4 text-sm text-muted">Projects come in from monday for now (Settings → Import). Creating a project straight from a signed contract is the next step.</p>
+        </Card>
+      </>
+    );
   return (
     <>
       <BackLink href="/projects" label="Projects" />

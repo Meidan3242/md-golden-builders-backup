@@ -31,12 +31,13 @@ export async function putR2(bucket: string, path: string, body: ArrayBuffer | Ui
   return null;
 }
 
+/** Saves an estimate PDF (already checked to be a PDF by the caller). */
 export async function uploadFile(bucket: string, path: string, file: File) {
-  if (r2Ready()) return putR2(bucket, path, new Uint8Array(await file.arrayBuffer()), file.type || "application/pdf");
+  if (r2Ready()) return putR2(bucket, path, new Uint8Array(await file.arrayBuffer()), "application/pdf");
   if (!supabaseReady()) return null;
   const res = await fetch(`${base()}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key()}`, apikey: key()!, "Content-Type": file.type || "application/pdf", "x-upsert": "true" },
+    headers: { Authorization: `Bearer ${key()}`, apikey: key()!, "Content-Type": "application/pdf", "x-upsert": "true" },
     body: Buffer.from(await file.arrayBuffer()),
   });
   if (!res.ok) {

@@ -6,16 +6,18 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { currentUser, getLead } from "@/lib/data";
-import { migrate, sql } from "@/lib/db";
+import { canSeeAll, currentUser, getLead } from "@/lib/data";
+import { migrate, schemaVersion, sql } from "@/lib/db";
 import { emailReady, sendEmail } from "@/lib/email";
 import { totalOf } from "@/lib/estimate-math";
 import type { EstimateJob, EstimateStage } from "@/lib/estimate-templates";
-import { estimateById, estimateByToken, estimatesReady, newToken, PHOTO_ID } from "@/lib/estimates";
+import { estimateContent, estimateVersion, UPDATED } from "@/lib/doc-version";
+import { estimateById, estimateByToken, estimateFromRow, estimatesReady, newToken, PHOTO_ID } from "@/lib/estimates";
 import { customerApproved } from "@/lib/estimate-notices";
 import { recordEstimateSent } from "@/lib/lead-estimate";
 import { money } from "@/lib/format";
 import { putR2, r2Ready } from "@/lib/storage";
+import { checkUpload } from "@/lib/upload-rules";
 
 const LOCKS = async (tx: TransactionSql) => {
   await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '20s'`; await tx`set local idle_in_transaction_session_timeout = '30s'`; // never leave the database locked
@@ -25,7 +27,7 @@ const LOCKS = async (tx: TransactionSql) => {
 async function canEdit(leadId: string | null) {
   const u = await currentUser();
   if (u.role === "pm") throw new Error("Not allowed");
-  if (leadId && !(await getLead(leadId))) throw new Error("Not allowed");
+  if (leadId ? !(await getLead(leadId)) : !canSeeAll(u)) throw new Error("Not allowed"); // no lead → owner / office only
   return u;
 }
 
@@ -158,18 +160,33 @@ export async function emailEstimate(id: string): Promise<string> {
   }
 }
 
-/** Customer side (public, by private link): approve the estimate with their name. */
-export async function approveEstimate(token: string, name: string): Promise<string> {
+/**
+ * Customer side (public, by private link): approve the estimate with their name — only the exact version
+ * they were shown (`version`, from their page). A copy of what they approved is kept with the approval.
+ */
+export async function approveEstimate(token: string, name: string, version: string): Promise<string> {
   const e = await estimateByToken(token);
   if (!e) return "This link isn't valid anymore.";
   if (e.status === "Approved") return "Already approved — thank you!";
   const who = clean(name, 120);
   if (who.length < 3) return "Please type your full name.";
-  await sql().begin(async (tx) => {
+  if (version !== estimateVersion(e)) return UPDATED; // it was changed while they were reading it
+  if (((await schemaVersion()) ?? 0) < 11) await migrate();
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || null;
+  const done = await sql().begin(async (tx) => {
     await LOCKS(tx);
-    await tx`update estimates set status = 'Approved', approved_at = now(), approved_name = ${who} where id = ${e.id} and status <> 'Approved'`;
+    // Re-read with the row locked: an edit saved a moment ago must not slip in between the check and the approval.
+    const [cur] = await tx`select * from estimates where id = ${e.id} for update`;
+    if (!cur || cur.status === "Approved" || estimateVersion(estimateFromRow(cur)) !== version) return false;
+    await tx`update estimates set status = 'Approved', approved_at = now(), approved_name = ${who},
+             approved_version = ${version}, approved_snapshot = ${tx.json(JSON.parse(JSON.stringify(estimateContent(e))))},
+             approved_ip = ${ip}, approved_ua = ${clean(h.get("user-agent"), 400)}
+             where id = ${e.id} and status <> 'Approved'`;
     if (e.leadId) await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${e.leadId}, 'u-owner', 'estimate', ${`✅ ${who} approved estimate #${e.number} — ${money(e.total)}`})`;
+    return true;
   });
+  if (!done) return (await estimateByToken(token))?.status === "Approved" ? "Already approved — thank you!" : UPDATED;
   after(() => customerApproved(e, who).catch((err) => console.error("approve notice failed", err)));
   revalidatePath(`/e/${token}`);
   revalidatePath("/", "layout");
@@ -178,13 +195,14 @@ export async function approveEstimate(token: string, name: string): Promise<stri
 
 /** A photo for one estimate item (shrunk on the phone first). The customer sees it under that item. */
 export async function uploadEstimatePhoto(form: FormData): Promise<{ id: string } | { error: string }> {
-  await canEdit(null);
+  if ((await currentUser()).role === "pm") return { error: "Not allowed" };
   if (!r2Ready()) return { error: "File storage isn't connected yet (Settings)." };
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return { error: "No photo." };
-  if (!file.type.startsWith("image/")) return { error: "Only photos." };
   if (file.size > 4 * 1024 * 1024) return { error: "The photo is too big (max 4 MB)." };
+  const ok = await checkUpload(file, ["image"]);
+  if (!ok.ok) return { error: ok.error };
   const id = `P-${randomUUID().replace(/-/g, "").slice(0, 16)}.jpg`;
-  const path = await putR2("estimates", id, new Uint8Array(await file.arrayBuffer()), file.type);
+  const path = await putR2("estimates", id, new Uint8Array(await file.arrayBuffer()), ok.mime);
   return path ? { id } : { error: "Couldn't save the photo — try again." };
 }

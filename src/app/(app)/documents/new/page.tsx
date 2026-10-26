@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, FilePlus2, FileSignature, FileText, HardHa
 import Link from "next/link";
 import { Badge, Button, Card, CardHeader, PageHeader } from "@/components/ui";
 import { DEMO_ESTIMATE as E } from "@/lib/demo-docs";
+import { dbConfigured } from "@/lib/clock";
 import { money } from "@/lib/format";
 
 const TYPES = [
@@ -48,6 +49,9 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
         ))}
       </div>
 
+      {dbConfigured() ? (
+        <HowToday type={type} />
+      ) : (
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card>
@@ -161,6 +165,25 @@ export default async function NewDocumentPage({ searchParams }: { searchParams: 
           </Card>
         </div>
       </div>
+      )}
     </>
+  );
+}
+
+/** With real data: where each document is made today — the form above is a sample with a fictional customer. */
+function HowToday({ type }: { type: string }) {
+  const steps: Record<string, { text: string; href?: string; cta?: string }> = {
+    estimate: { text: "Open the lead, then tap New estimate. The customer approves it from their own private link.", href: "/leads", cta: "Go to leads" },
+    contract: { text: "When the customer approves an estimate, open that estimate and tap Generate contract — everything is filled in from it.", href: "/leads", cta: "Go to leads" },
+  };
+  const s = steps[type] ?? { text: "Not in the app yet — keep using your current way for this one for now." };
+  return (
+    <Card>
+      <CardHeader title="How to create it" />
+      <div className="space-y-3 p-4 text-sm">
+        <p>{s.text}</p>
+        {s.href && <Button href={s.href} variant="primary">{s.cta}</Button>}
+      </div>
+    </Card>
   );
 }

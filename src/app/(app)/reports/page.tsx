@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { sourceColor } from "@/components/status";
-import { Badge, Card, CardHeader, PageHeader, Stat } from "@/components/ui";
+import { Badge, Card, CardHeader, Empty, PageHeader, Stat } from "@/components/ui";
+import { dbConfigured } from "@/lib/clock";
 import { canSeeMoney, currentUser, getMarketingSpend, getProjects, projectFinancials } from "@/lib/data";
 import { compactMoney, money, pct } from "@/lib/format";
 
@@ -28,10 +29,13 @@ export default async function ReportsPage() {
   const totWon = rows.reduce((a, r) => a + r.won, 0);
   const totRev = rows.reduce((a, r) => a + r.revenue, 0);
   const fins = projects.map((p) => ({ p, f: projectFinancials(p) }));
+  const sample = !dbConfigured(); // the funnel above is illustrative: never shown next to real data
 
   return (
     <>
-      <PageHeader title="Reports" subtitle={<>Marketing ROI, conversion and project profit · last 3 months <Badge tone="warn" className="ml-1">Illustrative until monday import</Badge></>} />
+      <PageHeader title="Reports" subtitle={<>Marketing ROI, conversion and project profit{sample && <> · last 3 months <Badge tone="warn" className="ml-1">Illustrative sample</Badge></>}</>} />
+      {sample ? (
+        <>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Marketing spend" value={money(totalSpend)} hint="Google, Thumbtack, Yelp + marketing manager" />
         <Stat label="Cost per lead" value={money(totalSpend / totLeads)} hint={`${totLeads} leads`} />
@@ -74,6 +78,14 @@ export default async function ReportsPage() {
           </tbody>
         </table>
       </Card>
+
+        </>
+      ) : (
+        <Card className="mb-4">
+          <CardHeader title="Marketing ROI" subtitle="Spend, leads and signed jobs per platform" />
+          <Empty>No marketing spend has been entered yet, so there are no platform numbers to show. Project profit below is from your real projects.</Empty>
+        </Card>
+      )}
 
       <Card className="overflow-x-auto">
         <CardHeader title="Project profit" subtitle="Contract + change orders − subcontractors − expenses" />

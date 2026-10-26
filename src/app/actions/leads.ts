@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { currentUser, loggedInUser } from "@/lib/data";
+import { assignableUsers, currentUser, leadForChange, loggedInUser } from "@/lib/data";
 import { dbReady, migrate, sql } from "@/lib/db";
 import { uploadFile } from "@/lib/storage";
+import { checkUpload } from "@/lib/upload-rules";
 import { recordEstimateSent } from "@/lib/lead-estimate";
 import { sanDiegoToUtc } from "@/lib/time";
 
@@ -29,19 +30,21 @@ export async function createLead(_: string | null, form: FormData): Promise<stri
   const visitDay = f("visitDay");
   const visitHour = f("visitHour");
   const visitType = f("visitType") || "Site visit";
+  // Only someone who can actually work the lead (the form's list, checked again here).
+  const assignTo = assignableUsers().some((x) => x.id === f("assignTo")) ? f("assignTo") : u.id;
   const db = sql();
   const id = await db.begin(async (tx) => {
     await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '50s'`; await tx`set local idle_in_transaction_session_timeout = '60s'`; // never leave the database locked
     const [lead] = await tx`
       insert into leads (name, phone, email, address, city, service, source, assigned_to, notes, created_at, stage)
       values (${f("name")}, ${f("phone")}, ${f("email") || null}, ${address}, ${city}, ${f("service") || "Other"}, ${f("source") || "Other"},
-              ${f("assignTo") || u.id}, ${f("notes") || null}, ${createdAt}, ${visitDay ? (visitType === "Second meeting" ? "Second Meeting" : "Appointment Set") : "New"})
+              ${assignTo}, ${f("notes") || null}, ${createdAt}, ${visitDay ? (visitType === "Second meeting" ? "Second Meeting" : "Appointment Set") : "New"})
       returning id`;
     await tx`insert into lead_activity (lead_id, by_user, kind, text) values (${lead.id}, ${u.id}, 'note', ${`Lead created by ${u.name}`})`;
     if (visitDay && visitHour) {
       const start = sanDiegoToUtc(`${visitDay}T${visitHour.padStart(2, "0")}:00`);
       const type = visitType === "Second meeting" ? "Second Meeting" : visitType === "Phone call" ? "Project Meeting" : "Site Visit";
-      await tx`insert into appointments (lead_id, title, type, start_at, assigned_to) values (${lead.id}, ${`${visitType} — ${f("name")}`}, ${type}, ${start}, ${f("assignTo") || "u-owner"})`;
+      await tx`insert into appointments (lead_id, title, type, start_at, assigned_to) values (${lead.id}, ${`${visitType} — ${f("name")}`}, ${type}, ${start}, ${assignTo})`;
       await tx`update leads set closed_at = now() where id = ${lead.id}`;
     }
     return lead.id as string;
@@ -52,7 +55,7 @@ export async function createLead(_: string | null, form: FormData): Promise<stri
 
 /** ✓ in the weekly list: closed (meeting booked or done). */
 export async function closeLead(id: string) {
-  const u = await staff();
+  const { user: u } = await leadForChange(id);
   if (!(await dbReady())) return;
   await sql()`update leads set closed_at = now(), updated_at = now() where id = ${id}`;
   await sql()`insert into lead_activity (lead_id, by_user, kind, text) values (${id}, ${u.id}, 'stage', 'Closed ✓')`;
@@ -60,7 +63,7 @@ export async function closeLead(id: string) {
 }
 
 export async function reopenLead(id: string) {
-  await staff();
+  await leadForChange(id);
   if (!(await dbReady())) return;
   await sql()`update leads set closed_at = null, updated_at = now() where id = ${id}`;
   revalidatePath("/", "layout");
@@ -68,15 +71,17 @@ export async function reopenLead(id: string) {
 
 /** Price + Joist PDF → "Estimate sent", and the follow-up plan starts. */
 export async function markEstimateSent(_: string | null, form: FormData): Promise<string | null> {
-  const u = await staff();
+  const id = String(form.get("id") ?? "");
+  const { user: u } = await leadForChange(id);
   if (!(await dbReady())) return DEMO;
-  const id = String(form.get("id"));
   const amount = Number(String(form.get("amount") ?? "").replace(/[^0-9.]/g, ""));
   if (!amount) return "Type the estimate amount.";
   const file = form.get("pdf");
   let pdf: string | null = null;
   if (file instanceof File && file.size > 0) {
     if (file.size > 20 * 1024 * 1024) return "PDF is too big (max 20 MB).";
+    const ok = await checkUpload(file, ["pdf"]);
+    if (!ok.ok) return ok.error;
     pdf = await uploadFile("estimates", `${id}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`, file);
   }
   await sql().begin(async (tx) => {
@@ -90,6 +95,9 @@ export async function markEstimateSent(_: string | null, form: FormData): Promis
 export async function finishFollowUp(id: string) {
   await staff();
   if (!(await dbReady())) return;
+  const [f] = await sql()`select lead_id from follow_ups where id = ${Number(id) || 0}`;
+  if (!f) throw new Error("Not allowed");
+  await leadForChange(f.lead_id); // only follow-ups of leads this person may work on
   await sql()`update follow_ups set done = true where id = ${Number(id)}`;
   revalidatePath("/", "layout");
 }

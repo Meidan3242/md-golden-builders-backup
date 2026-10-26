@@ -6,6 +6,7 @@ import { FormalEstimate } from "@/components/formal-estimate";
 import { sql } from "@/lib/db";
 import { paymentRows } from "@/lib/estimate-math";
 import { customerOpened } from "@/lib/estimate-notices";
+import { estimateVersion } from "@/lib/doc-version";
 import { estimateByToken } from "@/lib/estimates";
 import { loggedInUser } from "@/lib/data";
 import { dateLong } from "@/lib/format";
@@ -52,7 +53,7 @@ export default async function CustomerEstimatePage({ params }: { params: Promise
             <div className="text-[#555]">Approved on {dateLong(e.approvedAt)} — thank you. The contract will be sent to you next.</div>
           </div>
         ) : (
-          <ApproveEstimate token={token} first={first} />
+          <ApproveEstimate token={token} first={first} version={estimateVersion(e)} />
         )
       }
     />

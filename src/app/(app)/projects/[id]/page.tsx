@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, FileSignature, HandCoins, MessageSquare, Plus, Star } from "lucide-react";
+import { AlertTriangle, Camera, Check, CheckCircle2, Circle, FilePlus2, MinusCircle, FileSignature, HandCoins, MessageSquare, Plus, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProjectChat } from "@/components/project-chat";
@@ -8,6 +8,7 @@ import { DocIcon, MediaGrid, MilestoneTable, SubAssignmentCard } from "@/compone
 import { ProjectStageBadge } from "@/components/status";
 import { Avatar, Badge, Button, Card, CardHeader, Collapse, Empty, KeyValue, Progress, Tabs, Soon } from "@/components/ui";
 import { canSeeProjectMoney, contractsOf, currentUser, getProject, projectAlerts, projectFinancials, projectsReal, subById, userById, type ContractView } from "@/lib/data";
+import { projectChecklist } from "@/lib/project-checklist";
 import { r2Ready } from "@/lib/storage";
 import { date, dateLong, dateTime, money, pct } from "@/lib/format";
 import { PROJECT_STAGES, type Project } from "@/lib/types";
@@ -111,16 +112,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
 
 function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projectFinancials>; showMoney: boolean }) {
   const alerts = showMoney ? projectAlerts(p) : [];
-  const has = (k: string) => p.documents.some((d) => d.kind === k);
-  const checklist: [string, boolean][] = [
-    ["Contract signed (Form 203 + Additional Description)", has("Contract")],
-    ["Welcome email sent (contract, scope, license, payments)", true],
-    ["Permit approved", p.permits.length === 0 || p.permits.some((x) => x.status === "Approved" || x.status === "Finaled")],
-    ["Before photos uploaded", p.media.some((m) => m.phase === "Before")],
-    ["All subcontractor agreements signed", p.subs.every((s) => s.agreement === "Signed")],
-    ["Completion form signed", has("Completion Form")],
-    ["Warranty + review links sent", p.stage === "Completed"],
-  ];
+  const checklist = projectChecklist(p);
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="flex flex-col gap-4 lg:col-span-2">
@@ -143,10 +135,11 @@ function Overview({ p, f, showMoney }: { p: Project; f: ReturnType<typeof projec
         <Card>
           <CardHeader title="Project checklist" subtitle="From signature to review request" />
           <ul className="divide-y divide-border">
-            {checklist.map(([label, done]) => (
+            {checklist.map(({ label, state, note }) => (
               <li key={label} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                {done ? <CheckCircle2 className="size-4 text-ok" /> : <Circle className="size-4 text-muted" />}
-                <span className={done ? "text-muted" : "font-medium"}>{label}</span>
+                {state === "done" ? <CheckCircle2 className="size-4 text-ok" /> : state === "untracked" ? <MinusCircle className="size-4 text-muted/60" /> : <Circle className="size-4 text-muted" />}
+                <span className={state === "done" ? "text-muted" : state === "untracked" ? "text-muted" : "font-medium"}>{label}</span>
+                {note && <span className="ml-auto shrink-0 text-[11px] text-muted">{note}</span>}
               </li>
             ))}
           </ul>

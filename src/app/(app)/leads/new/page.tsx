@@ -2,7 +2,7 @@ import { Mic } from "lucide-react";
 import { LeadForm, SaveButton } from "@/components/lead-form";
 import { Button, Card, CardHeader, PageHeader } from "@/components/ui";
 import { WeekPicker, type Busy } from "@/components/week-picker";
-import { allUsers, getAppointments } from "@/lib/data";
+import { assignableUsers, getAppointments } from "@/lib/data";
 import { now } from "@/lib/clock";
 import { dayKey } from "@/lib/format";
 import { LEAD_SOURCES } from "@/lib/types";
@@ -56,7 +56,7 @@ export default async function NewLead() {
             </select>
           </Field>
           <Field label="Assign to">
-            <select name="assignTo" className={input}>{allUsers().filter((u) => u.role === "admin" || u.role === "sales").map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
+            <select name="assignTo" className={input}>{assignableUsers().map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
           </Field>
           <Field label="Came in (date & time)"><input name="cameIn" type="datetime-local" defaultValue={cameIn} className={input} /></Field>
           <Field label="Call recording">

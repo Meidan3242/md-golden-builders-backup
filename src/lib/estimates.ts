@@ -25,13 +25,15 @@ export type Estimate = {
   approvedName?: string;
   openCount: number; // times the customer opened it (not counting the team)
   lastOpenedAt?: string;
+  approvedVersion?: string; // fingerprint of exactly what the customer approved
 };
 
 export const estimatesReady = async () => ((await schemaVersion()) ?? 0) >= 8;
 export const newToken = () => randomBytes(24).toString("base64url"); // the customer's private link — unguessable
 
 const iso = (d: unknown) => (d ? new Date(d as string).toISOString() : undefined);
-function row(r: Record<string, unknown>): Estimate {
+/** An estimate from its database row (also used inside transactions that lock the row). */
+export function estimateFromRow(r: Record<string, unknown>): Estimate {
   return {
     id: r.id as string,
     number: r.number as number,
@@ -53,6 +55,7 @@ function row(r: Record<string, unknown>): Estimate {
     approvedName: (r.approved_name as string) ?? undefined,
     openCount: Number(r.open_count ?? 0),
     lastOpenedAt: iso(r.last_opened_at),
+    approvedVersion: (r.approved_version as string) ?? undefined,
   };
 }
 
@@ -60,17 +63,17 @@ function row(r: Record<string, unknown>): Estimate {
 export async function estimateById(id: string) {
   if (!(await estimatesReady())) return null;
   const [r] = await sql()`select * from estimates where id = ${id}`;
-  return r ? row(r) : null;
+  return r ? estimateFromRow(r) : null;
 }
 export async function estimatesOfLead(leadId: string) {
   if (!(await estimatesReady())) return [];
-  return (await sql()`select * from estimates where lead_id = ${leadId} order by created_at desc`).map(row);
+  return (await sql()`select * from estimates where lead_id = ${leadId} order by created_at desc`).map(estimateFromRow);
 }
 /** Customer side — only by the private link. Drafts are never shown. */
 export async function estimateByToken(token: string) {
   if (!/^[\w-]{20,}$/.test(token) || !(await estimatesReady())) return null;
   const [r] = await sql()`select * from estimates where token = ${token} and status <> 'Draft'`;
-  return r ? row(r) : null;
+  return r ? estimateFromRow(r) : null;
 }
 
 /** A photo attached to an estimate item: "P-" + 16 hex + ".jpg", saved in R2 under estimates/. */

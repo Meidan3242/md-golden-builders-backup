@@ -214,7 +214,7 @@ function EstimatePdf({ d, approved, img }: { d: EstimateDoc; approved?: { name: 
 
         {/* About us */}
         <View style={[s.section, { borderTopWidth: 0.75, borderTopColor: "#d8d2c4", paddingTop: 18, alignItems: "center" }]} wrap={false}>
-          {img.meidan && <Image src={img.meidan} style={{ width: 92, height: 92, borderRadius: 46 }} />}
+          {img.meidan && <Image src={img.meidan} style={{ width: 80, height: 80, borderRadius: 40 }} />}
           <Text style={[s.label, { marginTop: 8 }]}>About us</Text>
           <Text style={[s.serif, { fontWeight: "bold", fontSize: 14, marginTop: 2 }]}>Meidan D.</Text>
           <Text style={[s.muted, { fontSize: 9.5, marginTop: 3 }]}>Project Manager</Text>
@@ -228,7 +228,7 @@ function EstimatePdf({ d, approved, img }: { d: EstimateDoc; approved?: { name: 
           <View style={[s.row, { flexWrap: "wrap", justifyContent: "space-between", marginTop: 6, rowGap: 8 }]}>
             {RECENT_WORK.map((w, i) => img.work[i] && (
               <View key={w.src} style={{ width: "32%" }}>
-                <Image src={img.work[i]!} style={{ width: "100%", height: 104, objectFit: "cover" }} />
+                <Image src={img.work[i]!} style={{ width: "100%", height: 84, objectFit: "cover" }} />
                 <Text style={{ fontSize: 7.5, color: "#777777", marginTop: 2 }}>{w.caption}</Text>
               </View>
             ))}

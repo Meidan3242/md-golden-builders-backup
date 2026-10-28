@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { ApproveEstimate } from "@/components/approve-estimate";
 import { FormalEstimate } from "@/components/formal-estimate";
 import { sql } from "@/lib/db";
-import { paymentRows } from "@/lib/estimate-math";
+import { estimateDoc } from "@/lib/estimate-doc";
 import { customerOpened } from "@/lib/estimate-notices";
 import { estimateVersion } from "@/lib/doc-version";
 import { estimateByToken } from "@/lib/estimates";
@@ -31,21 +31,11 @@ export default async function CustomerEstimatePage({ params }: { params: Promise
     after(() => customerOpened(e).catch((err) => console.error("open notice failed", err)));
   }
   const first = e.customer.name.split(" ")[0];
-  const issued = e.sentAt ?? e.createdAt;
   return (
     <FormalEstimate
-      number={e.number}
-      date={dateLong(issued)}
-      validUntil={dateLong(new Date(new Date(issued).getTime() + e.validDays * 86_400_000).toISOString())}
-      customer={e.customer}
-      title={e.title}
-      note={e.note}
-      jobs={e.jobs}
+      {...estimateDoc(e)}
       photoSrc={(p) => `/e/${token}/photo/${p}`}
-      exclusions={e.exclusions}
-      total={e.total}
-      rows={paymentRows(e.total, e.schedule)}
-      printable
+      pdfHref={`/e/${token}/pdf`}
       acceptance={
         e.status === "Approved" ? (
           <div className="mt-4 border-t border-[#d8d2c4] pt-3 text-sm">

@@ -16,3 +16,6 @@ export function paymentRows(total: number, stages: EstimateStage[]) {
   });
   return [{ name: "Deposit (on approval)", amount: deposit }, ...rows];
 }
+
+/** What saveEstimate returns on success, followed by the estimate's id. */
+export const SAVED = "SAVED:";

@@ -1,4 +1,4 @@
-import { PrintButton } from "./print-button";
+import { Download } from "lucide-react";
 import { COMPANY } from "@/lib/demo-docs";
 import type { EstimateJob } from "@/lib/estimate-templates";
 import { money } from "@/lib/format";
@@ -13,7 +13,7 @@ export const RECENT_WORK = [
   { src: "/work/framing.jpg", caption: "Framing" },
   { src: "/work/crew.jpg", caption: "Our crew on site" },
 ];
-const TRADES = ["ADU", "Garage Conversion", "Kitchen Remodel", "Bathroom Remodel", "Room Additions", "Full Home Remodel", "Retaining Walls", "Pavers & Hardscape", "Concrete & Driveways", "Patios & Decks", "Stucco & Exterior", "Flooring"];
+export const TRADES = ["ADU", "Garage Conversion", "Kitchen Remodel", "Bathroom Remodel", "Room Additions", "Full Home Remodel", "Retaining Walls", "Pavers & Hardscape", "Concrete & Driveways", "Patios & Decks", "Stucco & Exterior", "Flooring"];
 
 const serif = "font-letter";
 const label = "text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8a6a1f]";
@@ -32,8 +32,8 @@ export function FormalEstimate(d: {
   total: number;
   rows: { name: string; amount: number }[];
   acceptance: React.ReactNode;
-  /** Customer page only: a "Download PDF" button. */
-  printable?: boolean;
+  /** Customer page only: where the "Download PDF" button gets the file. */
+  pdfHref?: string;
 }) {
   const first = d.customer.name.split(" ")[0];
   return (
@@ -44,7 +44,11 @@ export function FormalEstimate(d: {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-light.png" alt="MD Golden Builders" className="h-14 w-auto sm:h-16" />
           <div className="text-right">
-            {d.printable && <div className="mb-2 flex justify-end"><PrintButton /></div>}
+            {d.pdfHref && (
+              <div className="mb-2 flex justify-end">
+                <a href={d.pdfHref} className="inline-flex items-center gap-1.5 border border-[#1c1c1c] bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#1c1c1c] print:hidden"><Download className="size-3.5" /> Download PDF</a>
+              </div>
+            )}
             <div className={`${serif} text-2xl tracking-[0.2em] sm:text-3xl`}>ESTIMATE</div>
             <table className="ml-auto mt-1 text-xs text-[#555]">
               <tbody>
@@ -69,8 +73,8 @@ export function FormalEstimate(d: {
           </div>
           <div>
             <div className={label}>Prepared for</div>
-            <div className={`${serif} mt-1 text-base font-bold`}>{d.customer.name}</div>
-            <div className="text-[#555]">{d.customer.address}</div>
+            <div className={`${serif} mt-1 text-base font-bold [overflow-wrap:anywhere]`}>{d.customer.name}</div>
+            <div className="text-[#555] [overflow-wrap:anywhere]">{d.customer.address}</div>
             {(d.customer.phone || d.customer.email) && <div className="text-[#555]">{[d.customer.phone, d.customer.email].filter(Boolean).join(" · ")}</div>}
           </div>
         </section>
@@ -78,7 +82,7 @@ export function FormalEstimate(d: {
         {/* Letter */}
         <section className="text-[15px] leading-relaxed">
           <p className={serif}>Dear {first},</p>
-          <p className="mt-2">{d.note}</p>
+          <p className="mt-2 whitespace-pre-line [overflow-wrap:anywhere]">{d.note}</p>
           <p className="mt-3">Sincerely,</p>
           <p className={`${serif} mt-1 font-bold`}>Meidan D.</p>
           <p className="text-sm text-[#555]">Owner, {COMPANY.name}</p>
@@ -86,52 +90,49 @@ export function FormalEstimate(d: {
 
         {/* Scope */}
         <section>
-          <h2 className={`${serif} border-b border-[#1c1c1c] pb-1 text-lg font-bold`}>Scope of Work — {d.title}</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#d8d2c4] text-left text-[11px] uppercase tracking-wider text-[#777]">
-                <th className="w-8 py-2 font-semibold">No.</th>
-                <th className="py-2 font-semibold">Description</th>
-                <th className="w-28 py-2 text-right font-semibold">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {d.jobs.map((j, i) => (
-                <tr key={i} className="break-inside-avoid border-b border-[#e8e3d8] align-top">
-                  <td className="py-3 text-[#777]">{i + 1}</td>
-                  <td className="py-3 pr-3">
-                    <div className="font-semibold">{j.title}</div>
-                    {j.steps.map((s, k) => (
-                      <div key={k} className="mt-2 break-inside-avoid">
-                        {s.title && <div className="text-[13px] font-semibold text-[#333]">{s.title}</div>}
-                        {s.items.length > 0 && (
-                          <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[13px] text-[#444]">
-                            {s.items.map((it, m) => <li key={m}>{it}</li>)}
-                          </ul>
-                        )}
-                        {d.photoSrc && !!s.photos?.length && (
-                          <div className="mt-2 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
-                            {s.photos.map((p) => (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img key={p} src={d.photoSrc!(p)} alt={s.title || j.title} loading="lazy" className="aspect-[4/3] w-full border border-[#e3ddd0] object-cover" />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </td>
-                  <td className="py-3 text-right font-semibold tabular-nums">{j.price ? money(j.price) : ""}</td>
-                </tr>
-              ))}
-              <tr className="break-inside-avoid">
-                <td />
-                <td className={`${serif} pt-3 text-right text-base font-bold`}>Total Contract Price</td>
-                <td className={`${serif} pt-3 text-right text-base font-bold tabular-nums`}>{money(d.total)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 className={`${serif} break-after-avoid border-b border-[#1c1c1c] pb-1 text-lg font-bold [overflow-wrap:anywhere]`}>Scope of Work — {d.title}</h2>
+          {/* Plain blocks, not a table: a table row can't continue on the next page in Safari / iPhone print,
+              so a long job used to be cut off. Every block here grows with its text and breaks across pages. */}
+          <div className="text-sm">
+            <div className="flex border-b border-[#d8d2c4] py-2 text-[11px] font-semibold uppercase tracking-wider text-[#777]">
+              <div className="w-8 shrink-0">No.</div>
+              <div className="flex-1">Description</div>
+              <div className="w-28 shrink-0 text-right">Amount</div>
+            </div>
+            {d.jobs.map((j, i) => (
+              <div key={i} className="flex border-b border-[#e8e3d8] py-3">
+                <div className="w-8 shrink-0 text-[#777]">{i + 1}</div>
+                <div className="min-w-0 flex-1 pr-3 [overflow-wrap:anywhere]">
+                  <div className="break-after-avoid font-semibold">{j.title}</div>
+                  {j.steps.map((s, k) => (
+                    <div key={k} className="mt-2">
+                      {s.title && <div className="break-after-avoid text-[13px] font-semibold text-[#333]">{s.title}</div>}
+                      {s.items.length > 0 && (
+                        <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[13px] text-[#444]">
+                          {s.items.map((it, m) => <li key={m} className="whitespace-pre-line">{it}</li>)}
+                        </ul>
+                      )}
+                      {d.photoSrc && !!s.photos?.length && (
+                        <div className="mt-2 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
+                          {s.photos.map((p) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={p} src={d.photoSrc!(p)} alt={s.title || j.title} loading="lazy" className="aspect-[4/3] w-full break-inside-avoid border border-[#e3ddd0] object-cover" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="w-28 shrink-0 text-right font-semibold tabular-nums">{j.price ? money(j.price) : ""}</div>
+              </div>
+            ))}
+            <div className={`${serif} flex break-inside-avoid justify-end gap-6 pt-3 text-base font-bold`}>
+              <span>Total Contract Price</span>
+              <span className="w-28 shrink-0 text-right tabular-nums">{money(d.total)}</span>
+            </div>
+          </div>
           {d.exclusions.length > 0 && (
-            <p className="mt-4 text-[13px] text-[#555]"><span className="font-semibold text-[#1c1c1c]">Not included: </span>{d.exclusions.join("; ")}.</p>
+            <p className="mt-4 text-[13px] text-[#555] [overflow-wrap:anywhere]"><span className="font-semibold text-[#1c1c1c]">Not included: </span>{d.exclusions.join("; ")}.</p>
           )}
         </section>
 
@@ -143,7 +144,7 @@ export function FormalEstimate(d: {
               {d.rows.map((r, i) => (
                 <tr key={i} className="break-inside-avoid border-b border-[#e8e3d8]">
                   <td className="w-8 py-2 text-[#777]">{i + 1}</td>
-                  <td className="py-2">{r.name}</td>
+                  <td className="py-2 [overflow-wrap:anywhere]">{r.name}</td>
                   <td className="w-28 py-2 text-right tabular-nums">{money(r.amount)}</td>
                 </tr>
               ))}

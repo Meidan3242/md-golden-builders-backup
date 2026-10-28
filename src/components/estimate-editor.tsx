@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowLeft, ArrowUp, Camera, ChevronRight, ImageIcon, Plus, Trash2, X } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { saveEstimate, uploadEstimatePhoto } from "@/app/actions/estimates";
-import { depositFor, paymentRows, totalOf } from "@/lib/estimate-math";
+import { depositFor, paymentRows, SAVED, totalOf } from "@/lib/estimate-math";
 import { ESTIMATE_TEMPLATES, templateJob, type EstimateJob, type EstimateStage, type EstimateStep } from "@/lib/estimate-templates";
 import { money } from "@/lib/format";
 import { shrinkImage } from "@/lib/shrink";
@@ -27,11 +27,19 @@ const blankStep = (): EstimateStep => ({ title: "", items: [], photos: [] });
 export const photoSrc = (id: string) => `/estimates/photo/${id}`;
 
 /** Build or edit an estimate in 3 steps: customer → work (jobs with one price each; their steps open big, with photos) → payments. */
-export function EstimateEditor({ initial, suggested }: { initial: EditorValue; suggested?: string }) {
+/** Someone we already know — a lead or a project customer — to fill the customer details from. */
+export type ClientOption = { key: string; kind: "Lead" | "Project"; leadId?: string; customer: EditorValue["customer"]; note?: string };
+
+export function EstimateEditor({ initial, suggested, clients }: { initial: EditorValue; suggested?: string; clients?: ClientOption[] }) {
   const [v, setV] = useState(initial);
   const [step, setStep] = useState(0);
   const [open, setOpen] = useState<{ job: number; step: number } | null>(null);
-  const [msg, action, pending] = useActionState(saveEstimate, null);
+  const [result, action, pending] = useActionState(saveEstimate, null);
+  const savedId = result?.startsWith(SAVED) ? result.slice(SAVED.length) : null;
+  const msg = savedId ? null : result;
+  useEffect(() => {
+    if (savedId) window.location.assign(`/estimates/${savedId}`); // open the saved estimate (full load: always fresh)
+  }, [savedId]);
   const set = <K extends keyof EditorValue>(k: K, val: EditorValue[K]) => setV((x) => ({ ...x, [k]: val }));
   const setJob = (ji: number, patch: Partial<EstimateJob>) => setV((x) => ({ ...x, jobs: x.jobs.map((j, k) => (k === ji ? { ...j, ...patch } : j)) }));
   const setStepAt = (ji: number, si: number, patch: Partial<EstimateStep>) => setV((x) => ({ ...x, jobs: x.jobs.map((j, k) => (k === ji ? { ...j, steps: j.steps.map((st, m) => (m === si ? { ...st, ...patch } : st)) } : j)) }));
@@ -102,12 +110,13 @@ export function EstimateEditor({ initial, suggested }: { initial: EditorValue; s
               </div>
             </section>
           )}
+          {clients && <ClientPicker clients={clients} onPick={(c) => setV((x) => ({ ...x, leadId: c?.leadId ?? "", customer: c ? { ...c.customer } : { name: "", email: "", phone: "", address: "" } }))} />}
           <section className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
             <label><span className={label}>Customer name</span><input className={field} value={v.customer.name} onChange={(e) => set("customer", { ...v.customer, name: e.target.value })} /></label>
             <label><span className={label}>Phone</span><input className={field} inputMode="tel" value={v.customer.phone} onChange={(e) => set("customer", { ...v.customer, phone: e.target.value })} /></label>
             <label><span className={label}>Email</span><input className={field} type="email" value={v.customer.email} onChange={(e) => set("customer", { ...v.customer, email: e.target.value })} /></label>
-            <label><span className={label}>Job address</span><input className={field} value={v.customer.address} onChange={(e) => set("customer", { ...v.customer, address: e.target.value })} /></label>
-            <label className="sm:col-span-2"><span className={label}>Title — what the job is</span><input className={field} value={v.title} onChange={(e) => set("title", e.target.value)} placeholder="New retaining wall — 95 LF CMU with stucco" /></label>
+            <label><span className={label}>Project address</span><input className={field} value={v.customer.address} onChange={(e) => set("customer", { ...v.customer, address: e.target.value })} /></label>
+            <label className="sm:col-span-2"><span className={label}>Project name — what the job is</span><input className={field} value={v.title} onChange={(e) => set("title", e.target.value)} placeholder="New retaining wall — 95 LF CMU with stucco" /></label>
             <label className="sm:col-span-2"><span className={label}>Personal note (starts with “Dear {v.customer.name.split(" ")[0] || "…"},”)</span><textarea className={field} rows={4} value={v.note} onChange={(e) => set("note", e.target.value)} /></label>
           </section>
         </>
@@ -193,13 +202,13 @@ export function EstimateEditor({ initial, suggested }: { initial: EditorValue; s
           {step > 0 && <button type="button" onClick={() => go(step - 1)} className="rounded-xl border border-border px-3 py-3" aria-label="Back"><ArrowLeft className="size-4" /></button>}
           <div className="min-w-0 flex-1 text-sm">
             <div>Total <b className="text-lg">{money(total)}</b></div>
-            {msg && <div className="truncate text-xs text-bad">{msg}</div>}
+            {msg && <div className="text-xs text-bad">{msg}</div>}
           </div>
           {step < 2 ? (
             // separate keys: reusing the same button would turn the "Next" click into a submit
             <button key="next" type="button" onClick={() => go(step + 1)} className="gold-gradient rounded-xl px-5 py-3 text-sm font-bold text-black">Next: {STEPS[step + 1]}</button>
           ) : (
-            <button key="save" disabled={pending} className="gold-gradient rounded-xl px-5 py-3 text-sm font-bold text-black disabled:opacity-60">{pending ? "Saving…" : "Save & preview"}</button>
+            <button key="save" disabled={pending || !!savedId} className="gold-gradient rounded-xl px-5 py-3 text-sm font-bold text-black disabled:opacity-60">{pending ? "Saving…" : savedId ? "Saved ✓" : "Save & preview"}</button>
           )}
         </div>
       </div>
@@ -312,5 +321,48 @@ function ItemSheet({ n, count, job, value: s, onChange, onClose, onMove, onRemov
         </div>
       </div>
     </div>
+  );
+}
+
+/** Existing client (search leads and projects) or a new one typed below. */
+function ClientPicker({ clients, onPick }: { clients: ClientOption[]; onPick: (c: ClientOption | null) => void }) {
+  const [q, setQ] = useState("");
+  const [picked, setPicked] = useState<ClientOption | null>(null);
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const digits = q.replace(/\D/g, "");
+  const found = words.length
+    ? clients.filter((c) => {
+        const t = `${c.customer.name} ${c.customer.phone} ${c.customer.email} ${c.customer.address} ${c.note ?? ""}`.toLowerCase();
+        return words.every((w) => t.includes(w)) || (digits.length >= 4 && c.customer.phone.replace(/\D/g, "").includes(digits));
+      }).slice(0, 8)
+    : [];
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-2 text-sm font-semibold">Customer</div>
+      {picked ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold bg-gold-soft px-3 py-2 text-sm">
+          <span className="min-w-0 flex-1"><b>{picked.customer.name}</b> <span className="text-muted">· {picked.kind}{picked.note ? ` · ${picked.note}` : ""}</span></span>
+          <button type="button" onClick={() => { setPicked(null); onPick(null); }} className="text-xs font-semibold text-gold-text underline">Change</button>
+        </div>
+      ) : (
+        <>
+          <input className={field} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Existing client — search name, phone or address" />
+          {found.length > 0 && (
+            <ul className="mt-1 divide-y divide-border overflow-hidden rounded-xl border border-border">
+              {found.map((c) => (
+                <li key={c.key}>
+                  <button type="button" onClick={() => { setPicked(c); setQ(""); onPick(c); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface">
+                    <span className="min-w-0 flex-1 truncate"><b>{c.customer.name}</b> <span className="text-muted">· {c.customer.phone}{c.note ? ` · ${c.note}` : ""}</span></span>
+                    <span className="shrink-0 rounded-full border border-border px-2 text-[10px] text-muted">{c.kind}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {words.length > 0 && !found.length && <p className="mt-1 text-xs text-muted">No client found — type the new client&apos;s details below.</p>}
+          {!words.length && <p className="mt-1 text-xs text-muted">Or a new client: just fill in the details below.</p>}
+        </>
+      )}
+    </section>
   );
 }

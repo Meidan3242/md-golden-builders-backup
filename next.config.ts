@@ -35,6 +35,12 @@ export const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The estimate PDF is made on the server with its own fonts and the letterhead images.
+  serverExternalPackages: ["@react-pdf/renderer"],
+  outputFileTracingIncludes: {
+    "/estimates/[id]/pdf": ["./src/pdf/fonts/*.ttf", "./public/logo-light.png", "./public/brand/*", "./public/work/*"],
+    "/e/[token]/pdf": ["./src/pdf/fonts/*.ttf", "./public/logo-light.png", "./public/brand/*", "./public/work/*"],
+  },
   // Photos are shrunk on the phone first; PDFs up to ~4 MB (Vercel's request limit is 4.5 MB).
   experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   async headers() {

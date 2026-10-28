@@ -5,6 +5,7 @@ import { ContractDocument } from "@/components/contract-document";
 import { PrintButton } from "@/components/print-button";
 import { SignContract } from "@/components/sign-contract";
 import { contractByToken, payInstructions } from "@/lib/contracts";
+import { contractVersion } from "@/lib/doc-version";
 import { loggedInUser } from "@/lib/data";
 import { sql } from "@/lib/db";
 import { money } from "@/lib/format";
@@ -54,7 +55,7 @@ export default async function CustomerContractPage({ params }: { params: Promise
         )}
       </div>
       <ContractDocument number={c.number} d={c.data} contractor={c.contractor} owner={c.owner} todo={!signed} />
-      {!signed && <SignContract token={token} ownerName={c.data.owner.name} age65={!!c.data.age65} />}
+      {!signed && <SignContract token={token} ownerName={c.data.owner.name} age65={!!c.data.age65} version={contractVersion(c.data, c.contractor)} />}
     </div>
   );
 }

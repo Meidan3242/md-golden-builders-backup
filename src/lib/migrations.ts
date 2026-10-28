@@ -295,4 +295,31 @@ create index if not exists contracts_lead on contracts (lead_id);
 alter table contracts enable row level security;
 `,
   },
+  {
+    version: 11,
+    name: "Security: per-device log-out, login attempt limits, what the customer approved",
+    sql: /* sql */ `
+create table if not exists revoked_sessions (
+  sid text primary key,
+  user_id text not null,
+  revoked_at timestamptz not null default now(),
+  expires_at timestamptz not null
+);
+alter table revoked_sessions enable row level security;
+create table if not exists login_attempts (
+  id bigserial primary key,
+  email text not null,
+  ip text not null,
+  ok boolean not null,
+  at timestamptz not null default now()
+);
+create index if not exists login_attempts_email_ip on login_attempts (email, ip, at desc);
+create index if not exists login_attempts_ip on login_attempts (ip, at desc);
+alter table login_attempts enable row level security;
+alter table estimates add column if not exists approved_version text;
+alter table estimates add column if not exists approved_snapshot jsonb;
+alter table estimates add column if not exists approved_ip text;
+alter table estimates add column if not exists approved_ua text;
+`,
+  },
 ];

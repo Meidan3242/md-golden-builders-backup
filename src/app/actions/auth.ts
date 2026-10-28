@@ -1,13 +1,14 @@
 "use server";
 
 import { createHash, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ACCOUNTS, authReady, checkPassword, emailOf, findAccount, MIN_PASSWORD, setAccountPassword, userOfEmail } from "@/lib/accounts";
 import { loggedInUser } from "@/lib/data";
 import { migrate } from "@/lib/db";
-import { cutSessions } from "@/lib/logins";
-import { authSecret, envAnyCase, PASSWORD_ENV, SESSION_COOKIE, SESSION_DAYS, signSession } from "@/lib/session";
+import { loginBlocked, recordLogin } from "@/lib/login-guard";
+import { cutSessions, revokeSession } from "@/lib/logins";
+import { authSecret, envAnyCase, PASSWORD_ENV, readSession, SESSION_COOKIE, SESSION_DAYS, signSession } from "@/lib/session";
 
 const sha = (s: string) => createHash("sha256").update(s).digest();
 const sameSecret = (a: string, b: string) => timingSafeEqual(sha(a), sha(b));
@@ -32,7 +33,13 @@ export async function login(_: string | null, form: FormData): Promise<string | 
   const next = String(form.get("next") ?? "/");
   const userId = userOfEmail(email);
   if (!authSecret()) return "Login isn't set up yet (AUTH_SECRET is missing in Vercel).";
+  const ip = ((await headers()).get("x-forwarded-for") ?? "").split(",")[0]!.trim() || "unknown";
+  if (await loginBlocked(email, ip)) {
+    await slow();
+    return "Too many tries — wait 15 minutes and try again.";
+  }
   if (!userId || !password) {
+    await recordLogin(email, ip, false);
     await slow();
     return "Wrong email or password.";
   }
@@ -51,15 +58,26 @@ export async function login(_: string | null, form: FormData): Promise<string | 
     (ok = true), (account = false);
   }
   if (!ok) {
+    await recordLogin(email, ip, false);
     await slow();
     return "Wrong email or password.";
   }
+  await recordLogin(email, ip, true);
   await startSession(userId, account);
   redirect(next.startsWith("/") && !next.startsWith("//") && next !== "/" ? next : "/");
 }
 
 export async function logout() {
-  (await cookies()).delete(SESSION_COOKIE);
+  const jar = await cookies();
+  const s = await readSession(jar.get(SESSION_COOKIE)?.value, authSecret());
+  if (s?.sid) {
+    try {
+      await revokeSession(s.sid, s.u, s.exp); // a copy of this cookie stops working too
+    } catch (e) {
+      console.error("could not end the session on the server", e);
+    }
+  }
+  jar.delete(SESSION_COOKIE);
   redirect("/login");
 }
 

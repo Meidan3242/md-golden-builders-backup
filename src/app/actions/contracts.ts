@@ -5,11 +5,12 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { currentUser, getLead } from "@/lib/data";
+import { canSeeAll, currentUser, getLead } from "@/lib/data";
 import { migrate, sql } from "@/lib/db";
 import { emailReady, sendEmail } from "@/lib/email";
 import { cancelDeadline, initialsOf, splitAddress, type ContractData, type ContractorSign, type OwnerSign } from "@/lib/contract-form";
 import { contractById, contractByToken, contractOfEstimate, contractsReady, docHash, newContractToken, payInstructions } from "@/lib/contracts";
+import { contractVersion, estimateVersion, UPDATED } from "@/lib/doc-version";
 import { depositFor, paymentRows } from "@/lib/estimate-math";
 import { estimateById } from "@/lib/estimates";
 import { money } from "@/lib/format";
@@ -21,7 +22,7 @@ const clean = (s: unknown, max = 300) => String(s ?? "").trim().slice(0, max);
 async function canEdit(leadId: string | null) {
   const u = await currentUser();
   if (u.role === "pm") throw new Error("Not allowed");
-  if (leadId && !(await getLead(leadId))) throw new Error("Not allowed");
+  if (leadId ? !(await getLead(leadId)) : !canSeeAll(u)) throw new Error("Not allowed"); // no lead → owner / office only
   return u;
 }
 
@@ -33,6 +34,8 @@ export async function generateContract(estimateId: string) {
   if (!e) throw new Error("Estimate not found.");
   const u = await canEdit(e.leadId);
   if (e.status !== "Approved") throw new Error("The customer has to approve the estimate first.");
+  // The contract is made from exactly what the customer approved (when that was recorded).
+  if (e.approvedVersion && estimateVersion(e) !== e.approvedVersion) throw new Error("This estimate changed after the customer approved it.");
   if (!(await contractsReady())) await migrate();
   const existing = await contractOfEstimate(e.id);
   if (existing) redirect(`/contracts/${existing.id}`);
@@ -171,13 +174,14 @@ export async function emailContract(id: string): Promise<string> {
 }
 
 /** Customer side (public, by private link): the only thing the customer does is sign — every detail is already filled. */
-export async function signContract(token: string, input: { name: string }): Promise<string> {
+export async function signContract(token: string, input: { name: string; version: string }): Promise<string> {
   const c = await contractByToken(token);
   if (!c) return "This link isn't valid anymore.";
   if (c.status === "Signed") return "Already signed — thank you!";
   if (!c.contractor) return "This contract isn't ready yet.";
   const name = clean(input.name, 120);
   if (name.length < 3 || !/\s/.test(name)) return "Please type your full name (first and last).";
+  if (input.version !== contractVersion(c.data, c.contractor)) return UPDATED; // changed while they were reading it
   const age65 = !!c.data.age65;
   const h = await headers();
   const now = new Date();
@@ -195,6 +199,9 @@ export async function signContract(token: string, input: { name: string }): Prom
   const hash = docHash(c.data, c.contractor, owner);
   const done = await sql().begin(async (tx) => {
     await tx`set local lock_timeout = '8s'`; await tx`set local statement_timeout = '20s'`; await tx`set local idle_in_transaction_session_timeout = '30s'`; // never leave the database locked
+    // Re-read with the row locked: a change saved a moment ago must not slip in between the check and the signature.
+    const [cur] = await tx`select data, contractor_sign, status from contracts where id = ${c.id} for update`;
+    if (!cur || cur.status === "Signed" || !cur.contractor_sign || contractVersion(cur.data, cur.contractor_sign) !== input.version) return false;
     const [r] = await tx`update contracts set owner_sign = ${tx.json(owner)}, status = 'Signed', signed_at = now(), doc_hash = ${hash}, updated_at = now()
                          where id = ${c.id} and status <> 'Signed' and contractor_sign is not null returning id`;
     if (!r) return false;
@@ -205,7 +212,7 @@ export async function signContract(token: string, input: { name: string }): Prom
     }
     return true;
   });
-  if (!done) return "Already signed — thank you!";
+  if (!done) return (await contractByToken(token))?.status === "Signed" ? "Already signed — thank you!" : UPDATED;
   after(() => pushToTeam({ title: `✍️ ${name} signed contract #${c.number}`, body: `${c.data.title} · ${money(c.data.price)}`, url: `/contracts/${c.id}` }).catch((e) => console.error("sign notice failed", e)));
   revalidatePath("/", "layout");
   return "Done";

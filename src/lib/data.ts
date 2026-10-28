@@ -3,7 +3,9 @@
 // connected, the same rule is enforced again with Row-Level Security.
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { validAfter } from "./logins";
+import { ACCOUNTS } from "./accounts";
+import { dbConfigured } from "./clock";
+import { isRevoked, validAfter } from "./logins";
 import { authSecret, readSession, SESSION_COOKIE } from "./session";
 import {
   APPOINTMENTS,
@@ -39,6 +41,7 @@ export async function loggedInUser(): Promise<User | null> {
   const s = await readSession((await cookies()).get(SESSION_COOKIE)?.value, authSecret());
   if (!s) return null;
   if (s.iat < (await validAfter(s.u))) return null;
+  if (await isRevoked(s.sid)) return null; // logged out on this device
   return USERS.find((u) => u.id === s.u) ?? null;
 }
 
@@ -66,6 +69,18 @@ export async function getLeads(): Promise<Lead[]> {
 
 export async function getLead(id: string) {
   return (await getLeads()).find((l) => l.id === id);
+}
+
+/**
+ * For actions that CHANGE a lead: the lead, only if this person may see it (sales reps: their own;
+ * project managers: none). Throws otherwise — a lead id typed into a request is never enough.
+ */
+export async function leadForChange(id: string) {
+  const user = await currentUser();
+  if (user.role === "pm") throw new Error("Not allowed");
+  const lead = id ? await getLead(id) : undefined;
+  if (!lead) throw new Error("Not allowed");
+  return { user, lead };
 }
 
 export async function getProjects(): Promise<Project[]> {
@@ -99,9 +114,14 @@ export async function getFollowUps() {
   return all.filter((f) => ids.has(f.leadId)).sort((a, b) => a.due.localeCompare(b.due));
 }
 
-export const getSubcontractors = async () => SUBCONTRACTORS;
-export const subById = (id: string) => SUBCONTRACTORS.find((s) => s.id === id);
-export const getMarketingSpend = async () => MARKETING_SPEND;
+// With the real database connected, the fictional sample subcontractors and marketing numbers are never shown.
+const sample = () => !dbConfigured();
+export const getSubcontractors = async () => (sample() ? SUBCONTRACTORS : []);
+export const subById = (id: string) => (sample() ? SUBCONTRACTORS.find((s) => s.id === id) : undefined);
+export const getMarketingSpend = async () => (sample() ? MARKETING_SPEND : []);
+
+/** Who a lead can be assigned to: the owner and sales reps — with real data, only people who can actually log in. */
+export const assignableUsers = () => USERS.filter((u) => (u.role === "admin" || u.role === "sales") && (sample() || Object.values(ACCOUNTS).includes(u.id)));
 
 // ---------------------------------------------------------------- money
 

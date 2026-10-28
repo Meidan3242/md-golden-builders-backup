@@ -4,12 +4,13 @@ import { Dancing_Script } from "next/font/google";
 import { useState } from "react";
 import { signContract } from "@/app/actions/contracts";
 import { initialsOf } from "@/lib/contract-form";
+import { UPDATED_MSG } from "./updated-notice";
 
 const script = Dancing_Script({ subsets: ["latin"], weight: "600" });
 const small = "block text-[11px] font-semibold uppercase tracking-wider text-[#777]";
 
 /** The only thing the customer does: sign. Their name is already filled in; one tap signs every marked place. */
-export function SignContract({ token, ownerName, age65 }: { token: string; ownerName: string; age65: boolean }) {
+export function SignContract({ token, ownerName, age65, version }: { token: string; ownerName: string; age65: boolean; version: string }) {
   const [name, setName] = useState(ownerName);
   const [msg, setMsg] = useState<string>();
   const [pending, setPending] = useState(false);
@@ -21,8 +22,8 @@ export function SignContract({ token, ownerName, age65 }: { token: string; owner
         e.preventDefault();
         setPending(true);
         setMsg(undefined);
-        signContract(token, { name })
-          .then((r) => (r === "Done" ? window.location.assign(window.location.pathname) : setMsg(r)), () => setMsg("Something went wrong — please try again.")) // signed: reopen as the signed copy
+        signContract(token, { name, version })
+          .then((r) => (r === "Done" ? window.location.assign(window.location.pathname) : setMsg(r === "UPDATED" ? UPDATED_MSG.contract : r)), () => setMsg("Something went wrong — please try again.")) // signed: reopen as the signed copy
           .finally(() => setPending(false));
       }}
     >
@@ -42,7 +43,12 @@ export function SignContract({ token, ownerName, age65 }: { token: string; owner
       <button disabled={pending} className="mt-4 w-full bg-[#1c1c1c] py-4 text-sm font-semibold uppercase tracking-[0.15em] text-white disabled:opacity-60 sm:w-auto sm:px-14">
         {pending ? "Signing…" : "Sign the contract"}
       </button>
-      {msg && <p className="mt-2 text-sm text-[#b91c1c]">{msg}</p>}
+      {msg && (
+        <p className="mt-2 text-sm text-[#b91c1c]">
+          {msg}
+          {msg === UPDATED_MSG.contract && <button type="button" onClick={() => window.location.reload()} className="ml-2 font-semibold underline">Show the new version</button>}
+        </p>
+      )}
     </form>
   );
 }

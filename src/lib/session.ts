@@ -4,8 +4,9 @@
 export const SESSION_COOKIE = "mdg_session";
 export const SESSION_DAYS = 30;
 
-// u = user, exp = expiry, v = which login it came from (see below), iat = when it was issued.
-type Payload = { u: string; exp: number; v: string; iat?: number };
+// u = user, exp = expiry, v = which login it came from (see below), iat = when it was issued,
+// sid = this login's own id (so logging out on one phone can cut exactly that session).
+type Payload = { u: string; exp: number; v: string; iat?: number; sid?: string };
 
 const enc = new TextEncoder();
 const b64url = (buf: ArrayBuffer | Uint8Array) =>
@@ -17,7 +18,8 @@ async function key(secret: string) {
 }
 
 export function authSecret() {
-  const s = envAnyCase("AUTH_SECRET");
+  // Preview has its own secret: a login made on a Preview (with test passwords) is worthless on the real site.
+  const s = envAnyCase(process.env.VERCEL_ENV === "preview" ? "PREVIEW_AUTH_SECRET" : "AUTH_SECRET");
   return s && s.length >= 16 ? s : null;
 }
 
@@ -36,7 +38,8 @@ async function passwordVersion(userId: string, secret: string, v?: string) {
 
 export async function signSession(userId: string, secret: string, account = true) {
   const v = (await passwordVersion(userId, secret, account ? "a." : undefined)) ?? "";
-  const body = b64url(enc.encode(JSON.stringify({ u: userId, exp: Date.now() + SESSION_DAYS * 86_400_000, v, iat: Date.now() } satisfies Payload)));
+  const sid = b64url(crypto.getRandomValues(new Uint8Array(16)));
+  const body = b64url(enc.encode(JSON.stringify({ u: userId, exp: Date.now() + SESSION_DAYS * 86_400_000, v, iat: Date.now(), sid } satisfies Payload)));
   const sig = await crypto.subtle.sign("HMAC", await key(secret), enc.encode(body));
   return `${body}.${b64url(sig)}`;
 }
@@ -46,8 +49,8 @@ export async function verifySession(token: string | undefined, secret: string | 
   return (await readSession(token, secret))?.u ?? null;
 }
 
-/** The session's user and when it was issued (0 for sessions from before this was recorded). */
-export async function readSession(token: string | undefined, secret: string | null): Promise<{ u: string; iat: number } | null> {
+/** The session's user, when it was issued (0 for sessions from before this was recorded), its id and expiry. */
+export async function readSession(token: string | undefined, secret: string | null): Promise<{ u: string; iat: number; sid?: string; exp: number } | null> {
   if (!token || !secret) return null;
   const [body, sig] = token.split(".");
   if (!body || !sig) return null;
@@ -57,7 +60,7 @@ export async function readSession(token: string | undefined, secret: string | nu
     const p = JSON.parse(new TextDecoder().decode(fromB64url(body))) as Payload;
     if (p.exp <= Date.now()) return null;
     const v = await passwordVersion(p.u, secret, p.v);
-    return v && v === p.v ? { u: p.u, iat: p.iat ?? 0 } : null; // old password changed or removed → logged out
+    return v && v === p.v ? { u: p.u, iat: p.iat ?? 0, sid: typeof p.sid === "string" ? p.sid : undefined, exp: p.exp } : null; // old password changed or removed → logged out
   } catch {
     return null;
   }

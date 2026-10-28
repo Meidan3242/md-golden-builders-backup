@@ -1,5 +1,5 @@
 import { Phone } from "lucide-react";
-import { Badge, Button, Card, PageHeader } from "@/components/ui";
+import { Badge, Button, Card, Empty, PageHeader } from "@/components/ui";
 import { canSeeMoney, currentUser, getProjects, getSubcontractors } from "@/lib/data";
 import { now } from "@/lib/clock";
 import { date, daysFrom, money } from "@/lib/format";
@@ -13,6 +13,7 @@ export default async function SubsPage() {
   return (
     <>
       <PageHeader title="Subcontractors" subtitle="License, insurance, W-9 and payment history for every sub" actions={<Button variant="primary">+ Add subcontractor</Button>} />
+      {!subs.length && <Card><Empty>No subcontractors yet. They&apos;ll show here with their license, insurance and payments once they&apos;re added.</Empty></Card>}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {subs.map((s) => {
           const mine = assignments.filter((x) => x.a.subId === s.id);

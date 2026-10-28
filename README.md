@@ -11,6 +11,7 @@ Lead, project and finance management system for MD Golden Builders (San Diego ho
 ```bash
 npm install
 npm run dev   # http://localhost:3000
+npm test      # regression tests (security, permissions, versioning, checklist)
 ```
 
 The prototype runs on demo data (`src/lib/demo-data.ts`, fictional customers).

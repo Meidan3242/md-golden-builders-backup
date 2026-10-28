@@ -1,14 +1,15 @@
 import "server-only";
 import { AwsClient } from "aws4fetch";
-import { envSuffix } from "./clock";
+import { isPreview, supabaseKey, supabaseUrl } from "./clock";
 
 // Files live in Cloudflare R2 (cheap, no download fees) once its 4 keys are in Vercel.
 // Until then — and for files saved before — Supabase Storage (private bucket "estimates").
-const base = () => envSuffix("SUPABASE_URL");
-const key = () => envSuffix("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
+const base = supabaseUrl;
+const key = supabaseKey;
 const supabaseReady = () => !!(base() && key());
 
 const r2 = () => {
+  if (isPreview()) return null; // Preview never reads or writes the real customer files
   // Accept the Account ID alone or pasted inside the full "https://<id>.r2.cloudflarestorage.com" link.
   const rawAccount = process.env.R2_ACCOUNT_ID?.trim();
   const account = rawAccount?.match(/[0-9a-f]{32}/i)?.[0] ?? rawAccount, id = process.env.R2_ACCESS_KEY_ID?.trim(), secret = process.env.R2_SECRET_ACCESS_KEY?.trim(), bucket = process.env.R2_BUCKET?.trim();
@@ -31,12 +32,13 @@ export async function putR2(bucket: string, path: string, body: ArrayBuffer | Ui
   return null;
 }
 
+/** Saves an estimate PDF (already checked to be a PDF by the caller). */
 export async function uploadFile(bucket: string, path: string, file: File) {
-  if (r2Ready()) return putR2(bucket, path, new Uint8Array(await file.arrayBuffer()), file.type || "application/pdf");
+  if (r2Ready()) return putR2(bucket, path, new Uint8Array(await file.arrayBuffer()), "application/pdf");
   if (!supabaseReady()) return null;
   const res = await fetch(`${base()}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key()}`, apikey: key()!, "Content-Type": file.type || "application/pdf", "x-upsert": "true" },
+    headers: { Authorization: `Bearer ${key()}`, apikey: key()!, "Content-Type": "application/pdf", "x-upsert": "true" },
     body: Buffer.from(await file.arrayBuffer()),
   });
   if (!res.ok) {

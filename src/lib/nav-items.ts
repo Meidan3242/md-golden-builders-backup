@@ -8,6 +8,7 @@ import {
   HardHat,
   LayoutDashboard,
   Map,
+  ReceiptText,
   Settings,
   Users,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export const NAV: Item[] = [
   { href: "/", label: "Home", icon: LayoutDashboard, roles: STAFF },
   { href: "/leads", label: "Leads", icon: Users, roles: STAFF },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/estimates", label: "Estimates", icon: ReceiptText, roles: STAFF },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/map", label: "Map", icon: Map, roles: STAFF },
   { href: "/documents/new", label: "Documents", icon: FileText, roles: STAFF },
